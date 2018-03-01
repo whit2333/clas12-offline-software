@@ -14,7 +14,11 @@ import org.jlab.coda.jevio.EvioException;
 import org.jlab.coda.jevio.EvioNode;
 import org.jlab.detector.base.DetectorType;
 import org.jlab.io.base.DataBank;
+import org.jlab.io.base.DataDescriptor;
+import org.jlab.io.base.DataEntryType;
 import org.jlab.io.evio.EvioDataBank;
+import org.jlab.io.evio.EvioDataDescriptor;
+import org.jlab.io.evio.EvioDataDictionary;
 import org.jlab.io.evio.EvioDataEvent;
 import org.jlab.io.evio.EvioSource;
 import org.jlab.io.evio.EvioTreeBranch;
@@ -553,11 +557,52 @@ public class EvioHipoEvent {
             if(evioBank.rows()>0) hipoEvent.appendBanks(hipoBank);
         }
     }
-    
-   public void fillHipoEventTrueInfo(HipoDataEvent hipoEvent, EvioDataEvent evioEvent){
-        
-        String[]        bankNames = new String[]{"BMT","BST","CND","CTOF","DC","EC","FMT","FTCAL","FTHODO","FTOF","FTTRK","HTCC","LTCC","PCAL","RICH","RTPC"};
-        DetectorType[]  bankTypes = new DetectorType[]{DetectorType.BMT,
+
+    public void fillHipoFromEvio(HipoDataEvent hipoEvent, EvioDataEvent evioEvent,
+            String[] hipoBankNames, String evioBankName,
+            String[] hipoVarNames, String[] evioVarNames) {
+    }
+  
+    private int getEvioVarLength(EvioDataEvent evioEvent,String bankName,String varName) {
+        // this should probably go in EvioDataEvent, or maybe it's already available/easier somehow.
+        int length=0;
+        if(evioEvent.hasBank(bankName)==true) {
+            EvioDataDescriptor desc=(EvioDataDescriptor) evioEvent.getDictionary().getDescriptor(bankName);
+            int type=desc.getProperty("type",varName);
+            if (DataEntryType.getType(type)==DataEntryType.INTEGER) {
+                int[] vals=evioEvent.getInt(bankName+"."+varName);
+                if (vals!=null) length=vals.length;
+            }
+            else if (DataEntryType.getType(type)==DataEntryType.DOUBLE) {
+                double[] vals=evioEvent.getDouble(bankName+"."+varName);
+                if (vals!=null) length=vals.length;
+            }
+            else if (DataEntryType.getType(type)==DataEntryType.FLOAT) {
+                float[] vals=evioEvent.getFloat(bankName+"."+varName);
+                if (vals!=null) length=vals.length;
+            }
+            else if (DataEntryType.getType(type)==DataEntryType.SHORT) {
+                short[] vals=evioEvent.getShort(bankName+"."+varName);
+                if (vals!=null) length=vals.length;
+            }
+            else if (DataEntryType.getType(type)==DataEntryType.BYTE) {
+                byte[] vals=evioEvent.getByte(bankName+"."+varName);
+                if (vals!=null) length=vals.length;
+            }
+        }
+        return length;
+    }
+
+    public void fillHipoEventTrueInfo(HipoDataEvent hipoEvent, EvioDataEvent evioEvent){
+     
+        final String hipoBankName="MC::True";
+        final String [] varNames={
+            "pid" ,"mpid","tid" ,"mtid","otid","trackE",//"totEdep",
+            "avgX","avgY","avgZ","avgLx","avgLy","avgLz",
+            "px"  ,"py"  ,"pz"  ,"vx"  ,"vy"  ,"vz"  ,"mvx" ,"mvy" ,"mvz" ,"avgT"};
+
+        final String[]        evioBankNames = new String[]{"BMT","BST","CND","CTOF","DC","EC","FMT","FTCAL","FTHODO","FTOF","FTTRK","HTCC","LTCC","PCAL","RICH","RTPC"};
+        final DetectorType[]  evioBankTypes = new DetectorType[]{DetectorType.BMT,
                                                        DetectorType.BST,
                                                        DetectorType.CND,
                                                        DetectorType.CTOF,
@@ -573,6 +618,114 @@ public class EvioHipoEvent {
                                                        DetectorType.ECAL,
                                                        DetectorType.RICH,
                                                        DetectorType.RTPC};
+
+        final String [] evioVarNames=varNames;
+        final String [] hipoVarNames=varNames;
+
+        // figure out how many rows for output hipo bank:
+        int nHipoRows = 0;
+        for(int kk = 0; kk < evioBankNames.length; kk++){
+
+            int nEvioRows = 0;
+            String evioBankName=evioBankNames[kk]+"::true";
+            if(evioEvent.hasBank(evioBankName)!=true) continue;
+
+            for (int j = 0; j<evioVarNames.length; j++) {
+
+                int length=this.getEvioVarLength(evioEvent,evioBankName,evioVarNames[j]);
+                if (length>0) {
+                    if (nEvioRows==0) {
+                        nEvioRows=length;
+                        nHipoRows+=nEvioRows;
+                    }
+                    else if (nEvioRows!=length)
+                        throw new RuntimeException("Non-rectangular EVIO bank.");
+                }
+            }
+        }
+
+        // fill the output hipo bank:
+        if(nHipoRows!=0) {
+            HipoDataBank hipoBank = (HipoDataBank) hipoEvent.createBank(hipoBankName, nHipoRows);
+            int iHipoRow=0;
+            for(int k = 0; k < evioBankNames.length; k++){
+                String evioBankName=evioBankNames[k]+"::true";
+                if(evioEvent.hasBank(evioBankName)!=true) continue;
+                EvioDataDescriptor desc=(EvioDataDescriptor) evioEvent.getDictionary().getDescriptor(evioBankName);
+
+                // figure out how many rows for this evio bank:
+                int nEvioRows=0;
+                for (int j = 0; j<evioVarNames.length; j++) {
+                    int length=this.getEvioVarLength(evioEvent,evioBankName,evioVarNames[j]);
+                    if (length>0) {
+                        nEvioRows=length;
+                        // we already checked it's rectangluar, so can ignore the rest:
+                        break;
+                    }
+                }
+
+                // this is wrong.  gotta check hipo data type too.
+
+                // fill the output hipo bank:
+                for (int i=0; i<nEvioRows; i++) {
+                    for (int j = 0; j<evioVarNames.length; j++) {
+                        String evioVarName=evioVarNames[j];
+                        int evioType=desc.getProperty("type",evioVarNames[j]);
+                        //int hipoType=desc.getProperty("type",hipoVarNames[j]);
+                        if (DataEntryType.getType(evioType)==DataEntryType.INTEGER) {
+                            int val=-99;
+                            int[] vals=evioEvent.getInt(evioBankName+"."+evioVarName);
+                            if (vals!=null) val=vals[i];
+                            hipoBank.setInt(hipoVarNames[j],iHipoRow,val);
+                        }
+                        else if (DataEntryType.getType(evioType)==DataEntryType.DOUBLE) {
+                            double val=-99;
+                            double[] vals=evioEvent.getDouble(evioBankName+"."+evioVarName);
+                            if (vals!=null) val=vals[i];
+                            hipoBank.setFloat(hipoVarNames[j],iHipoRow,(float)val); // bah
+                        }
+                        else if (DataEntryType.getType(evioType)==DataEntryType.FLOAT) {
+                            float val=-99;
+                            float[] vals=evioEvent.getFloat(evioBankName+"."+evioVarName);
+                            if (vals!=null) val=vals[i];
+                            hipoBank.setFloat(hipoVarNames[j],iHipoRow,val);
+                        }
+                        else if (DataEntryType.getType(evioType)==DataEntryType.SHORT) {
+                            short val=-99;
+                            short[] vals=evioEvent.getShort(evioBankName+"."+evioVarName);
+                            if (vals!=null) val=vals[i];
+                            hipoBank.setShort(hipoVarNames[j],iHipoRow,val);
+                        }
+                        else if (DataEntryType.getType(evioType)==DataEntryType.BYTE) {
+                            byte val=-99;
+                            byte[] vals=evioEvent.getByte(evioBankName+"."+evioVarName);
+                            if (vals!=null) val=vals[i];
+                            hipoBank.setByte(hipoVarNames[j],iHipoRow,val);
+                        }
+
+                        // this has got to go in order to generalize it:
+                        hipoBank.setByte("detector",iHipoRow,(byte)evioBankTypes[k].getDetectorId());
+                    }
+                    iHipoRow++;
+                }
+            }
+            hipoEvent.appendBanks(hipoBank);
+        }
+
+        /*
+        EvioDataDictionary edd=(EvioDataDictionary)evioEvent.getDictionary();
+        String[] edddl=edd.getDescriptorList();
+        for (int k = 0; k<edddl.length; k++) {
+            DataDescriptor dd=edd.getDescriptor(edddl[k]);
+            String [] ddel=dd.getEntryList();
+            System.out.println(edddl[k]);
+            for (int l = 0; l<ddel.length; l++) {
+                int[] asdf=evioEvent.getTagNum(edddl[k]+"."+ddel[l]);
+                System.out.print(ddel[l]+"/"+asdf[0]+"/"+asdf[1]+" ");
+            }
+            System.out.println();
+        }
+        /*
         int rows = 0;
         for(int k = 0; k < bankNames.length; k++){
             if(evioEvent.hasBank(bankNames[k]+"::true")==true){
@@ -616,6 +769,7 @@ public class EvioHipoEvent {
             }
             hipoEvent.appendBanks(hipoBank);
         }
+        */
     }
    
    
