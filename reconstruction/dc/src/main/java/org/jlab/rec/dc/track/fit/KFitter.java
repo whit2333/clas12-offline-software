@@ -209,7 +209,8 @@ public class KFitter {
                 double V = mv.measurements.get(k1 + 1).error; 
                 double h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y}, 
                         (int) mv.measurements.get(k1 + 1).tilt,  mv.measurements.get(k1 + 1).wireMaxSag,  mv.measurements.get(k1 + 1).wireLen);
-
+                //set residuals
+                mv.measurements.get(k1 + 1).residual = mv.measurements.get(k1 + 1).x - h;
                 chi2 += (mv.measurements.get(k1 + 1).x - h) * (mv.measurements.get(k1 + 1).x - h) / V;
             }
         }

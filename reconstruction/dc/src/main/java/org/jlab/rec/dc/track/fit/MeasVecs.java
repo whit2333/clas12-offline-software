@@ -195,6 +195,7 @@ public class MeasVecs {
         public double error;
         public double wireLen;
         public double wireMaxSag;
+        public double residual;
         
         MeasVec(int k) {
             this.k = k;

@@ -702,22 +702,28 @@ public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Fa
     for(StateVec st : stateVecAtPlanesList) {
         if(st==null)
             return;
+        double Xtrk = st.x();
+        double Ytrk = st.y();
         planeIdNum++;
         for(Cross c : trk) { 
-                for(FittedHit h1 : c.get_Segment1()) { 
-                        if(planeIdNum== (h1.get_Superlayer()-1)*6+h1.get_Layer() ) {
-                            h1.setAssociatedStateVec(st);   
-                            h1.setSignalPropagTimeAlongWire(DcDetector);
-                            h1.setSignalTimeOfFlight(); 
-                        }
-                }
-                for(FittedHit h2 : c.get_Segment2()) {
-                        if(planeIdNum== (h2.get_Superlayer()-1)*6+h2.get_Layer() ) {
-                            h2.setAssociatedStateVec(st);
-                            h2.setSignalPropagTimeAlongWire(DcDetector);
-                            h2.setSignalTimeOfFlight();
-                        }
-                }
+            for(FittedHit h1 : c.get_Segment1()) { 
+                    if(planeIdNum== (h1.get_Superlayer()-1)*6+h1.get_Layer() ) {
+                        h1.setAssociatedStateVec(st); 
+                        double Xhit = h1.XatY(DcDetector, Ytrk);
+                        h1.set_TrkResid(Xhit-Xtrk) ;
+                        h1.setSignalPropagTimeAlongWire(DcDetector);
+                        h1.setSignalTimeOfFlight(); 
+                    }
+            }
+            for(FittedHit h2 : c.get_Segment2()) {
+                    if(planeIdNum== (h2.get_Superlayer()-1)*6+h2.get_Layer() ) {
+                        h2.setAssociatedStateVec(st);
+                        double Xhit = h2.XatY(DcDetector, Ytrk);
+                        h2.set_TrkResid(Xhit-Xtrk) ;
+                        h2.setSignalPropagTimeAlongWire(DcDetector);
+                        h2.setSignalTimeOfFlight();
+                    }
+            }
         }
     }
 }
