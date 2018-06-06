@@ -12,7 +12,6 @@ import java.util.Map;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.rec.dc.trajectory.Trajectory;
-import org.jlab.rec.fvt.track.fit.MeasVecs.MeasVec;
 /**
  *
  * @author ziegler
@@ -32,7 +31,7 @@ public class TrackMatch {
             int layer = bank.getByte("layer", i); 
             int ns = this.findNearestStrip(fMTTraj.get(layer-1).getX(), fMTTraj.get(layer-1).getY(), layer);
             if(Math.abs(ns-bank.getInt("seedStrip", i))<stripsOff) { // pass if within # strips
-                System.out.println(" strips off "+(Math.abs(ns-bank.getInt("seedStrip", i))));
+                //System.out.println(" strips off "+(Math.abs(ns-bank.getInt("seedStrip", i))));
                 if(clusMap.containsKey(layer)) {
                     if(Math.abs(ns-bank.getInt("seedStrip", i))<Math.abs(ns-clusMap.get(layer)));
                         clusMap.put(layer, (double) bank.getFloat("centroid", i));
@@ -44,7 +43,7 @@ public class TrackMatch {
          measurements.add(mv.setMeasVec(-1, 0));
         for(int l = 0; l<6; l++) {
             if(clusMap.containsKey(l+1)) {
-                System.out.println(" added measurement "+clusMap.get(l+1)+" at layer "+(l+1));
+                //System.out.println(" added measurement "+clusMap.get(l+1)+" at layer "+(l+1));
                 measurements.add(mv.setMeasVec(l, clusMap.get(l+1)));
             }
         }
