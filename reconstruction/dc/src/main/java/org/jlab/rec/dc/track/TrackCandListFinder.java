@@ -191,7 +191,7 @@ public class TrackCandListFinder {
                 this.getStraightTrack(cand);
                 if(cand.get_pAtOrig()!=null) {
                     cand.set_Id(cands.size()+1);
-                    this.matchHits(traj.get_Trajectory(), cand, DcDetector);
+                    this.matchHits(traj.get_Trajectory(), cand, DcDetector, dcSwim);
                     cands.add(cand); 
                 }
             } else {
@@ -695,7 +695,7 @@ public class TrackCandListFinder {
 
 
 
-public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Factory DcDetector) {
+public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Factory DcDetector, DCSwimmer dcSwim) {
     int planeIdNum=0;
     if(stateVecAtPlanesList==null)
         return;
@@ -704,6 +704,7 @@ public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Fa
             return;
         double Xtrk = st.x();
         double Ytrk = st.y();
+        float[] bf = new float[3];
         planeIdNum++;
         for(Cross c : trk) { 
             for(FittedHit h1 : c.get_Segment1()) { 
@@ -711,6 +712,9 @@ public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Fa
                         h1.setAssociatedStateVec(st); 
                         double Xhit = h1.XatY(DcDetector, Ytrk);
                         h1.set_TrkResid(Xhit-Xtrk) ;
+                        bf[0]=(float) 0.;bf[1]=(float) 0.;bf[2]=(float) 0.;
+                        dcSwim.Bfield(h1.get_Sector(), st.x(), st.y(), h1.get_Z(), bf);
+                        h1.setB(Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]));
                         h1.setSignalPropagTimeAlongWire(DcDetector);
                         h1.setSignalTimeOfFlight(); 
                     }
@@ -720,6 +724,9 @@ public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Fa
                         h2.setAssociatedStateVec(st);
                         double Xhit = h2.XatY(DcDetector, Ytrk);
                         h2.set_TrkResid(Xhit-Xtrk) ;
+                        bf[0]=(float) 0.;bf[1]=(float) 0.;bf[2]=(float) 0.;
+                        dcSwim.Bfield(h2.get_Sector(), st.x(), st.y(), h2.get_Z(), bf);
+                        h2.setB(Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]));
                         h2.setSignalPropagTimeAlongWire(DcDetector);
                         h2.setSignalTimeOfFlight();
                     }

@@ -294,7 +294,7 @@ public class DCHBEngine extends ReconstructionEngine {
             for(Track trk: trkcands) {
                 // reset the id
                 trk.set_Id(trkId);
-                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
+                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector, swimmer);
                 for(Cross c : trk) { 
                     c.get_Segment1().isOnTrack=true;
                     c.get_Segment2().isOnTrack=true;
@@ -368,7 +368,7 @@ public class DCHBEngine extends ReconstructionEngine {
 
                 // reset the id
                 trk.set_Id(trkId);
-                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
+                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector, swimmer);
                 for(Cross c : trk) { 
                     for(FittedHit h1 : c.get_Segment1()) { 
                             h1.set_AssociatedHBTrackID(trk.get_Id());
@@ -398,7 +398,7 @@ public class DCHBEngine extends ReconstructionEngine {
         //String outputFile = args[1];
         //String inputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305.hipo";
         //String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/rec_out_mu-_testDCjar_hipo/mu_30nA_bg_out.ev.hipo";
-        String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/gemc_out_mu-_hipo/mu-_30nA_bg_out.ev.hipo";
+        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec.hipo";
         //System.err.println(" \n[PROCESSING FILE] : " + inputFile);
         
         DCHBEngine en = new DCHBEngine();
@@ -416,7 +416,7 @@ public class DCHBEngine extends ReconstructionEngine {
         //Writer
         
         //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGD.hipo";
-        String outputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/rec_out_mu-_testDCjar_hipo/mu_30nA_bg_out.recn2.hipo";
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec2.hipo";
         writer.open(outputFile);
         TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
         long t1 = 0;
