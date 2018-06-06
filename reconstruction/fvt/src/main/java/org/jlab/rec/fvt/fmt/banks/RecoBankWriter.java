@@ -107,9 +107,6 @@ public class RecoBankWriter {
         if (crosses == null) {
             return null;
         }
-        if (crosses.get(0).size() == 0) {
-            return null;
-        }
 
         DataBank bank = event.createBank("FMTRec::Crosses", crosses.size());
 

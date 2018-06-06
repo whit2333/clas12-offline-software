@@ -8,7 +8,6 @@ import org.jlab.clas.reco.ReconstructionEngine;
 import org.jlab.io.base.*;
 import org.jlab.io.hipo.HipoDataSource;
 import org.jlab.io.hipo.HipoDataSync;
-import org.jlab.rec.fvt.banks.InputBanksReader;
 import org.jlab.rec.fvt.fmt.Constants;
 //import org.jlab.rec.fmt.Constants;
 import org.jlab.rec.fvt.fmt.banks.HitReader;
@@ -68,11 +67,9 @@ public class FMTReconstruction extends ReconstructionEngine {
     public void setFieldsConfig(String fieldsConfig) {
         FieldsConfig = fieldsConfig;
     }
-    InputBanksReader ir ;
-    List<Cluster> clusters;
+    
     CrossMaker crossMake;
     ClusterFinder clusFinder;
-    List<Cross> crosses;
     
     @Override
     public boolean processDataEvent(DataEvent event) {
@@ -97,8 +94,9 @@ public class FMTReconstruction extends ReconstructionEngine {
 //            DCSwimmer.setMagneticFieldsScales(SOLSCALE, TORSCALE, shift);
 //            Run = newRun;
 //        }
-        clusters.clear();
-        crosses.clear();
+        
+        List<Cluster> clusters = new ArrayList<Cluster>();    
+        List<Cross> crosses = new ArrayList<Cross>();    
         
         this.FieldsConfig = this.getFieldsConfig();
         this.Run = this.getRun();
@@ -126,79 +124,6 @@ public class FMTReconstruction extends ReconstructionEngine {
             rbc.appendFMTBanks(event, FMThits, clusters, crosses);
         }
         
-//        List<Track> tracks = ir.getTracks(event, clusters, dcSwim);
-//        KFitter kf; 
-//        
-//        if(tracks!=null && clusters.size() != 0)
-//            for(Track track : tracks) {
-//                kf = new KFitter(track, event, dcSwim);
-//                kf.runFitter(track);
-//            }
-//
-//        
-//        if(tracks== null)
-//            return true;
-//        this.fillTrajectoryBank(event, tracks);
-//        //event.show();
-//        return true;
-//    }
-//    
-//    public void fillTrajectoryBank(DataEvent event, List<Track> tracks) {
-//        DataBank bank = event.createBank("REC::Traj", tracks.size()*19);
-//        int i1=0;
-//        for (int i = 0; i < tracks.size(); i++) {
-//            if(tracks.get(i)==null)
-//                continue;
-//            bank.setShort("detId", i1, (short) -1);
-//            bank.setShort("trkId", i1, (short) tracks.get(i).get_Id());
-//            bank.setByte("q", i1, (byte) tracks.get(i).getQ());
-//            bank.setFloat("x", i1, (float) tracks.get(i).getX());
-//            bank.setFloat("y", i1, (float) tracks.get(i).getY());
-//            bank.setFloat("z", i1, (float) tracks.get(i).getZ());
-//            bank.setFloat("px", i1, (float) tracks.get(i).getPx());
-//            bank.setFloat("py", i1, (float) tracks.get(i).getPy());
-//            bank.setFloat("pz", i1, (float) tracks.get(i).getPz());
-//            bank.setFloat("pathlength", i1, (float) 0);
-//            /*    System.out.println(tracks.get(i).get_Id()+" "+tracks.get(i).getQ()+" ("+(-1)+") "+
-//                            (float)tracks.get(i).getX()+", "+
-//                            (float)tracks.get(i).getY()+", "+
-//                            (float)tracks.get(i).getZ()+", "+
-//                            (float)tracks.get(i).getPx()+", "+
-//                            (float)tracks.get(i).getPy()+", "+
-//                            (float)tracks.get(i).getPz()+", "+          
-//                            (float)0+" "
-//                            ); */
-//            i1++;
-//            tracks.get(i).calcTrajectory(dcSwim);
-//            for(int j = 0; j< tracks.get(i).trajectory.size(); j++) {
-//                if(tracks.get(i).trajectory.get(j).getDetName().startsWith("DC") && (j-6)%6!=0)
-//                    continue;  // save the last layer in a superlayer
-//                bank.setShort("detId", i1, (short) tracks.get(i).trajectory.get(j).getDetId());
-//                bank.setShort("trkId", i1, (short) tracks.get(i).get_Id());
-//                bank.setByte("q", i1, (byte) tracks.get(i).getQ());
-//                bank.setFloat("x", i1, (float) tracks.get(i).trajectory.get(j).getX());
-//                bank.setFloat("y", i1, (float) tracks.get(i).trajectory.get(j).getY());
-//                bank.setFloat("z", i1, (float) tracks.get(i).trajectory.get(j).getZ());
-//                bank.setFloat("px", i1, (float) tracks.get(i).trajectory.get(j).getpX());
-//                bank.setFloat("py", i1, (float) tracks.get(i).trajectory.get(j).getpY());
-//                bank.setFloat("pz", i1, (float) tracks.get(i).trajectory.get(j).getpZ());
-//                bank.setFloat("pathlength", i1, (float) tracks.get(i).trajectory.get(j).getPathLen());
-//                i1++;
-//                /*     System.out.println(tracks.get(i).get_Id()+" "+tracks.get(i).getQ()
-//                            +" ("+tracks.get(i).trajectory.get(j).getDetId()+") "
-//                            + tracks.get(i).trajectory.get(j).getDetName()+"] "+
-//                            (float)tracks.get(i).trajectory.get(j).getX()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getY()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getZ()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getpX()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getpY()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getpZ()+", "+
-//                            (float)tracks.get(i).trajectory.get(j).getPathLen()+" "
-//                            ); */
-//            }
-//        }
-//       // bank.show();
-//        event.appendBank(bank);
         return true;
    }
 
@@ -206,18 +131,70 @@ public class FMTReconstruction extends ReconstructionEngine {
     public boolean init() {
        
        Constants.Load();
-       ir = new InputBanksReader();
        clusFinder = new ClusterFinder();
        crossMake = new CrossMaker();
-       crosses = new ArrayList<Cross>();
-       clusters = new ArrayList<Cluster>() ;
       
        return true;
     }
 
      
     public static void main(String[] args) {
-
+//String inputFile = args[0];
+        //String outputFile = args[1];
+        String inputFile="//Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron.hipo";
+        
+        
+        
+        FMTReconstruction en = new FMTReconstruction();
+        en.init();
+        
+        
+        int counter = 0;
+        
+        HipoDataSource reader = new HipoDataSource();
+        reader.open(inputFile);
+        
+        HipoDataSync writer = new HipoDataSync();
+        //Writer
+        
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec.hipo";
+       
+        writer.open(outputFile);
+        long t1 = 0;
+        while (reader.hasEvent()) {
+            
+            counter++;
+            System.out.println("************************************************************* ");
+            DataEvent event = reader.getNextEvent();
+            if (counter > 0) {
+                t1 = System.currentTimeMillis();
+            }
+            //if(event.getBank("RUN::config").getInt("event", 0) <50)
+             //   continue;
+            en.processDataEvent(event);
+            //event.show();
+            
+            writer.writeEvent(event);
+            System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
+           // event.show();
+            //if (event.getBank("RUN::config").getInt("event", 0) > 11) {
+            //    break;
+            //}
+            
+            
+            // event.show();
+            if(counter%100==0)
+                break;
+            //if(event.hasBank("HitBasedTrkg::HBTracks")) {
+            //    event.show();
+            
+            //}
+        }
+        writer.close();
+        double t = System.currentTimeMillis() - t1;
+        System.out.println(t1 + " TOTAL  PROCESSING TIME = " + (t / (float) counter));
     }
+
+    
 
 }
