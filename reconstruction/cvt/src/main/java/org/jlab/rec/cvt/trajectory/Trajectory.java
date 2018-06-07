@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import org.jlab.rec.cvt.cross.Cross;
 
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 
 /**
  * The trajectory is a set of state vectors at BST planes along the particle
@@ -96,7 +96,7 @@ public class Trajectory extends ArrayList<Cross> {
      */
     private static final long serialVersionUID = 358913937206455870L;
 
-    public TrkSwimmer bstSwim = new TrkSwimmer();
+    public CVTSwimmer bstSwim = new CVTSwimmer();
     public boolean isFinal = false;
 
     public double calc_Field(double x_cm, double y_cm, double z_cm) {

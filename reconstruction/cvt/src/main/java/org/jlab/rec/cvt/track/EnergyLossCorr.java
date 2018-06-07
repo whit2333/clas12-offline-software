@@ -3,7 +3,7 @@ package org.jlab.rec.cvt.track;
 import org.jlab.rec.cvt.svt.Constants;
 import org.jlab.rec.cvt.svt.Geometry;
 import org.jlab.rec.cvt.trajectory.Helix;
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 
 /**
  * Stand alone energy loss correction for the SVT
@@ -19,7 +19,7 @@ public class EnergyLossCorr {
     /**
      * Field instantiated using the torus and the solenoid
      */
-    public TrkSwimmer bstSwim = new TrkSwimmer();
+    public CVTSwimmer bstSwim = new CVTSwimmer();
 
     double cosEntAnglesPlanes[];
 

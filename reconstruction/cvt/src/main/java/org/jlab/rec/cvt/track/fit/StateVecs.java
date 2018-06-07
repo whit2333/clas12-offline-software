@@ -9,7 +9,7 @@ import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.rec.cvt.track.Seed;
 import org.jlab.rec.cvt.trajectory.Helix;
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 
 import Jama.Matrix;
 import org.jlab.rec.cvt.svt.Constants;
@@ -441,7 +441,7 @@ public class StateVecs {
 
     }
 
-    TrkSwimmer tSwim = new TrkSwimmer();
+    CVTSwimmer tSwim = new CVTSwimmer();
 
     public class B {
 
