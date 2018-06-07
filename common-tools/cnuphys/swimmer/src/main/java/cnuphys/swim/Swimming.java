@@ -229,7 +229,7 @@ public class Swimming {
 		if (opt == 1) {
 			System.out.println("\nSWIMMER 1");
 		}
-		Swimmer swimmer = new Swimmer(MagneticFields.getInstance().getActiveField());
+		Swimmer swimmer = new Swimmer();
 
 		SwimTrajectory traj = null;
 		try {
@@ -271,7 +271,7 @@ public class Swimming {
 		if (opt == 1) {
 			System.out.println("\nSWIMMER 2");
 		}
-		Swimmer2 swimmer = new Swimmer2(MagneticFields.getInstance().getActiveField());
+		Swimmer2 swimmer = new Swimmer2();
 
 		SwimTrajectory traj = null;
 		try {
@@ -317,7 +317,7 @@ public class Swimming {
 		if (opt == 1) {
 			System.out.println("\nSWIMMER 3");
 		}
-		Swimmer2 swimmer = new Swimmer2(MagneticFields.getInstance().getActiveField());
+		Swimmer2 swimmer = new Swimmer2();
 
 		int nStep= 0;
 		

@@ -1,7 +1,5 @@
 package cnuphys.swimZ;
 
-import cnuphys.magfield.MagneticField;
-
 public class SwimZStateVector {
 
 	// NOTE: not including q = Q/p as an element because it is a constant. It is
@@ -23,6 +21,11 @@ public class SwimZStateVector {
 	/** the y track slope, py/pz */
 	public double ty;
 
+	
+	public SwimZStateVector() {
+		this(Double.NaN,Double.NaN, Double.NaN, Double.NaN, Double.NaN);
+	}
+	
 	/**
 	 * Constructor
 	 * 

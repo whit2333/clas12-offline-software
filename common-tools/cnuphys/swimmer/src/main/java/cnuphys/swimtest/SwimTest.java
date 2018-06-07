@@ -10,8 +10,6 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Random;
-
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -22,21 +20,18 @@ import javax.swing.JPanel;
 import cnuphys.lund.LundStyle;
 import cnuphys.lund.LundTrackDialog;
 import cnuphys.lund.SwimTrajectoryListener;
-import cnuphys.magfield.CompositeProbe;
 import cnuphys.magfield.FastMath;
-import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.IField;
 import cnuphys.magfield.MagneticFieldCanvas;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFieldInitializationException;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
-import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.RungeKuttaException;
 import cnuphys.swim.SwimMenu;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swim.Swimming;
+import cnuphys.swimZ.SwimZStateVector;
 
 public class SwimTest {
 	
@@ -51,18 +46,10 @@ public class SwimTest {
 
 	private static final JMenuItem reconfigItem = new JMenuItem("Remove Solenoid and Torus Overlap");
 
+	private static double[] adaptiveAbsError = { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
 
-	// these will be used to create a DefaultStopper
-	private static final double maxPathLength = 8.0; // m
-
-	// get some fit results
-	private static final double hdata[] = new double[3];
-
-	static double[] adaptiveAbsError = { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
-
-	static double oldAccuracy = 1.0e-6; // m
-	static double oldUniformStepSize = 0.1; // m
-	static double oldAdaptiveInitStepSize = 0.01; // m
+	private static double oldAccuracy = 1.0e-6; // z stopping accuracy in m
+	private static double oldAdaptiveInitStepSize = 0.01; // m
 
 	//initialize the magnetic field
 	private static void initMagField() {
@@ -71,12 +58,8 @@ public class SwimTest {
 		File mfdir = new File(System.getProperty("user.home"), "magfield");
 		System.out.println("mfdir exists: " + (mfdir.exists() && mfdir.isDirectory()));
 		try {
-			// mf.initializeMagneticFields(mfdir.getPath(), "torus.dat",
-			// "Symm_solenoid_r601_phi1_z1201_2008.dat");
 			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_08May2018.dat",
 					"Symm_solenoid_r601_phi1_z1201_2008.dat");
-//			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_18Apr2018.dat",
-//					"Symm_solenoid_r601_phi1_z1201_2008.dat");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -88,61 +71,30 @@ public class SwimTest {
 		MagneticFields.getInstance().setActiveField(FieldType.TORUS);
 
 	}
-	
-	//create the test trajectories
-	private static void createTestTraj() {
-		
-		long seed = 3344632211L;
-		Random rand = new Random(seed);
-		int num = 1000;
 
-		TestTrajectories test = new TestTrajectories();
-				
+	/**
+	 * Print a memory report
+	 * 
+	 * @param message
+	 *            a message to add on
+	 */
+	public static void memoryReport(String message) {
+		System.gc();
+		System.gc();
 
-	}
-	
-	//test the sector swimmer for rotated composite
-	private static void testSectorSwim() {
-
-		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
-
-		IField field = FieldProbe.factory();
-	
-		Swimmer swimmer = new Swimmer(field);
-		
-		int charge = -1;
-		
-		double x0 = (-40. + 20*Math.random())/100.;
-		double y0 = (10. + 40.*Math.random())/100.;
-		double z0 = (180 + 40*Math.random())/100.;
-		double pTot = 1.0;
-		double theta = 0;
-		double phi = 0;
-		double z = 411.0/100.;
-		double accuracy = 10/1.0e6;
-		double stepSize = 0.01;
-		
-		System.out.println("=======");
-		for (int sector = 1; sector <= 6; sector ++) {
-			
-			 SwimTrajectory traj;
-			try {
-				traj = swimmer.sectorSwim(sector, charge, x0, y0, z0, pTot,
-				            theta, phi, z, accuracy, 10,
-				            10, stepSize, Swimmer.CLAS_Tolerance, hdata);
-	            traj.computeBDL(field);
-	            
-	            double lastY[] = traj.lastElement();
-				System.out.print("Sector: " + sector + "  ");
-				printVect(lastY, " last ");
-			} catch (RungeKuttaException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
-			
-			
+		StringBuilder sb = new StringBuilder(1024);
+		double total = (Runtime.getRuntime().totalMemory()) / 1048576.;
+		double free = Runtime.getRuntime().freeMemory() / 1048576.;
+		double used = total - free;
+		sb.append("==== Memory Report =====\n");
+		if (message != null) {
+			sb.append(message + "\n");
 		}
+		sb.append("Total memory in JVM: " + String.format("%6.1f", total) + "MB\n");
+		sb.append(" Free memory in JVM: " + String.format("%6.1f", free) + "MB\n");
+		sb.append(" Used memory in JVM: " + String.format("%6.1f", used) + "MB\n");
+
+		System.err.println(sb.toString());
 	}
 	
 	
@@ -152,16 +104,24 @@ public class SwimTest {
 		
 		final JMenuItem createTrajItem = new JMenuItem("Create Test Trajectories...");
 		final JMenuItem testSectorItem = new JMenuItem("Test Sector Swim");
-		
+		final JMenuItem threadItem = new JMenuItem("Thread Test");
+		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. Swimmer2 Test");
+
 		ActionListener al = new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if (e.getSource() == createTrajItem) {
-					createTestTraj();
+					CreateTestTrajectories.createTestTraj(3344632211L, 1000);
 				}
 				else if (e.getSource() == testSectorItem) {
-					testSectorSwim();
+					SectorTest.testSectorSwim();
+				}
+				else if (e.getSource() == threadItem) {
+					ThreadTest.threadTest(100, 8);
+				}
+				else if (e.getSource() == oneVtwoItem) {
+					CompareSwimmers.swimmerVswimmer2Test(3344632211L, 5000);
 				}
 				else if (e.getSource() == reconfigItem) {
 					MagneticFields.getInstance().removeMapOverlap();
@@ -171,12 +131,16 @@ public class SwimTest {
 			
 		};
 		
+		threadItem.addActionListener(al);	
 		createTrajItem.addActionListener(al);	
+		oneVtwoItem.addActionListener(al);	
 		testSectorItem.addActionListener(al);	
 		reconfigItem.addActionListener(al);	
 		menu.add(createTrajItem);
+		menu.add(oneVtwoItem);
 		menu.add(testSectorItem);
 		menu.add(reconfigItem);
+		menu.add(threadItem);
 		
 		return menu;
 	}
@@ -341,8 +305,25 @@ public class SwimTest {
 
 		return traj;
 	}
+	
+	/**
+	 * Print a vector to the standard output
+	 * @param v the double vector
+	 * @param s an info string
+	 */
+	public static void printSwimZ(SwimZStateVector v, String s) {
+				
+		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f]", s, v.x/100., v.y/100., v.z/100.);
+		System.out.println(out);
+	}
 
-	private static void printVect(double v[], String s) {
+
+	/**
+	 * Print a vector to the standard output
+	 * @param v the double vector
+	 * @param s an info string
+	 */
+	public static void printVect(double v[], String s) {
 		
 		if (v.length == 8) {
 			String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f, %-12.5f, %-12.5f, %-12.5f, %-12.5f, %-12.5f]", 

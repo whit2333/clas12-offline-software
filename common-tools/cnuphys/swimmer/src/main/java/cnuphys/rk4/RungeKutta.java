@@ -1228,7 +1228,7 @@ public class RungeKutta {
 		_workArrayCache.push(yt2);
 		_workArrayCache.push(dydt);
 		
-		System.out.println("  ****** workarray cache size: " + _workArrayCache.size());
+//		System.out.println("  ****** workarray cache size: " + _workArrayCache.size());
 
 		return nstep;
 	}
@@ -1649,5 +1649,15 @@ public class RungeKutta {
 	public static double getMaxStepSize() {
 		return MAXSTEPSIZE;
 	}
+	
+	/**
+	 * Get the minimum step size
+	 * 
+	 * @return the minimum stepsize is whatever units you are using
+	 */
+	public static double getMinStepSize() {
+		return MINSTEPSIZE;
+	}
+
 
 }

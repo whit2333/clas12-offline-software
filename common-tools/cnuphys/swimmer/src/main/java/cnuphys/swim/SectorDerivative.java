@@ -1,7 +1,5 @@
 package cnuphys.swim;
 
-import cnuphys.magfield.IField;
-import cnuphys.magfield.RotatedCompositeField;
 import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.IDerivative;
 
@@ -13,8 +11,6 @@ import cnuphys.rk4.IDerivative;
  */
 public class SectorDerivative implements IDerivative {
 
-	private IField _field;
-	private RotatedCompositeField _rcField;
 	private RotatedCompositeProbe _rcProbe;
 	
 	//the sector [1..6]
@@ -42,46 +38,17 @@ public class SectorDerivative implements IDerivative {
 	 * @param field
 	 *            the magnetic field
 	 */
-	public SectorDerivative(int sector, int charge, double momentum, IField field) {
-		_field = field;
+	public SectorDerivative(int sector, int charge, double momentum, RotatedCompositeProbe rcProbe) {
 		_sector = sector;
-		
-		if (_field instanceof RotatedCompositeField) {
-			_rcField = (RotatedCompositeField)_field;
-			_rcProbe = null;
-		}
-		else if (_field instanceof RotatedCompositeProbe) {
-			_rcProbe = (RotatedCompositeProbe)_field;
-			_rcField = null;
-		}
-		else {
-			System.err.println("Can only create a SectorDerivative with a RotatedComposite Field or Probe");
-			System.exit(1);
-		}
-		
-		
+		_rcProbe = rcProbe;		
 		_momentum = momentum;
 		// units of this alpha are 1/(T*m)
 		_alpha = 1.0e-9 * charge * Swimmer.C / _momentum;
 	}
 
-	public void set(int sector, int charge, double momentum, IField field) {
-		_field = field;
+	public void set(int sector, int charge, double momentum, RotatedCompositeProbe rcProbe) {
+		_rcProbe = rcProbe;		
 		_sector = sector;
-
-
-		if (_field instanceof RotatedCompositeField) {
-			_rcField = (RotatedCompositeField)_field;
-			_rcProbe = null;
-		}
-		else if (_field instanceof RotatedCompositeProbe) {
-			_rcProbe = (RotatedCompositeProbe)_field;
-			_rcField = null;
-		}
-		else {
-			System.err.println("Can only set a SectorDerivative with a RotatedComposite Field or Probe");
-			System.exit(1);
-		}
 		_momentum = momentum;
 		// units of this alpha are 1/(T*m)
 		_alpha = 1.0e-9 * charge * Swimmer.C / _momentum;
@@ -106,7 +73,7 @@ public class SectorDerivative implements IDerivative {
 		double By = 0.0;
 		double Bz = 0.0;
 
-		if (_field != null) {
+		if (_rcProbe != null) {
 
 			float b[] = new float[3];
 
@@ -115,12 +82,7 @@ public class SectorDerivative implements IDerivative {
 			double yy = Q[1] * 100;
 			double zz = Q[2] * 100;
 			
-			if (_rcProbe != null) {
-				_rcProbe.field(_sector, (float) xx, (float) yy, (float) zz, b);
-			}
-			else {
-				_rcField.field(_sector, (float) xx, (float) yy, (float) zz, b);
-			}
+			_rcProbe.field(_sector, (float) xx, (float) yy, (float) zz, b);
 
 			// convert to tesla
 			Bx = b[0] / 10.0;

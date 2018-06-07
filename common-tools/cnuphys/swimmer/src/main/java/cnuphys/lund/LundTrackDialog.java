@@ -27,7 +27,6 @@ import javax.swing.border.TitledBorder;
 
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.MagneticFields;
 import cnuphys.rk4.RungeKuttaException;
 import cnuphys.swim.DefaultSwimStopper;
 import cnuphys.swim.SwimTrajectory;
@@ -174,11 +173,6 @@ public class LundTrackDialog extends JDialog {
 	// add all the widgets
 	private void addComponents() {
 		setLayout(new BorderLayout(6, 6));
-		JLabel plabel = new JLabel("Using magnetic probes: " + FieldProbe.isCache());
-		JPanel sp = new JPanel();
-		sp.setLayout(new FlowLayout(FlowLayout.CENTER, 4, 4));
-		sp.add(plabel);
-		add(sp, BorderLayout.NORTH);
 
 		Box box = Box.createVerticalBox();
 		box.add(Box.createVerticalStrut(6));
@@ -280,7 +274,7 @@ public class LundTrackDialog extends JDialog {
 						System.err.println("SwimZ swimmer");
 						SwimZStateVector start = new SwimZStateVector(xo * 100, yo * 100, zo * 100, momentum, theta,
 								phi);
-						SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+						SwimZ sz = new SwimZ();
 
 						double adaptiveInitStepSize = 0.01;
 

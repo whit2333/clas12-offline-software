@@ -5,7 +5,8 @@ import java.util.ArrayList;
 
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.IField;
+import cnuphys.magfield.IMagField;
+import cnuphys.magfield.MagneticField;
 import cnuphys.rk4.ButcherTableau;
 import cnuphys.rk4.IStopper;
 import cnuphys.rk4.RungeKutta;
@@ -28,12 +29,11 @@ public class Swimmer2 {
 	//object cache
 	private ArrayDeque<DefaultDerivative> _derivCache = new ArrayDeque<>();
 
-	// Field getter.
-	// NOTE: the method of interest in IField takes a position in cm
-	// and returns a field in kG.This swim package works in SI (meters and
-	// Tesla)
+	// Field probe.
+	// NOTE: methods of interest in FieldProbe takes a position in cm and
+	// return a field in kG.This swim package works in SI (meters and Tesla)
 	// so care has to be taken when using the field object
-	private IField _field;
+	private FieldProbe _probe;
 	
 	/**
 	 * Swimmer2 constructor. Here we create a Swimmer that will use the given
@@ -42,8 +42,24 @@ public class Swimmer2 {
 	 * @param field
 	 *            interface into a magnetic field
 	 */
-	public Swimmer2(IField field) {
-		_field = FieldProbe.factory(field);
+	public Swimmer2() {
+		_probe = FieldProbe.factory();
+	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public Swimmer2(MagneticField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
+	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public Swimmer2(IMagField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
 	}
 
 	/**
@@ -223,11 +239,11 @@ public class Swimmer2 {
 
 		DefaultDerivative deriv;
 		if (_derivCache.isEmpty()) {
-			deriv = new DefaultDerivative(charge, momentum, _field);
+			deriv = new DefaultDerivative(charge, momentum, _probe);
 		}
 		else {
 			deriv = _derivCache.pop();
-			deriv.set(charge, momentum, _field);
+			deriv.set(charge, momentum, _probe);
 		}
 
 		// normally we swim from small z to a larger z cutoff.
@@ -374,7 +390,7 @@ public class Swimmer2 {
 		SwimTrajectory trajectory = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi, 100);
 
 		// the derivative
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 
 		// integrate
 		_rungeKutta.adaptiveStep(uo, s0, sMax, stepSize, s, u, deriv, stopper, _defaultTableau,
@@ -441,11 +457,11 @@ public class Swimmer2 {
 		
 		DefaultDerivative deriv;
 		if (_derivCache.isEmpty()) {
-			deriv = new DefaultDerivative(charge, momentum, _field);
+			deriv = new DefaultDerivative(charge, momentum, _probe);
 		}
 		else {
 			deriv = _derivCache.pop();
-			deriv.set(charge, momentum, _field);
+			deriv.set(charge, momentum, _probe);
 		}
 
 		// integrate

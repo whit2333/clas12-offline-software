@@ -4,7 +4,8 @@ import java.util.ArrayList;
 
 import Jama.Matrix;
 import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.IField;
+import cnuphys.magfield.IMagField;
+import cnuphys.magfield.MagneticField;
 import cnuphys.rk4.DefaultStopper;
 import cnuphys.rk4.IRkListener;
 import cnuphys.rk4.IStopper;
@@ -47,11 +48,34 @@ public class SwimZ {
 	// Min momentum to swim in GeV/c
 	public static final double MINMOMENTUM = 5e-05;
 
-	/** The current magnetic field */
-	private IField _field;
+	/** The current magnetic field probe */
+	private FieldProbe _probe;
 
 	// create a do nothing stopper for now
 	private IStopper _stopper = new DefaultStopper();
+	
+	/**
+	 * In swimming routines that require a tolerance vector, this is a
+	 * reasonable one to use for CLAS. These represent absolute errors in the
+	 * adaptive stepsize algorithms
+	 */
+	// private static double _eps = 1.0e-6;
+	private static double _eps = 1.0e-3;
+	// private static double _eps = 1.0e-4;
+	public static double CLAS_Tolerance[];
+	
+	public static final String VERSION = "1.0";
+
+	
+	static {
+		setCLASTolerance(_eps);
+		System.out.println("\n***********************************");
+		System.out.println("* SwimZ package version: " + VERSION);
+		System.out.println("* contact: david.heddle@cnu.edu");
+		System.out.println("***********************************\n");
+	}
+
+
 	
 	/**
 	 * SwimZ constructor. Here we create a Swimmer that will use the given
@@ -60,11 +84,57 @@ public class SwimZ {
 	 * @param field
 	 *            interface into a magnetic field
 	 */
-	public SwimZ(IField field) {
-		IField probe = FieldProbe.factory(field);
-		_field = (probe != null) ? probe : field;
+	public SwimZ() {
+		_probe = FieldProbe.factory();
 	}
 	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public SwimZ(MagneticField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
+	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public SwimZ(IMagField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
+	}
+	
+	/**
+	 * Set the tolerance used by the CLAS_Tolerance array
+	 * 
+	 * @param eps
+	 *            the baseline tolerance. The default is 1.0e-5. Probably should
+	 *            stay in the range 1e-10 (accurate but slow) to 1e-4
+	 *            (inaccurate but fast)
+	 */
+	public static void setCLASTolerance(double eps) {
+		_eps = eps;
+		double xscale = 1.0; // position scale order of meters
+		double pscale = 1.0; // direct cosine px/P etc scale order of 1
+		double xTol = eps * xscale;
+		double pTol = eps * pscale;
+		CLAS_Tolerance = new double[6];
+		for (int i = 0; i < 3; i++) {
+			CLAS_Tolerance[i] = xTol;
+			CLAS_Tolerance[i + 3] = pTol;
+		}
+	}
+
+	/**
+	 * Get the tolerance used by the CLAS_Toleance array
+	 * 
+	 * @return the tolerance used by the CLAS_Toleance array
+	 */
+	public static double getEps() {
+		return _eps;
+	}
+
+
 
 	/**
 	 * Swim to a fixed z over short distances using RK adaptive stepsize
@@ -101,13 +171,13 @@ public class SwimZ {
 		}
 
 		// straight line?
-		if ((Q == 0) || (_field == null) || _field.isZeroField()) {
+		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
 			System.out.println("Z adaptive swimmer detected straight line.");
 			return straightLineResult(Q, p, start, zf);
 		}
 
 		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _field);
+		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
 		// need a RK4 object
 		RungeKutta rk4 = new RungeKutta();
@@ -180,14 +250,14 @@ public class SwimZ {
 		}
 
 		// straight line?
-		if ((Q == 0) || (_field == null) || _field.isZeroField()) {
+		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
 			System.out.println("Z adaptive swimmer detected straight line.");
 			straightLineResult(Q, p, start, stop, zf);
 			return 2;
 		}
 
 		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _field);
+		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
 		// need a RK4 object
 		RungeKutta rk4 = new RungeKutta();
@@ -265,7 +335,7 @@ public class SwimZ {
 		stop.copy(start);
 
 		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _field);
+		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
 		// need a RK4 object
 		RungeKutta rk4 = new RungeKutta();
@@ -461,7 +531,7 @@ public class SwimZ {
 		}
 
 		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _field);
+		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
 		// need a RK4 object
 		RungeKutta rk4 = new RungeKutta();
@@ -543,7 +613,7 @@ public class SwimZ {
 			double tx0 = v0.tx;
 			double ty0 = v0.ty;
 
-			_field.field((float) x0, (float) y0, (float) z0, B);
+			_probe.field((float) x0, (float) y0, (float) z0, B);
 
 			// some needed factors
 			double txsq = tx0 * tx0;
@@ -644,13 +714,13 @@ public class SwimZ {
 			this.tx = tx;
 			this.ty = ty;
 
-			if ((_field == null) || _field.isZeroField()) {
+			if ((_probe == null) || _probe.isZeroField()) {
 				this.Bx = 0;
 				this.By = 0;
 				this.Bz = 0;
 			}
 			else {
-				_field.field((float) x, (float) y, (float) z, result);
+				_probe.field((float) x, (float) y, (float) z, result);
 			}
 
 			this.Bx = result[0];

@@ -81,7 +81,7 @@ public class SwimZTest {
 		SwimZResult result = null;
 		SwimZStateVector last = null;
 
-		SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
@@ -107,7 +107,7 @@ public class SwimZTest {
 		SwimZResult result = null;
 		SwimZStateVector last = null;
 
-		SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
@@ -130,7 +130,7 @@ public class SwimZTest {
 		SwimZResult result = null;
 		double hdata[] = new double[3];
 
-		SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
@@ -154,7 +154,7 @@ public class SwimZTest {
 		double hdata[] = new double[3];
 		int numStep = 0;
 
-		SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		
 		
@@ -183,7 +183,7 @@ public class SwimZTest {
 		double hdata[] = new double[3];
 		int numStep = 0;
 
-		SwimZ sz = new SwimZ(MagneticFields.getInstance().getActiveField());
+		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {

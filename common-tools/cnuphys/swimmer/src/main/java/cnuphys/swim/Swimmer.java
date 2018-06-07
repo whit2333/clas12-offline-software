@@ -5,10 +5,10 @@ import java.util.ArrayList;
 import cnuphys.lund.GeneratedParticleRecord;
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.IField;
+import cnuphys.magfield.IMagField;
+import cnuphys.magfield.MagneticField;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
-import cnuphys.magfield.RotatedCompositeField;
 import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.ButcherTableau;
 import cnuphys.rk4.IRkListener;
@@ -44,11 +44,11 @@ public final class Swimmer {
 	public static double CLAS_Tolerance[];
 
 	// Field getter.
-	// NOTE: the method of interest in IField takes a position in cm
+	// NOTE: the method of interest in FieldProbe takes a position in cm
 	// and returns a field in kG.This swim package works in SI (meters and
 	// Tesla)
 	// so care has to be taken when using the field object
-	private IField _field;
+	private FieldProbe _probe;
 
 	public static final String VERSION = "1.08";
 
@@ -60,6 +60,41 @@ public final class Swimmer {
 		System.out.println("***********************************\n");
 	}
 
+
+	/**
+	 * Create a swimmer using the current active field
+	 */
+	public Swimmer() {
+		//make a probe using the current active field
+		_probe = FieldProbe.factory();
+		MagneticFieldChangeListener mfl = new MagneticFieldChangeListener() {
+
+			@Override
+			public void magneticFieldChanged() {
+				_probe = FieldProbe.factory();
+			}
+
+		};
+
+		MagneticFields.getInstance().addMagneticFieldChangeListener(mfl);
+	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public Swimmer(MagneticField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
+	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field
+	 * @param magneticField the magnetic field
+	 */
+	public Swimmer(IMagField magneticField) {
+		_probe = FieldProbe.factory(magneticField);
+	}
+	
 	/**
 	 * Return the version string
 	 * 
@@ -69,30 +104,12 @@ public final class Swimmer {
 		return VERSION;
 	}
 
-	public Swimmer() {
-		_field = FieldProbe.factory();
-		MagneticFieldChangeListener mfl = new MagneticFieldChangeListener() {
-
-			@Override
-			public void magneticFieldChanged() {
-				_field = FieldProbe.factory();
-			}
-
-		};
-
-		MagneticFields.getInstance().addMagneticFieldChangeListener(mfl);
-	}
-
 	/**
-	 * Swimmer constructor. Here we create a Swimmer that will use the given
-	 * magnetic field.
-	 * 
-	 * @param field
-	 *            interface into a magnetic field
+	 * Get the underlying field probe
+	 * @return the probe
 	 */
-	public Swimmer(IField field) {
-		IField probe = FieldProbe.factory(field);
-		_field = (probe != null) ? probe : field;
+	public FieldProbe getProbe() {
+		return _probe;
 	}
 
 	/**
@@ -186,7 +203,7 @@ public final class Swimmer {
 
 		// if no magnetic field or no charge, then simple straight line tracks.
 		// the path will consist of just two points
-		if ((_field == null) || (charge == 0)) {
+		if ((_probe == null) || (charge == 0)) {
 			GeneratedParticleRecord genPartRec = new GeneratedParticleRecord(charge, xo, yo, zo, momentum, theta, phi);
 			return straightLineTrajectory(genPartRec, maxPathLength);
 		}
@@ -215,7 +232,7 @@ public final class Swimmer {
 		SwimTrajectory trajectory = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi, nsave);
 
 		// Integrate
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 		ntotal = (new RungeKutta()).uniformStep(uo, 0, maxPathLength, u, s, deriv, stopper);
 
 		// now cycle through and get the save points
@@ -315,7 +332,7 @@ public final class Swimmer {
 		double uo[] = initialState(xo, yo, zo, theta, phi);
 
 		// Integrate
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 		return (new RungeKutta()).uniformStep(uo, 0, maxPathLength, stepSize, deriv, stopper, listener);
 	}
 
@@ -370,9 +387,9 @@ public final class Swimmer {
 
 		// if no magnetic field or no charge, then simple straight line tracks.
 		// the path will consist of just two points
-		if ((_field == null) || (charge == 0)) {
+		if ((_probe == null) || (charge == 0)) {
 			System.out.println(
-					"Original Swimmer, straight line field is null: " + (_field == null) + "  charge: " + charge);
+					"Original Swimmer, straight line field is null: " + (_probe == null) + "  charge: " + charge);
 			GeneratedParticleRecord genPartRec = new GeneratedParticleRecord(charge, xo, yo, zo, momentum, theta, phi);
 			return straightLineTrajectoryFixedZ(genPartRec, fixedZ);
 
@@ -495,7 +512,7 @@ public final class Swimmer {
 			double relTolerance[], double hdata[]) throws RungeKuttaException {
 
 		//can only work for rotated composite fields or probes
-		if ((_field instanceof RotatedCompositeField) || (_field instanceof RotatedCompositeProbe)) {
+		if (_probe instanceof RotatedCompositeProbe) {
 			return sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, sMax, stepSize,
 					relTolerance, hdata);
 		}
@@ -555,7 +572,7 @@ public final class Swimmer {
 			double theta, double phi, final double fixedZ, double accuracy, double sMax, double stepSize,
 			double relTolerance[], double hdata[]) throws RungeKuttaException {
 		
-		if (!(_field instanceof RotatedCompositeField) && !(_field instanceof RotatedCompositeProbe)) {
+		if (!(_probe instanceof RotatedCompositeProbe)) {
 			System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
 			System.exit(1);
 			return null;
@@ -704,7 +721,7 @@ public final class Swimmer {
 			throws RungeKuttaException {
 		
 		//can only work for rotated composite fields or probes
-		if (!(_field instanceof RotatedCompositeField) && !(_field instanceof RotatedCompositeProbe)) {
+		if (!(_probe instanceof RotatedCompositeProbe)) {
 			System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
 			System.exit(1);
 			return null;
@@ -721,7 +738,7 @@ public final class Swimmer {
 		SwimTrajectory trajectory = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi, 100);
 
 		// the derivative
-		SectorDerivative deriv = new SectorDerivative(sector, charge, momentum, _field);
+		SectorDerivative deriv = new SectorDerivative(sector, charge, momentum, (RotatedCompositeProbe)_probe);
 
 		// integrate
 		(new RungeKutta()).adaptiveStep(uo, s0, sMax, stepSize, s, u, deriv, stopper, _defaultTableau, relTolerance,
@@ -833,9 +850,36 @@ public final class Swimmer {
 			final double fixedZ, double accuracy, double sMax, double stepSize, double relTolerance[], double hdata[])
 			throws RungeKuttaException {
 		if (momentum < MINMOMENTUM) {
-			System.err.println("Skipping low momentum swim (D)");
+//			System.err.println("Skipping low momentum swim (D)");
 			return new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi);
 		}
+		
+		//no field?
+		if ((charge == 0) || (getProbe().isZeroField())) {
+	//		System.err.println("Skipping neutral or no field swim (D)");
+			// just has to be proportional to velocity
+			SwimTrajectory traj = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi);
+			double vz = momentum * FastMath.cos(Math.toRadians(theta));
+
+			if (Math.abs(vz) > 1.0e-10) {
+				double vp = momentum * FastMath.sin(Math.toRadians(theta));
+				double vx = vp * Math.cos(Math.toRadians(phi));
+				double vy = vp * Math.sin(Math.toRadians(phi));
+				
+				double time = (fixedZ - zo)/vz;
+				double xf = xo + vx*time;
+				double yf = xo + vy*time;
+				
+				traj.add(xf, yf, fixedZ, momentum, theta, phi);
+				
+//				System.out.println("xf = " + xf);
+//				System.out.println("yf = " + yf);
+//				System.out.println("zf = " + fixedZ);
+				
+			}
+			return traj;
+		}
+		
 
 		// normally we swim from small z to a larger z cutoff.
 		// but we can handle either
@@ -1026,7 +1070,7 @@ public final class Swimmer {
 		SwimTrajectory trajectory = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi, 100);
 
 		// the derivative
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 
 		// integrate
 		(new RungeKutta()).adaptiveStep(uo, s0, sMax, stepSize, s, u, deriv, stopper, _defaultTableau, relTolerance,
@@ -1095,7 +1139,7 @@ public final class Swimmer {
 		double uo[] = initialState(xo, yo, zo, theta, phi);
 
 		// Integrate
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 
 		int nstep = (new RungeKutta()).adaptiveStep(uo, 0, maxPathLength, stepSize, deriv, stopper, listener,
 				_defaultTableau, relTolerance, hdata);
@@ -1160,7 +1204,7 @@ public final class Swimmer {
 		SwimTrajectory trajectory = new SwimTrajectory(charge, xo, yo, zo, momentum, theta, phi, 100);
 
 		// Integrate
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 
 		// integrate
 		(new RungeKutta()).adaptiveStep(uo, 0, maxPathLength, stepSize, t, y, deriv, stopper, _defaultTableau,
@@ -1231,7 +1275,7 @@ public final class Swimmer {
 		double uo[] = initialState(xo, yo, zo, theta, phi);
 
 		// Integrate
-		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _field);
+		DefaultDerivative deriv = new DefaultDerivative(charge, momentum, _probe);
 
 		int nstep = (new RungeKutta()).adaptiveStep(uo, 0, maxPathLength, stepSize, deriv, stopper, listener,
 				_defaultTableau, tolerance, yscale, hdata);
@@ -1414,7 +1458,7 @@ public final class Swimmer {
 	 * @param pz
 	 *            the z start momentum in GeV/c
 	 */
-	public static SwimTrajectory swimBackwardsToVertex(IField field, int q, double xo, double yo, double zo, double px,
+	public static SwimTrajectory swimBackwardsToVertex(int q, double xo, double yo, double zo, double px,
 			double py, double pz) {
 		// reverse the direction
 		px = -px;
@@ -1433,7 +1477,7 @@ public final class Swimmer {
 		double accuracy = 1.0e-5;
 		double stepSize = 5e-4; // m
 
-		Swimmer swimmer = new Swimmer(field);
+		Swimmer swimmer = new Swimmer();
 		SwimTrajectory traj = null;
 
 		double hdata[] = new double[3];
