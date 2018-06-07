@@ -52,6 +52,22 @@ public class GridCoordinate {
 	 *            the number of points (including ends)
 	 */
 	public GridCoordinate(String name, float min, float max, int numPoints) {
+		this(name, (double)min, (double)max, numPoints);
+	}
+	
+	/**
+	 * Construct a grid coordinate.
+	 *
+	 * @param name
+	 *            the name of the coordinate
+	 * @param min
+	 *            the minimum value
+	 * @param max
+	 *            the maximum value
+	 * @param numPoints
+	 *            the number of points (including ends)
+	 */
+	public GridCoordinate(String name, double min, double max, int numPoints) {
 		super();
 		_name = name;
 		_min = min;
@@ -64,6 +80,7 @@ public class GridCoordinate {
 			_values[i] = _min + i * _delta;
 		}
 	}
+
 
 	/**
 	 * Returns an index [0..numPoints-2] such that the grid values index and
@@ -235,6 +252,14 @@ public class GridCoordinate {
     */
    public boolean inRange(double q) {
 	   return (q >= _min) && (q <= _max);
+   }
+   
+   /**
+    * Make a clone of this grid coordinate
+    */
+   @Override
+public GridCoordinate clone() {
+	   return new GridCoordinate(_name, _min, _max, _numPoints);
    }
 
 }

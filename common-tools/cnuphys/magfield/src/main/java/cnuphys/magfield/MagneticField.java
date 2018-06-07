@@ -10,18 +10,12 @@ import java.nio.FloatBuffer;
 
 /**
  * For magnetic fields stored in a specific format.
- * 
+ * This is low-level, essentiall a container for the field values
  * @author David Heddle
  * @author Nicole Schumacher
  * @version 1.0
  */
-public abstract class MagneticField implements IField {
-
-	/** Which atan2, etc. algorithms to use */
-	public enum MathLib {
-		DEFAULT, FAST, SUPERFAST;
-	}
-
+public abstract class MagneticField implements IMagField {
 
 	/** Magic number used to check if byteswapping is necessary. */
 	public static final int MAGICNUMBER = 0xced;
@@ -90,12 +84,7 @@ public abstract class MagneticField implements IField {
 	
 	/** shift in z direction in cm (misalignment) */
 	protected double _shiftZ; //cm
-	
-	// for rotating field
-	protected static final double ROOT3OVER2 = 0.866025403784439;
-	protected static final double cosSect[] = {Double.NaN, 1, 0.5, -0.5, -1, -0.5, 0.5};
-	protected static final double sinSect[] = {Double.NaN, 0, ROOT3OVER2, ROOT3OVER2, 0, -ROOT3OVER2, -ROOT3OVER2};
-	
+		
 	/**
 	 * Holds the grid info for the slowest changing coordinate (as stored in the
 	 * file).
@@ -117,38 +106,12 @@ public abstract class MagneticField implements IField {
 	/** Total number of field points. */
 	protected int numFieldPoints;
 
-	// used internally for index calculations
-	private int N23 = -1;
-
-	// scale factor always treated as positive
+	/** Overall scale factor */
 	protected double _scaleFactor = 1.0;
 
 	// determine whether we use interpolation or nearest neighbor
-	protected static boolean _interpolate = true;
-
-	// indices of components
-	protected static final int X = 0;
-	protected static final int Y = 1;
-	protected static final int Z = 2;
+	protected static boolean _interpolate = true;		
 	
-
-	/**
-	 * Does this field have a cylindrical grid
-	 * @return <code>true</code> if the field has a cylindrical grid
-	 */
-	public boolean isCylindricalGrid() {
-		return gridCoordinateSystem == CoordinateSystem.CYLINDRICAL;
-	}
-	
-	/**
-	 * Does this field have a rectangular (Cartesian)  grid
-	 * @return <code>true</code> if the field has a rectangular grid
-	 */
-	public boolean isRectangularGrid() {
-		return gridCoordinateSystem == CoordinateSystem.CARTESIAN;
-	}
-
-
 	/**
 	 * Scale the field.
 	 * 
@@ -190,15 +153,6 @@ public abstract class MagneticField implements IField {
 	}
 	
 	/**
-     * Is the physical magnet represented by the map misaligned?
-     * @return <code>true</code> if magnet is misaligned
-     */
-	@Override
-    public boolean isMisaligned() {
-    	return false;
-    }
-
-	/**
 	 * Checks whether the field has been set to always return zero.
 	 * 
 	 * @return <code>true</code> if the field is set to return zero.
@@ -218,69 +172,6 @@ public abstract class MagneticField implements IField {
 		setScaleFactor(0.0);
 	}
 
-	
-    /**
-     * Obtain an approximation for the magnetic field gradient at a given location expressed in Cartesian
-     * coordinates. The field is returned as a Cartesian vector in kiloGauss/cm.
-     *
-     * @param x
-     *            the x coordinate in cm
-     * @param y
-     *            the y coordinate in cm
-     * @param z
-     *            the z coordinate in cm
-     * @param result
-     *            a float array holding the retrieved field in kiloGauss. The
-     *            0,1 and 2 indices correspond to x, y, and z components.
-     */
-	@Override
-     public void gradient(float x, float y, float z, float result[]) {
-		
-		//use three point derivative
-		float del = 1f; //cm
-		float del2 = 2*del;
-		
-		float baseVal = fieldMagnitude(x, y, z);
-		float bv3 = -3*baseVal;
-		
-		float bx0 = fieldMagnitude(x+del, y, z);
-		float bx1 = fieldMagnitude(x+del2, y, z);
-		
-//		System.err.println(" " + baseVal + "  " + bx0 + "  " + bx1);
-		float by0 = fieldMagnitude(x, y+del, z);
-		float by1 = fieldMagnitude(x, y+del2, z);
-		float bz0 = fieldMagnitude(x, y, z+del);
-		float bz1 = fieldMagnitude(x, y, z+del2);
-		
-		result[0] = (bv3 + 4*bx0 - bx1)/del2;
-		result[1] = (bv3 + 4*by0 - by1)/del2;
-		result[2] = (bv3 + 4*bz0 - bz1)/del2;
-    }
-	
-	/**
-     * Obtain an approximation for the magnetic field gradient at a given location expressed in cylindrical
-     * coordinates. The field is returned as a Cartesian vector in kiloGauss/cm.
-     *
-     * @param phi
-     *            azimuthal angle in degrees.
-     * @param rho
-     *            the cylindrical rho coordinate in cm.
-     * @param z
-     *            coordinate in cm
-     * @param result
-     *            the result
-     * @result a Cartesian vector holding the calculated field in kiloGauss.
-     */
-	@Override
-    public void gradientCylindrical(double phi, double rho, double z,
-    	    float result[]) {
-		phi = Math.toRadians(phi);
-		double x = rho*FastMath.cos(phi);
-    	double y = rho*FastMath.sin(phi);
-    	gradient((float)x, (float)y, (float)z, result);
-    }
-
-
 	/**
 	 * Get the creation date
 	 * @return the creation date as a string
@@ -297,43 +188,6 @@ public abstract class MagneticField implements IField {
         return MagneticFields.dateStringLong(time);
 	}
 
-	/**
-	 * Get the field magnitude in kiloGauss at a given location expressed in
-	 * cylindrical coordinates.
-	 * 
-	 * @param phi
-	 *            azimuthal angle in degrees.
-	 * @param r
-	 *            in cm.
-	 * @param z
-	 *            in cm
-	 * @return the magnitude of the field in kiloGauss.
-	 */
-	@Override
-	public final float fieldMagnitudeCylindrical(double phi, double r, double z) {
-		float result[] = new float[3];
-		fieldCylindrical(phi, r, z, result);
-		return FastMath.vectorLength(result);
-	}
-
-	/**
-	 * Get the field magnitude in kiloGauss at a given location expressed in
-	 * Cartesian coordinates.
-	 * 
-	 * @param x
-	 *            the x coordinate in cm
-	 * @param y
-	 *            the y coordinate in cm
-	 * @param z
-	 *            the z coordinate in cm
-	 * @return the magnitude of the field in kiloGauss.
-	 */
-	@Override
-	public final float fieldMagnitude(float x, float y, float z) {
-		float result[] = new float[3];
-		field(x, y, z, result);
-		return FastMath.vectorLength(result);
-	}
 
 	/**
 	 * Get the composite index to take me to the correct place in the buffer.
@@ -347,11 +201,8 @@ public abstract class MagneticField implements IField {
 	 * @return the composite index (buffer offset)
 	 */
 	public final int getCompositeIndex(int n1, int n2, int n3) {
-		if (N23 < 0) {
-			N23 = q2Coordinate.getNumPoints() * q3Coordinate.getNumPoints();
-			System.err.println("N23 = " + N23);
-		}
-		return n1 * N23 + n2 * q3Coordinate.getNumPoints() + n3;
+		int n23 = q2Coordinate.getNumPoints() * q3Coordinate.getNumPoints();
+		return n1 * n23 + n2 * q3Coordinate.getNumPoints() + n3;
 	}
 
 	/**
@@ -432,38 +283,6 @@ public abstract class MagneticField implements IField {
 		return B1 * B1 + B2 * B2 + B3 * B3;
 	}
 
-	/**
-	 * Get the math lib being used. Kept here for backwards compatibility.
-	 * 
-	 * @return the math lib being used
-	 */
-	public static MathLib getMathLib() {
-		switch (FastMath.getMathLib()) {
-		case FAST:
-			return MathLib.FAST;
-		case SUPERFAST:
-			return MathLib.SUPERFAST;
-		default:
-			return MathLib.DEFAULT;
-		}
-	}
-
-	/**
-	 * Set the math library to use. Kept here for backwards compatibility.
-	 * 
-	 * @param lib
-	 *            the math library enum
-	 */
-	public static void setMathLib(MathLib lib) {
-		switch (lib) {
-		case FAST:
-			FastMath.setMathLib(FastMath.MathLib.FAST);
-		case SUPERFAST:
-			FastMath.setMathLib(FastMath.MathLib.SUPERFAST);
-		default:
-			FastMath.setMathLib(FastMath.MathLib.DEFAULT);
-		}
-	}
 
 	/**
 	 * Get the vector for a given index.
@@ -486,21 +305,13 @@ public abstract class MagneticField implements IField {
 	 * @return a string representation.
 	 */
 	@Override
-	public final String toString() {
+	public String toString() {
 		StringBuffer sb = new StringBuffer(1024);
 		
 		//creation date
 		sb.append("  Created: " + getCreationDate() + "\n");
 		
-		
-		//if a torus, was it a full torus?
-		if (this instanceof FullTorus) {
-			sb.append("  Full torus with no assumed symmetry\n");
-		}
-		else if (this instanceof Torus) {
-			sb.append("  Reduced torus with assumed symmetry\n");
-		}
-		
+				
 		sb.append("  " + q1Coordinate.toString());
 		sb.append("\n");
 		sb.append("  " + q2Coordinate.toString());
@@ -542,7 +353,7 @@ public abstract class MagneticField implements IField {
 
 	
 	/**
-	 * Get the base file name
+	 * Get the base file name of the field map
 	 * @return the base file name
 	 */
 	public String getBaseFileName() {
@@ -558,7 +369,6 @@ public abstract class MagneticField implements IField {
 	 * @throws FileNotFoundException
 	 *             the file not found exception
 	 */
-	@Override
 	public final void readBinaryMagneticField(File binaryFile) throws FileNotFoundException {
 
 		_baseFileName = (binaryFile == null) ? "???" : binaryFile.getName();
@@ -586,12 +396,6 @@ public abstract class MagneticField implements IField {
 			// grid cs
 			gridCoordinateSystem = CoordinateSystem.fromInt(dos.readInt());
 			
-			if (isRectangularGrid()) {
-				_q1Name = "x";
-				_q2Name = "y";
-				_q3Name = "z";
-			}
-
 			// field cs
 			fieldCoordinateSystem = CoordinateSystem.fromInt(dos.readInt());
 
@@ -613,8 +417,6 @@ public abstract class MagneticField implements IField {
 			float q3Max = dos.readFloat();
 			int nQ3 = dos.readInt();
 			q3Coordinate = new GridCoordinate(_q3Name, q3Min, q3Max, nQ3);
-			
-			N23 = nQ2*nQ3;  //cache this value
 			
 			numFieldPoints = nQ1 * nQ2 * nQ3;
 
@@ -639,33 +441,12 @@ public abstract class MagneticField implements IField {
 
 			computeMaxField();
 
-			System.out.println(toString());
 			dos.close();
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-
-	protected int indexOfNearestNeighbor(double q1, double q2, double q3) {
-		int n0 = q1Coordinate.getIndex(q1);
-		if (n0 < 0) {
-			return -1;
-		}
-		int n1 = q2Coordinate.getIndex(q2);
-		if (n1 < 0) {
-			return -1;
-		}
-		int n2 = q3Coordinate.getIndex(q3);
-		if (n2 < 0) {
-			return -1;
-		}
-
-		int index = getCompositeIndex(n0, n1, n2);
-
-		return index;
-	}
-
 
 	/**
 	 * Get the magnitude for a given index.
@@ -699,12 +480,13 @@ public abstract class MagneticField implements IField {
 	}
 
 	/**
-	 * Get B1 at a given index.
+	 * Get the B1 component at a given index.
 	 * 
 	 * @param index
 	 *            the index.
 	 * @return the B1 at the given index.
 	 */
+	@Override
 	public final float getB1(int index) {
 		int i = 3 * index;
 
@@ -723,12 +505,13 @@ public abstract class MagneticField implements IField {
 	}
 
 	/**
-	 * Get B2 at a given index.
+	 * Get the B2 component at a given index.
 	 * 
 	 * @param index
 	 *            the index.
 	 * @return the B2 at the given index.
 	 */
+	@Override
 	public final float getB2(int index) {
 		int i = 1 + 3 * index;
 		if (i >= field.limit()) {
@@ -739,12 +522,13 @@ public abstract class MagneticField implements IField {
 	}
 
 	/**
-	 * Get B3 at a given index.
+	 * Get the B3 component at a given index.
 	 * 
 	 * @param index
 	 *            the index.
 	 * @return the B3 at the given index.
 	 */
+	@Override
 	public final float getB3(int index) {
 		int i = 2 + 3 * index;
 		if (i >= field.limit()) {
@@ -807,14 +591,6 @@ public abstract class MagneticField implements IField {
 	}
 
 	/**
-	 * Get the name of the field
-	 * 
-	 * @return the name, e.e. "Torus"
-	 */
-	@Override
-	public abstract String getName();
-
-	/**
 	 * Check whether we interpolate or use nearest neighbor
 	 * 
 	 * @return the interpolate flag
@@ -834,107 +610,26 @@ public abstract class MagneticField implements IField {
 		System.out.println("Interpolating fields: " + _interpolate);
 	}
 
-	public int capacity() {
-		return field.capacity();
+
+	/**
+	 * @return the phiCoordinate
+	 */
+	public GridCoordinate getPhiCoordinate() {
+		return q1Coordinate;
 	}
 
 	/**
-	 * Get the sector [1..6] from the phi value
-	 * 
-	 * @param phi
-	 *            the value of phi in degrees
-	 * @return the sector [1..6]
+	 * @return the rCoordinate
 	 */
-	public static int getSector(double phi) {
-		// convert phi to [0..360]
-
-		while (phi < 0) {
-			phi += 360.0;
-		}
-		while (phi > 360.0) {
-			phi -= 360.0;
-		}
-
-		if ((phi > 30.0) && (phi <= 90.0)) {
-			return 2;
-		}
-		if ((phi > 90.0) && (phi <= 150.0)) {
-			return 3;
-		}
-		if ((phi > 150.0) && (phi <= 210.0)) {
-			return 4;
-		}
-		if ((phi > 210.0) && (phi <= 270.0)) {
-			return 5;
-		}
-		if ((phi > 270.0) && (phi <= 330.0)) {
-			return 6;
-		}
-		return 1;
+	public GridCoordinate getRCoordinate() {
+		return q2Coordinate;
 	}
-	
-	 /**
-     * Check whether the field boundaries include the point
-     * @param x the x coordinate in the map units
-     * @param y the y coordinate in the map units
-     * @param z the z coordinate in the map units
-     * @return <code>true</code> if the point is included in the boundary of the field
-     */
-	@Override
-    public boolean contains(double x, double y, double z) {
-		double rho = FastMath.sqrt(x * x + y * y);
-		double phi = FastMath.atan2Deg(y, x);
-        return containsCylindrical(phi, rho, z);
-    }
-    
-	/**
-	 * Check whether the field boundaries include the point
-	 * 
-	 * @param phi
-	 *            azimuthal angle in degrees.
-	 * @param rho
-	 *            the cylindrical rho coordinate in cm.
-	 * @param z
-	 *            coordinate in cm
-	 * @return <code>true</code> if the point is included in the boundary of the
-	 *         field
-	 * 
-	 */
-	@Override
-	public abstract boolean containsCylindrical(double phi, double rho, double z);
-	
-	
-	/**
-	 * Obtain the magnetic field at a given location expressed in Cartesian
-	 * coordinates in the sector (not lab or global) system. 
-	 * The field is returned as a Cartesian vector in kiloGauss.
-	 * @param sector the sector [1..6]
-	 * @param x
-	 *            the x sector coordinate in cm
-	 * @param y
-	 *            the y sector coordinate in cm
-	 * @param z
-	 *            the z sector coordinate in cm
-	 * @param result
-	 *            the result is a float array holding the retrieved field in
-	 *            kiloGauss. The 0,1 and 2 indices correspond to x, y, and z
-	 *            components.
-	 */
-	@Override
-	public void field(int sector, float x, float y, float z, float[] result) {
-				
-		//rotate to the correct sector to get the lab coordinates. We can use the result array!
-		MagneticFields.sectorToLab(sector, result, x, y, z);
-		x = result[0];
-		y = result[1];
-		z = result[2];
-		
-		//get the field using the global (lab) coordinates
-		field(x, y, z, result);
-		
-		//rotate the field back to the sector coordinates
-		MagneticFields.labToSector(sector, result, result[0],  result[1],  result[2]);
 
+	/**
+	 * @return the zCoordinate
+	 */
+	public GridCoordinate getZCoordinate() {
+		return q3Coordinate;
 	}
 
 }

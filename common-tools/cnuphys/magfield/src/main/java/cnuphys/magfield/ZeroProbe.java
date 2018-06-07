@@ -6,13 +6,6 @@ public class ZeroProbe extends FieldProbe {
 		super(null);
 	}
 	
-	/**
-	 * Get the name of the field
-	 */
-	@Override
-	public String getName() {
-		return "No Field";
-	}
 
 	@Override
 	public float fieldMagnitudeCylindrical(double phi, double r, double z) {
@@ -70,5 +63,9 @@ public class ZeroProbe extends FieldProbe {
 		return false;
 	}
 
+	@Override
+	public boolean containsCylindrical(double phi, double rho, double z) {
+		return false;
+	}
 
 }

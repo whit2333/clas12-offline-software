@@ -4,16 +4,15 @@ import java.util.ArrayList;
 
 public class CompositeProbe extends FieldProbe {
 	
-	protected ArrayList<IField> probes = new ArrayList<IField>();
+	protected ArrayList<FieldProbe> probes = new ArrayList<FieldProbe>();
 
 	public CompositeProbe(CompositeField field) {
 		super(field);
-		for (IField f : field) {
+		for (IMagField f : field) {
 			probes.add(FieldProbe.factory(f));
 		}
 
 	}
-	
 	
 	/**
 	 * Obtain the magnetic field at a given location expressed in Cartesian
@@ -161,8 +160,8 @@ public class CompositeProbe extends FieldProbe {
  	 * @return <code>true</code> if we have a torus
  	 */
  	public boolean hasTorus() {
- 		for (IField field : probes) {
- 			if ((field instanceof TorusProbe) || ((field instanceof Torus))) {
+ 		for (IField probe : probes) {
+ 			if (probe instanceof TorusProbe) {
  				return true;
  			}
  		}
@@ -176,12 +175,23 @@ public class CompositeProbe extends FieldProbe {
 	 * @return <code>true</code> if we have a solenoid
 	 */
 	public boolean hasSolenoid() {
-		for (IField field : probes) {
-			if ((field instanceof SolenoidProbe) || ((field instanceof Solenoid))) {
+		for (IField probe : probes) {
+			if (probe instanceof SolenoidProbe) {
 				return true;
 			}
 		}
 
+		return false;
+	}
+
+
+	@Override
+	public boolean containsCylindrical(double phi, double rho, double z) {
+		for (IField probe : probes) {
+			if (probe.containsCylindrical(phi, rho, z)) {
+				return true;
+			}
+		}
 		return false;
 	}
 	

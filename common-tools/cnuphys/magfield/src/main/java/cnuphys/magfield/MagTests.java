@@ -46,44 +46,247 @@ public class MagTests {
 
 	private static String _homeDir = System.getProperty("user.home");
 	
-	// sameness tests (probes and not probes)
-	private static void samenessTest() {
-		System.out.println("Sameness Test Probe v. Not Probe");
+	//test many traj on different threads
+	private static void threadTest(final int num, final int numThread) {
+		
+		memoryReport("staring thread test");
+		
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
+
+		final long seed = 5347632765L;
+
+		final Random rand = new Random(seed);
+
+		
+		Runnable runnable = new Runnable() {
+
+			@Override
+			public void run() {
+				System.err.println("Starting thread " + Thread.currentThread().getName());
+				long time = System.currentTimeMillis();
+				float[] result = new float[3];
+				FieldProbe probe = FieldProbe.factory();
+				
+				for (int i = 0; i < num; i++) {
+					
+					float z = 400 * rand.nextFloat();
+					double rho = 400 * rand.nextFloat();
+					double phi = Math.toRadians(-25 + 50*rand.nextFloat());
+					float x = (float) (rho * FastMath.cos(phi));
+					float y = (float) (rho * FastMath.sin(phi));
+					probe.field(x, y, z, result);
+
+				}
+				System.err.println("Thread " + Thread.currentThread().getName() + "  ending millis: "
+						+ (System.currentTimeMillis() - time));
+			}
+
+		};
+		
+		for (int i = 0; i < numThread; i++) {
+			Thread thread = new Thread(runnable);
+			thread.start();
+		}
+	}
+	
+	// sameness tests (overlap not overlap)
+	public static void samenessTest() {
+		System.err.println("Sameness Test Overlap Removal");
+
+	//	int num = 10000000;
+		int num = 5000000;
+
+		float x[] = new float[num];
+		float y[] = new float[num];
+		float z[] = new float[num];
+		
+		long seed = 5347632765L;
+
+		Random rand = new Random(seed);
+
+		System.err.println("Creating " + num + " random points");
+		for (int i = 0; i < num; i++) {
+			
+			
+			z[i] = 400 * rand.nextFloat();
+			float rho = 400 * rand.nextFloat();
+//			double phi = Math.toRadians(-25 + 50*rand.nextFloat());
+//			double phi = Math.toRadians(-2 + 4*rand.nextFloat());
+			double phi = 0;
+			
+			if (i == 0) {
+				z[i] = 299.99f;
+				rho = 299.99f;
+				phi = 0;
+			}
+			else if (i == 1) {
+				z[i] = 301.01f;
+				rho = 301.01f;
+				phi = 0;
+			}
+
+
+			x[i] = (float) (rho * FastMath.cos(phi));
+			y[i] = (float) (rho * FastMath.sin(phi));
+		}
+
+		float result[][][] = new float[2][num][3];
+		float diff[] = new float[3];
+		
+		System.err.println("Creating space");
+		for (int i = 0; i < num; i++) {
+			result[0][i] = new float[3];
+			result[1][i] = new float[3];
+		}
+		
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
+
+		FieldProbe ifield = FieldProbe.factory();
+
+		System.err.println("Computing with overlapping");
+		long time = System.currentTimeMillis();
+		for (int i = 0; i < num; i++) {
+			ifield.field(x[i], y[i], z[i], result[0][i]);
+		}
+		time = System.currentTimeMillis() - time;
+		System.err.println("Time for overlapping field: " + (time)/1000.);
+		
+		//now remove overlap
+		
+		System.err.println("Computing with non-overlapping");
+		MagneticFields.getInstance().removeMapOverlap();
+		ifield = FieldProbe.factory();
+		
+		
+		time = System.currentTimeMillis(); 
+		for (int i = 0; i < num; i++) {
+			ifield.field(x[i], y[i], z[i], result[1][i]);
+		}
+		time = System.currentTimeMillis() - time;
+		System.err.println("Time for non-overlapping field: " + (time)/1000.);
+
+		System.err.println("Computing biggest diff");
+		// now get biggest diff
+		double maxDiff = -1;
+		int iMax = -1;
+
+		for (int i = 0; i < num; i++) {
+
+			for (int j = 0; j < 3; j++) {
+				diff[j] = result[1][i][j] - result[0][i][j];
+			}
+			double dlen = FastMath.vectorLength(diff);
+
+			if (dlen > maxDiff) {
+				iMax = i;
+				maxDiff = dlen;
+			}
+		}
+
+		System.err.println("maxDiff = " + maxDiff + "   at index: " + iMax);
+		System.err.println(String.format("xyz = (%8.4f, %8.4f, %8.4f)", x[iMax], y[iMax], z[iMax]));
+		double phi = FastMath.atan2Deg(y[iMax], x[iMax]);
+		if (phi < 0) {
+			phi += 360;
+		}
+		double rho = FastMath.hypot(x[iMax], y[iMax]);
+		System.err.println(String.format("cyl = (%8.4f, %8.4f, %8.4f)", phi, rho, z[iMax]));
+        System.err.println(String.format("   Overlapping (%8.4f, %8.4f, %8.4f) %8.4f kG", result[0][iMax][0], result[0][iMax][1], result[0][iMax][2], FastMath.vectorLength(result[0][iMax])));
+        System.err.println(String.format("NonOverlapping (%8.4f, %8.4f, %8.4f) %8.4f kG", result[1][iMax][0], result[1][iMax][1], result[1][iMax][2], FastMath.vectorLength(result[1][iMax])));
+		
+	}
+	
+	
+	
+	// sameness tests (overlap not overlap)
+	private static void mathTest() {
+		
+		
+		FastMath.MathLib libs[] = {FastMath.MathLib.DEFAULT, FastMath.MathLib.FAST, FastMath.MathLib.SUPERFAST};
+		System.err.println("Sameness Test Math Lib");
 
 		int num = 10000000;
 
 		float x[] = new float[num];
 		float y[] = new float[num];
 		float z[] = new float[num];
+		
+		long seed = 5347632765L;
 
-		float result1[] = new float[3];
-		float result2[] = new float[3];
-		float diff[] = new float[3];
+		Random rand = new Random(seed);
 
-		IField ifield1 = MagneticFields.getInstance().getActiveField();
-		IField ifield2 = FieldProbe.factory(MagneticFields.getInstance().getActiveField());
-
-		double dT = 1. / (num - 1);
+		System.err.println("Creating " + num + " random points");
 		for (int i = 0; i < num; i++) {
-			double t = i * dT;
-			x[i] = (float) (85. * t);
-			y[i] = (float) (15. * t);
-			z[i] = (float) (372. * t);
+			
+			
+			z[i] = 400 * rand.nextFloat();
+			float rho = 400 * rand.nextFloat();
+	//		double phi = Math.toRadians(75 + 30*rand.nextFloat());
+			double phi = Math.toRadians(89*rand.nextFloat());
+			
+
+			x[i] = (float) (rho * FastMath.cos(phi));
+			y[i] = (float) (rho * FastMath.sin(phi));
 		}
 
-		double maxDiff = -1;
+		float result[][][] = new float[3][num][3];
+		float diff[] = new float[3];
+		
+		System.err.println("Creating space");
 		for (int i = 0; i < num; i++) {
-			ifield1.field(x[i], y[i], z[i], result1);
-			ifield2.field(x[i], y[i], z[i], result2);
+			result[0][i] = new float[3];
+			result[1][i] = new float[3];
+			result[2][i] = new float[3];
+		}
+		
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
+
+		IField ifield = FieldProbe.factory();
+		
+		for (int index = 0; index < 3; index++) {
+			FastMath.setMathLib(libs[index]);
+			System.err.println("Computing with " + FastMath.getMathLib());
+			long time = System.currentTimeMillis();
+			for (int i = 0; i < num; i++) {
+				ifield.field(x[i], y[i], z[i], result[index][i]);
+			}
+			time = System.currentTimeMillis() - time;
+			System.err.println("Time for "+ FastMath.getMathLib() + " math: " + (time)/1000.);
+		}
+
+		
+		// now get biggest diff superfast to default
+		double maxDiff = -1;
+		int iMax = -1;
+
+		for (int i = 0; i < num; i++) {
 
 			for (int j = 0; j < 3; j++) {
-				diff[j] = result2[j] - result1[j];
-				double dlen = FastMath.vectorLength(diff);
-				maxDiff = Math.max(dlen, maxDiff);
+				diff[j] = result[2][i][j] - result[0][i][j];
+			}
+			double dlen = FastMath.vectorLength(diff);
+
+			if (dlen > maxDiff) {
+				iMax = i;
+				maxDiff = dlen;
 			}
 		}
 
-		System.err.println("maxDiff = " + maxDiff);
+
+		System.err.println("maxDiff = " + maxDiff + "   at index: " + iMax);
+		System.err.println(String.format("xyz = (%8.4f, %8.4f, %8.4f)", x[iMax], y[iMax], z[iMax]));
+		double phi = FastMath.atan2Deg(y[iMax], x[iMax]);
+		if (phi < 0) {
+			phi += 360;
+		}
+		double rho = FastMath.hypot(x[iMax], y[iMax]);
+		System.err.println(String.format("cyl = (%8.4f, %8.4f, %8.4f)", phi, rho, z[iMax]));
+		
+		for (int index = 0; index < 3; index++) {
+		       System.err.println(String.format("%s (%8.4f, %8.4f, %8.4f) %8.4f kG", libs[index].toString(), 
+		    		   result[index][iMax][0], result[index][iMax][1], result[index][iMax][2], FastMath.vectorLength(result[index][iMax])));
+		}
+ 		
 	}
 
 	//check active field
@@ -167,14 +370,14 @@ public class MagTests {
 		}
 		System.err.println("\nSector test calculated field");
 		System.err.println(" Biggest diff: " + delMax + "  in sector " + sectMax);
-		System.err.println(String.format("xyz = (%8.3f, %8.3f, %8.3f)", x[iMax], y[iMax], z[iMax]));
+		System.err.println(String.format("xyz = (%8.4f, %8.4f, %8.4f)", x[iMax], y[iMax], z[iMax]));
 		
 		double phi = FastMath.atan2Deg(y[iMax], x[iMax]);
 		if (phi < 0) {
 			phi += 360;
 		}
 		double rho = FastMath.hypot(x[iMax], y[iMax]);
-		System.err.println(String.format("cyl = (%8.3f, %8.3f, %8.3f)", phi, rho, z[iMax]));
+		System.err.println(String.format("cyl = (%8.4f, %8.4f, %8.4f)", phi, rho, z[iMax]));
 		
 //		System.err.println(String.format("Sector 1 (%9.5f, %9.5f, %9.5f) %9.5f", 
 //				result[0][iMax][0], result[0][iMax][1], result[0][iMax][2], 
@@ -202,7 +405,7 @@ public class MagTests {
 		double y = -40. + 20*Math.random();
 		double z = 290. + 30*Math.random();
 		
-		System.err.println(String.format("\n xyz = (%8.3f, %8.3f, %8.3f)", x, y, z));
+		System.err.println(String.format("\n xyz = (%8.4f, %8.4f, %8.4f)", x, y, z));
 		for (int sector = 1; sector <= 6; sector++) {
 			probe.field(sector, (float)x, (float)y, (float)z, result);
 			double Bx = result[0];
@@ -213,120 +416,6 @@ public class MagTests {
 		}
 		
 	}
-	
-	//compare the rectangular and cylindrical grids
-	private static void rectCylCompareTest() {
-		try {
-			
-			long seed = 3344632211L;
-
-			int num = 1000000;
-
-			float x[] = new float[num];
-			float y[] = new float[num];
-			float z[] = new float[num];
-	
-			float result1[][] = new float[num][3];
-			float result2[][] = new float[num][3];
-			float res[] = new float[3];
-			long time1;
-			long time2;
-
-			Random rand = new Random(seed);
-			
-			for (int i = 0; i < num; i++) {
-				z[i] = 100 + (500 * rand.nextFloat());
-				double phi = -10f + 20.*rand.nextFloat();
-				
-				int randSect = rand.nextInt(6);
-				phi = phi + (60*randSect);
-				phi = Math.toRadians(phi);
-				
-				float rho = 50 + 400*rand.nextFloat();
-				
-				
-				x[i] = (float)(rho*Math.cos(phi));
-				y[i] = (float)(rho*Math.sin(phi));
-			}
-
-			MagneticFields.getInstance().openNewTorus("/Users/heddle/magfield/Full_torus_r251_phi181_z251_08May2018.dat");
-			IField ifield = FieldProbe.factory(MagneticFields.getInstance().getTorus());
-			
-			for (int i = 0; i < num; i++) {
-				ifield.field(x[i], y[i], z[i], result1[i]);
-			}
-			
-			//for timing
-			time1 = System.currentTimeMillis();
-			for (int j = 0; j < 10; j++) {
-				for (int i = 0; i < num; i++) {
-					ifield.field(x[i], y[i], z[i], res);
-				}
-			}
-			time1 = System.currentTimeMillis() - time1;
-
-			
-			MagneticFields.getInstance().openNewTorus("/Users/heddle/magfield/rectTorus.dat");
-			ifield = FieldProbe.factory(MagneticFields.getInstance().getTorus());
-			
-			for (int i = 0; i < num; i++) {
-				ifield.field(x[i], y[i], z[i], result2[i]);
-				for (int k = 0; k < 3; k++) {
-					result2[i][k] = -result2[i][k];
-				}
-			}
-			
-			//for timing
-			time2 = System.currentTimeMillis();
-			for (int j = 0; j < 10; j++) {
-				for (int i = 0; i < num; i++) {
-					ifield.field(x[i], y[i], z[i], res);
-				}
-			}
-			time2 = System.currentTimeMillis() - time2;
-
-
-			
-			double maxDiff = -1;
-			int maxIndex = -1;
-			float diff[] = new float[3];
-			double sum = 0;
-			for (int i = 0; i < num; i++) {
-
-				for (int j = 0; j < 3; j++) {
-					diff[j] = result2[i][j] - result1[i][j];
-					double dlen = FastMath.vectorLength(diff);
-					sum += dlen;
-					
-					if (dlen > maxDiff) {
-						maxDiff = dlen;
-						maxIndex = i;
-					}
-					
-					maxDiff = Math.max(dlen, maxDiff);
-				}
-			}
-
-			System.err.println("maxDiff = " + maxDiff);
-			System.err.println("avgDiff = " + (sum/num));
-			System.err.println(String.format("Location (%-8.3f, %-8.3f, %-8.3f)", x[maxIndex], y[maxIndex], z[maxIndex]));
-			
-			
-			System.err.println("PHI = " + FastMath.atan2Deg(y[maxIndex], x[maxIndex]));
-			
-			System.err.println(String.format("B1 (%-8.3f, %-8.3f, %-8.3f)", result1[maxIndex][0], result1[maxIndex][1], result1[maxIndex][2]));
-			System.err.println(String.format("B2 (%-8.3f, %-8.3f, %-8.3f)", result2[maxIndex][0], result2[maxIndex][1], result2[maxIndex][2]));
-			
-			System.err.println("Time 1: " + ((double)time1)/1000.);
-			System.err.println("Time 1: " + ((double)time2)/1000.);
-			
-			System.out.println("Done Rect-Cyl Comparison");
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-
 
 	// timing tests
 	private static void timingTest(int option) {
@@ -341,17 +430,12 @@ public class MagTests {
 
 		float result[] = new float[3];
 
-		IField ifield;
+		IField ifield = FieldProbe.factory();
 
-		if ((option == 2) || (option == 3)) {
-			ifield = FieldProbe.factory(MagneticFields.getInstance().getActiveField());
-		} else {
-			ifield = MagneticFields.getInstance().getActiveField();
-		}
 
 		Random rand = new Random(seed);
 
-		if ((option == 0) || (option == 2)) {
+		if (option == 0) {
 			for (int i = 0; i < num; i++) {
 				z[i] = 600 * rand.nextFloat();
 				float rho = 600 * rand.nextFloat();
@@ -360,7 +444,7 @@ public class MagTests {
 				x[i] = (float) (rho * FastMath.cos(phi));
 				y[i] = (float) (rho * FastMath.sin(phi));
 			}
-		} else if ((option == 1) || (option == 3)) {
+		} else if (option == 1) {
 			double dT = 1. / (num - 1);
 			for (int i = 0; i < num; i++) {
 				double t = i * dT;
@@ -383,7 +467,7 @@ public class MagTests {
 				ifield.field(x[i], y[i], z[i], result);
 			}
 
-			double del = ((double) (System.currentTimeMillis() - time)) / 1000.;
+			double del = (System.currentTimeMillis() - time) / 1000.;
 			sum += del;
 
 			System.out.println("loop " + (outer + 1) + " time  = " + del + " sec");
@@ -393,99 +477,6 @@ public class MagTests {
 
 	}
 	
-	
-
-	private static float getMax(float min, float del, int n) {
-		return min + (n - 1) * del;
-	}
-
-	// create a rectangular torus map
-	// creates a full rectangular map from the current
-	private static void createRectangularTorus(float xmin, float delX, int nX, float ymin, float delY, int nY,
-			float zmin, float delZ, int nZ) {
-
-		try {
-			IField ifield = FieldProbe.factory(MagneticFields.getInstance().getTorus());
-			float result[] = new float[3];
-			// FloatVect[][][] bvals = new FloatVect[nX][nY][nZ];
-
-			File bfile = new File(_homeDir, "rectTorus.dat");
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(bfile));
-
-			// write header
-			dos.writeInt(0xced); // magic word
-			dos.writeInt(1); // Cartesian grid
-			dos.writeInt(1); // Cartesian field
-			dos.writeInt(0); // cm
-			dos.writeInt(0); // degrees
-			dos.writeInt(0); // kG
-			dos.writeFloat(xmin);
-			dos.writeFloat(getMax(xmin, delX, nX));
-			dos.writeInt(nX);
-			dos.writeFloat(ymin);
-			dos.writeFloat(getMax(ymin, delY, nY));
-			dos.writeInt(nY);
-			dos.writeFloat(zmin);
-			dos.writeFloat(getMax(zmin, delZ, nZ));
-			dos.writeInt(nZ);
-
-			long unixTime = System.currentTimeMillis();
-
-			int high = (int) (unixTime >> 32);
-			int low = (int) unixTime;
-
-			// write reserved
-			dos.writeInt(high); // first word of unix time
-			dos.writeInt(low); // second word of unix time
-			dos.writeInt(0);
-			dos.writeInt(0);
-			dos.writeInt(0);
-
-			int size = 3 * 4 * nX * nY * nZ;
-			byte bytes[] = new byte[size];
-			ByteBuffer byteBuffer = ByteBuffer.wrap(bytes);
-			System.err.println("FILE SIZE = " + size + " bytes");
-
-			float x = Float.NaN;
-			float y = Float.NaN;
-			float z = Float.NaN;
-
-			for (int ix = 0; ix < nX; ix++) {
-				x = xmin + ix * delX;
-				System.out.println("X = " + x);
-				for (int iy = 0; iy < nY; iy++) {
-					y = ymin + iy * delY;
-					for (int iz = 0; iz < nZ; iz++) {
-						z = zmin + iz * delZ;
-						ifield.field(x, y, z, result);
-
-						byteBuffer.putFloat(result[0]);
-						byteBuffer.putFloat(result[1]);
-						byteBuffer.putFloat(result[2]);
-
-						// dos.writeFloat(result[0]);
-						// dos.writeFloat(result[1]);
-						// dos.writeFloat(result[2]);
-
-						// bvals[ix][iy][iz] = new FloatVect(result[0],
-						// result[1],result[2]);
-					}
-				}
-			}
-
-			dos.write(bytes);
-
-			System.out.println(String.format("Final location: (%-7.3f, %-7.3f, %-7.3f)", x, y, z));
-
-			dos.flush();
-			dos.close();
-
-			System.out.println("Binary file: " + bfile.getCanonicalPath());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
 
 	public static JMenu getTestMenu() {
 
@@ -493,9 +484,9 @@ public class MagTests {
 
 		final JMenuItem test0Item = new JMenuItem("Timing Test Random Points");
 		final JMenuItem test1Item = new JMenuItem("Timing Test Along a Line");
-		final JMenuItem test2Item = new JMenuItem("PROBE Timing Test Random Points");
-		final JMenuItem test3Item = new JMenuItem("PROBE Timing Test Along a Line");
 		final JMenuItem test4Item = new JMenuItem("Sameness Test");
+		final JMenuItem test5Item = new JMenuItem("MathLib Test");
+		final JMenuItem threadItem = new JMenuItem("Thread Test");
 
 		ActionListener al1 = new ActionListener() {
 
@@ -505,12 +496,12 @@ public class MagTests {
 					timingTest(0);
 				} else if (e.getSource() == test1Item) {
 					timingTest(1);
-				} else if (e.getSource() == test2Item) {
-					timingTest(2);
-				} else if (e.getSource() == test3Item) {
-					timingTest(3);
-				} else if (e.getSource() == test4Item) {
+				}  else if (e.getSource() == test4Item) {
 					samenessTest();
+				} else if (e.getSource() == test5Item) {
+					mathTest();
+				} else if (e.getSource() == threadItem) {
+					threadTest(10000000, 8);
 				}
 			}
 
@@ -518,20 +509,17 @@ public class MagTests {
 
 		test0Item.addActionListener(al1);
 		test1Item.addActionListener(al1);
-		test2Item.addActionListener(al1);
-		test3Item.addActionListener(al1);
 		test4Item.addActionListener(al1);
+		test5Item.addActionListener(al1);
+		threadItem.addActionListener(al1);
 		testMenu.add(test0Item);
 		testMenu.add(test1Item);
-		testMenu.add(test2Item);
-		testMenu.add(test3Item);
 		testMenu.add(test4Item);
+		testMenu.add(test5Item);
+		testMenu.add(threadItem);
 		testMenu.addSeparator();
 
 		// now for rectangular grids
-		final JMenuItem rectTorusItem = new JMenuItem("Create Rectangular Torus");
-
-		final JMenuItem rectCylItem = new JMenuItem("Compare Rectangular and Cylindrical");
 		final JMenuItem rotatedSectorItem = new JMenuItem("Check Sectors for Rotated Composite");
 		final JMenuItem sectorItem = new JMenuItem("Check Sectors for (Normal) Composite");
 
@@ -539,13 +527,7 @@ public class MagTests {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				if (e.getSource() == rectTorusItem) {
-					createRectangularTorus(-500, 2, 501, -500, 2, 501, 100, 2, 251);
-				}
-				else if (e.getSource() == rectCylItem) {
-					rectCylCompareTest();
-				}
-				else if (e.getSource() == reconfigItem) {
+				if (e.getSource() == reconfigItem) {
 					MagneticFields.getInstance().removeMapOverlap();
 				}
 				else if (e.getSource() == rotatedSectorItem) {
@@ -556,20 +538,40 @@ public class MagTests {
 				}
 			}
 		};
-		rectTorusItem.addActionListener(al2);
-		rectCylItem.addActionListener(al2);
 		reconfigItem.addActionListener(al2);
 		rotatedSectorItem.addActionListener(al2);
 		sectorItem.addActionListener(al2);
-		testMenu.add(rectTorusItem);
-		testMenu.add(rectCylItem);
-		testMenu.addSeparator();
 		testMenu.add(reconfigItem);
 		testMenu.add(rotatedSectorItem);
 		testMenu.add(sectorItem);
 
 
 		return testMenu;
+	}
+	
+	/**
+	 * Print a memory report
+	 * 
+	 * @param message
+	 *            a message to add on
+	 */
+	public static void memoryReport(String message) {
+		System.gc();
+		System.gc();
+
+		StringBuilder sb = new StringBuilder(1024);
+		double total = (Runtime.getRuntime().totalMemory()) / 1048576.;
+		double free = Runtime.getRuntime().freeMemory() / 1048576.;
+		double used = total - free;
+		sb.append("==== Memory Report =====\n");
+		if (message != null) {
+			sb.append(message + "\n");
+		}
+		sb.append("Total memory in JVM: " + String.format("%6.1f", total) + "MB\n");
+		sb.append(" Free memory in JVM: " + String.format("%6.1f", free) + "MB\n");
+		sb.append(" Used memory in JVM: " + String.format("%6.1f", used) + "MB\n");
+
+		System.err.println(sb.toString());
 	}
 	
 	private static void fixMenus() {

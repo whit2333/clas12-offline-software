@@ -1,7 +1,17 @@
 package cnuphys.magfield;
 
+/**
+ * Cells are used by the probes. 3D cells for the torus,
+ * 2D cells for the solenoid.
+ * @author heddle
+ *
+ */
 public class Cell3D implements MagneticFieldChangeListener {
+	
+	//used for debug printing
+	private boolean printedOnce = false;
 
+	//the limits of the current cell
 	public double q1Min = Double.POSITIVE_INFINITY;
 	public double q1Max = Double.NEGATIVE_INFINITY;
 	public double q2Min = Double.POSITIVE_INFINITY;
@@ -9,32 +19,34 @@ public class Cell3D implements MagneticFieldChangeListener {
 	public double q3Min = Double.POSITIVE_INFINITY;
 	public double q3Max = Double.NEGATIVE_INFINITY;
 
-	private MagneticField field;
+	//the probe using this cell
+	private FieldProbe _probe;
 
 	private double q1Norm;
 	private double q2Norm;
 	private double q3Norm;
 
+	//space used by the cell. 
+	private final double f[] = new double[3];
+	private final double g[] = new double[3];
+	private final double a[] = new double[8];
 
-	private double f[] = new double[3];
-	private double g[] = new double[3];
-	private double a[] = new double[8];
-
-	private int n1 = -1;
-	private int n2 = -1;
-	private int n3 = -1;
+	//field indices of the current cell
+	private int _n1 = -1;
+	private int _n2 = -1;
+	private int _n3 = -1;
 	
 	//hold field at 8 corners of cell
-	FloatVect b[][][] = new FloatVect[2][2][2];
+	private final FloatVect b[][][] = new FloatVect[2][2][2];
 
 	/**
 	 * Create a 3D cell (for Torus)
 	 * 
-	 * @param field
-	 *            the magnetic field
+	 * @param probe
+	 *            the magnetic probe
 	 */
-	public Cell3D(MagneticField field) {
-		this.field = field;
+	public Cell3D(FieldProbe probe) {
+		_probe = probe;
 		MagneticFields.getInstance().addMagneticFieldChangeListener(this);
 		
 		for (int i = 0; i < 2; i++) {
@@ -47,92 +59,92 @@ public class Cell3D implements MagneticFieldChangeListener {
 		
 	}
 
-	// reset the cached values
-
-	boolean printedOnce = false;
-
+	//reset because we have crossed into another cell
 	private void reset(double q1, double q2, double q3) {
-		GridCoordinate q1Coord = field.q1Coordinate;
-		GridCoordinate q2Coord = field.q2Coordinate;
-		GridCoordinate q3Coord = field.q3Coordinate;
+		GridCoordinate q1Coord = _probe.q1Coordinate;
+		GridCoordinate q2Coord = _probe.q2Coordinate;
+		GridCoordinate q3Coord = _probe.q3Coordinate;
 
-		n1 = q1Coord.getIndex(q1);
-		if (n1 < 0) {
+		//get the field indices for the coordinates
+		//q1 is phi, q2 is rho, q3 is z
+		_n1 = q1Coord.getIndex(q1);
+		if (_n1 < 0) {
 			if (!printedOnce) {
 				printedOnce = true;
-				System.err.println("WARNING Bad n1 in Cell3D.reset: " + n1 + "  phi: " + q1);
+				System.err.println("WARNING Bad n1 in Cell3D.reset: " + _n1 + "  phi: " + q1);
 			}
 			return;
 		}
-		n2 = q2Coord.getIndex(q2);
-		if (n2 < 0) {
+		_n2 = q2Coord.getIndex(q2);
+		if (_n2 < 0) {
 			if (!printedOnce) {
 				printedOnce = true;
-				System.err.println("WARNING Bad n2 in Cell3D.reset: " + n2 + "  rho: " + q2);
+				System.err.println("WARNING Bad n2 in Cell3D.reset: " + _n2 + "  rho: " + q2);
 			}
 			return;
 		}
-		n3 = q3Coord.getIndex(q3);
-		if (n3 < 0) {
+		_n3 = q3Coord.getIndex(q3);
+		if (_n3 < 0) {
 			if (!printedOnce) {
 				printedOnce = true;
-				System.err.println("WARNING Bad n3 in Cell3D.reset: " + n3 + "  z: " + q3);
+				System.err.println("WARNING Bad n3 in Cell3D.reset: " + _n3 + "  z: " + q3);
 			}
 			return;
 		}
 
-		q1Min = q1Coord.getMin(n1);
-		q1Max = q1Coord.getMax(n1);
+		//precompute the boundaries and some factors
+		q1Min = q1Coord.getMin(_n1);
+		q1Max = q1Coord.getMax(_n1);
 		q1Norm = 1. / (q1Max - q1Min);
 
-		q2Min = q2Coord.getMin(n2);
-		q2Max = q2Coord.getMax(n2);
+		q2Min = q2Coord.getMin(_n2);
+		q2Max = q2Coord.getMax(_n2);
 		q2Norm = 1. / (q2Max - q2Min);
 
-		q3Min = q3Coord.getMin(n3);
-		q3Max = q3Coord.getMax(n3);
+		q3Min = q3Coord.getMin(_n3);
+		q3Max = q3Coord.getMax(_n3);
 		q3Norm = 1. / (q3Max - q3Min);
 
-		int i000 = field.getCompositeIndex(n1, n2, n3); //n1 n2 n3
+		int i000 = _probe.getCompositeIndex(_n1, _n2, _n3); //n1 n2 n3
 		int i001 = i000 + 1; //n1 n2 n3+1
 
-		int i010 = field.getCompositeIndex(n1, n2 + 1, n3); //n1 n2+1 n3
+		int i010 = _probe.getCompositeIndex(_n1, _n2 + 1, _n3); //n1 n2+1 n3
 		int i011 = i010 + 1;  //n1 n2+1 n3+1
 
-		int i100 = field.getCompositeIndex(n1 + 1, n2, n3);  //n1+1 n2 n3
+		int i100 = _probe.getCompositeIndex(_n1 + 1, _n2, _n3);  //n1+1 n2 n3
 		int i101 = i100 + 1;  //n1+1 n2 n3+1
 
-		int i110 = field.getCompositeIndex(n1 + 1, n2 + 1, n3); //n1+1 n2+1 n3
+		int i110 = _probe.getCompositeIndex(_n1 + 1, _n2 + 1, _n3); //n1+1 n2+1 n3
 		int i111 = i110 + 1; //n1+1 n2+1 n3+1
 		
 		//field at 8 corners
 		
-		b[0][0][0].x = field.getB1(i000);
-		b[0][0][1].x = field.getB1(i001);
-		b[0][1][0].x = field.getB1(i010);
-		b[0][1][1].x = field.getB1(i011);
-		b[1][0][0].x = field.getB1(i100);
-		b[1][0][1].x = field.getB1(i101);
-		b[1][1][0].x = field.getB1(i110);
-		b[1][1][1].x = field.getB1(i111);
+		b[0][0][0].x = _probe.getB1(i000);
+		b[0][0][1].x = _probe.getB1(i001);
+		b[0][1][0].x = _probe.getB1(i010);
+		b[0][1][1].x = _probe.getB1(i011);
+		b[1][0][0].x = _probe.getB1(i100);
+		b[1][0][1].x = _probe.getB1(i101);
+		b[1][1][0].x = _probe.getB1(i110);
+		b[1][1][1].x = _probe.getB1(i111);
 		
-		b[0][0][0].y = field.getB2(i000);
-		b[0][0][1].y = field.getB2(i001);
-		b[0][1][0].y = field.getB2(i010);
-		b[0][1][1].y = field.getB2(i011);
-		b[1][0][0].y = field.getB2(i100);
-		b[1][0][1].y = field.getB2(i101);
-		b[1][1][0].y = field.getB2(i110);
-		b[1][1][1].y = field.getB2(i111);
+		b[0][0][0].y = _probe.getB2(i000);
+		b[0][0][1].y = _probe.getB2(i001);
+		b[0][1][0].y = _probe.getB2(i010);
+		b[0][1][1].y = _probe.getB2(i011);
+		b[1][0][0].y = _probe.getB2(i100);
+		b[1][0][1].y = _probe.getB2(i101);
+		b[1][1][0].y = _probe.getB2(i110);
+		b[1][1][1].y = _probe.getB2(i111);
 		
-		b[0][0][0].z = field.getB3(i000);
-		b[0][0][1].z = field.getB3(i001);
-		b[0][1][0].z = field.getB3(i010);
-		b[0][1][1].z = field.getB3(i011);
-		b[1][0][0].z = field.getB3(i100);
-		b[1][0][1].z = field.getB3(i101);
-		b[1][1][0].z = field.getB3(i110);
-		b[1][1][1].z = field.getB3(i111);
+		b[0][0][0].z = _probe.getB3(i000);
+		b[0][0][1].z = _probe.getB3(i001);
+		b[0][1][0].z = _probe.getB3(i010);
+		b[0][1][1].z = _probe.getB3(i011);
+		b[1][0][0].z = _probe.getB3(i100);
+		b[1][0][1].z = _probe.getB3(i101);
+		b[1][1][0].z = _probe.getB3(i110);
+		b[1][1][1].z = _probe.getB3(i111);
 
 	}
 
@@ -162,20 +174,17 @@ public class Cell3D implements MagneticFieldChangeListener {
 	 * @param result
 	 */
 	public void calculate(double q1, double q2, double q3, float[] result) {
-		
-		
-		boolean contains;
-		if (field.isRectangularGrid()) {
-			contains = field.contains(q1, q2, q3);
-		}
-		else {
-			contains = field.containsCylindrical(q1, q2, q3);
-		}
-		
-		if (contains) {
+				
+		if (_probe.containsCylindrical(q1, q2, q3)) {
 			// do we need to reset?
 			if (!contained(q1, q2, q3)) {
 				reset(q1, q2, q3);
+				if ((_n1 < 0) || (_n2 < 0) || (_n3 < 0)) {
+					result[0] = 0;
+					result[1] = 0;
+					result[2] = 0;
+					return;
+				}
 			}
 
 			if (!MagneticField.isInterpolate()) {

@@ -11,25 +11,20 @@ import java.io.FileNotFoundException;
  */
 
 public class Torus extends MagneticField {
-	
-	//the cell implements the probe trick
-	protected Cell3D _cell;
-	
+		
 	//has part of the solenoid been added in to remove the overlap?
 	protected boolean _addedSolenoid;
-	
-	//used to reconfigure fields so solenoid and torus do not overlap
-	private double _fakeZMin = Float.NEGATIVE_INFINITY;
-
-	
+		
+	//if is full, then no assumed 12-fold symmetry
+	private boolean _fullMap;
+		
 	/**
 	 * Instantiates a new torus.
 	 * Note q1 = phi, q2 = rho, q3 = z
 	 */
-	public Torus() {
+	private Torus() {
 		setCoordinateNames("phi", "rho", "z");
 		_scaleFactor = -1; // default
-		_cell = new Cell3D(this);
 		_addedSolenoid = false;
 	}
 	
@@ -52,273 +47,35 @@ public class Torus extends MagneticField {
 	public static Torus fromBinaryFile(File file) throws FileNotFoundException {
 		Torus torus = new Torus();
 		torus.readBinaryMagneticField(file);
+		double phiMax = torus.getPhiMax();
+		
+		torus._fullMap = (phiMax > 100.);
+		
+		System.out.println(torus.toString());
+
 		return torus;
 	}
-
-	/**
-	 * Must deal with the fact that we only have the field between 0 and 30
-	 * degrees.
-	 *
-	 * @param absolutePhi the absolute phi
-	 * @return the relative phi (-30, 30) from the nearest middle of a sector in
-	 *         degrees.
-	 */
-	private double relativePhi(double absolutePhi) {
-		if (absolutePhi < 0.0) {
-			absolutePhi += 360.0;
-		}
-
-		// make relative phi between 0 -30 and 30
-		double relativePhi = absolutePhi;
-		while (Math.abs(relativePhi) > 30.0) {
-			relativePhi -= 60.0;
-		}
-		return relativePhi;
-	}
 	
 	/**
-	 * Obtain the magnetic field at a given location expressed in Cartesian
-	 * coordinates. The field is returned as a Cartesian vector in kiloGauss.
-	 * The coordinates are in the canonical CLAS system with the origin at the
-	 * nominal target, x through the middle of sector 1 and z along the beam.
-	 * 
-	 * @param x
-	 *            the x coordinate in cm
-	 * @param y
-	 *            the y coordinate in cm
-	 * @param z
-	 *            the z coordinate in cm
-	 * @param result
-	 *            a array holding the retrieved (interpolated) field in
-	 *            kiloGauss. The 0,1 and 2 indices correspond to x, y, and z
-	 *            components.
+	 * Get the maximum phi coordinate of the field boundary (deg)
+	 * @return the maximum phi coordinate of the field boundary
 	 */
-	@Override
-	public final void field(float x, float y, float z, float result[]) {
-
-		if (isRectangularGrid()) {
-			if (!contains(x, y, z)) {
-				result[X] = 0f;
-				result[Y] = 0f;
-				result[Z] = 0f;
-			} else {
-				_cell.calculate(x, y, z, result);
-			}
-			return;
+	public double getPhiMax() {
+		double phimax = q1Coordinate.getMax();
+		while (phimax < 0) {
+			phimax += 360.;
 		}
-		
-		if (z < _fakeZMin) {
-			result[X] = 0f;
-			result[Y] = 0f;
-			result[Z] = 0f;
-			return;
-		}
-
-
-		double rho = FastMath.sqrt(x * x + y * y);
-		double phi = FastMath.atan2Deg(y, x);
-		fieldCylindrical(phi, rho, z, result);
-	}
-
-	
-	/**
-	 * Get the field by trilinear interpolation.
-	 *
-	 * @param phi azimuthal angle in degrees.
-	 * @param rho the cylindrical rho coordinate in cm.
-	 * @param z coordinate in cm
-	 * @param result the result
-	 * @result a Cartesian vector holding the calculated field in kiloGauss.
-	 */
-	public void fieldCylindrical(Cell3D cell, double phi, double rho, double z,
-			float result[]) {
-		
-		if (isRectangularGrid()) {
-			System.err.println("Calling fieldCylindrical in Torus for Rectangular Grid");
-			System.exit(1);
-		}
-		
-		if (!containsCylindrical(phi, rho, z)) {
-			result[X] = 0f;
-			result[Y] = 0f;
-			result[Z] = 0f;
-			return;
-		}
-
-		if (isZeroField()) {
-			result[X] = 0f;
-			result[Y] = 0f;
-			result[Z] = 0f;
-			return;
-		}
-
-		while (phi >= 360.0) {
-			phi -= 360.0;
-		}
-		while (phi < 0.0) {
-			phi += 360.0;
-		}
-		
-		// relativePhi (-30, 30) phi relative to middle of sector
-		double relativePhi = relativePhi(phi);
-
-		boolean flip = (relativePhi < 0.0);
-
-		cell.calculate(Math.abs(relativePhi), rho, z, result);
-
-		// negate change x and z components
-		if (flip) {
-			result[X] = -result[X];
-			result[Z] = -result[Z];
-		}
-
-		// rotate onto to proper sector
-		
-		int sector = getSector(phi);
-
-		if (sector > 1) {
-			double cos = cosSect[sector];
-			double sin = sinSect[sector];
-			double bx = result[X];
-			double by = result[Y];
-			result[X] = (float) (bx * cos - by * sin);
-			result[Y] = (float) (bx * sin + by * cos);
-		}
-		
-		result[X] *= _scaleFactor;
-		result[Y] *= _scaleFactor;
-		result[Z] *= _scaleFactor;		
-	}
-
-
-	/**
-	 * Get the field by trilinear interpolation. Uses the
-	 * common cell which should not be done in a multithreaded environment.
-	 *
-	 * @param phi azimuthal angle in degrees.
-	 * @param rho the cylindrical rho coordinate in cm.
-	 * @param z coordinate in cm
-	 * @param result the result
-	 * @result a Cartesian vector holding the calculated field in kiloGauss.
-	 */
-	@Override
-	public void fieldCylindrical(double phi, double rho, double z,
-			float result[]) {
-
-		fieldCylindrical(_cell, phi, rho, z, result);
-	}
-	
-
-	/**
-	 * @return the phiCoordinate
-	 */
-	public GridCoordinate getPhiCoordinate() {
-		return q1Coordinate;
+		return phimax;
 	}
 
 	/**
-	 * @return the rCoordinate
+	 * Get the minimum phi coordinate of the field boundary (deg)
+	 * @return the minimum phi coordinate of the field boundary
 	 */
-	public GridCoordinate getRCoordinate() {
-		return q2Coordinate;
-	}
-
-	/**
-	 * @return the zCoordinate
-	 */
-	public GridCoordinate getZCoordinate() {
-		return q3Coordinate;
-	}
-
-	/**
-	 * Get the maximum z coordinate of the field boundary
-	 * @return the maximum z coordinate of the field boundary
-	 */
-	public double getZMax() {
-		return q3Coordinate.getMax();
-	}
-
-	/**
-	 * Get the minimum z coordinate of the field boundary
-	 * @return the minimum z coordinate of the field boundary
-	 */
-	public double getZMin() {
-		return q3Coordinate.getMin();
-	}
-
-	/**
-	 * Get the maximum rho coordinate of the field boundary
-	 * @return the maximum rho coordinate of the field boundary
-	 */
-	public double getRhoMax() {
-		if (isRectangularGrid()) {
-			System.err.println("Asking for Rho Max for Rectangular Grid");
-			System.exit(1);
-		}
-		return q2Coordinate.getMax();
-	}
-
-	/**
-	 * Get the minimum rho coordinate of the field boundary
-	 * @return the minimum rho coordinate of the field boundary
-	 */
-	public double getRhoMin() {
-		if (isRectangularGrid()) {
-			System.err.println("Asking for Rho Min for Rectangular Grid");
-			System.exit(1);
-		}
-		return q2Coordinate.getMin();
-	}
-	
-	/**
-	 * Get the maximum x coordinate of the field boundary
-	 * @return the maximum x coordinate of the field boundary
-	 */
-	public double getXMax() {
-		if (isCylindricalGrid()) {
-			System.err.println("Asking for X Max for Cylandrical Grid");
-			System.exit(1);
-		}
-		return q1Coordinate.getMax();
-	}
-	
-	/**
-	 * Get the maximum x coordinate of the field boundary
-	 * @return the maximum x coordinate of the field boundary
-	 */
-	public double getXMin() {
-		if (isCylindricalGrid()) {
-			System.err.println("Asking for X Min for Cylandrical Grid");
-			System.exit(1);
-		}
+	public double getPhiMin() {
 		return q1Coordinate.getMin();
 	}
-
 	
-	/**
-	 * Get the maximum y coordinate of the field boundary
-	 * @return the maximum y coordinate of the field boundary
-	 */
-	public double getYMax() {
-		if (isCylindricalGrid()) {
-			System.err.println("Asking for Y Max for Cylandrical Grid");
-			System.exit(1);
-		}
-		return q2Coordinate.getMax();
-	}
-	
-	/**
-	 * Get the maximum y coordinate of the field boundary
-	 * @return the maximum y coordinate of the field boundary
-	 */
-	public double getYMin() {
-		if (isCylindricalGrid()) {
-			System.err.println("Asking for Y Min for Cylandrical Grid");
-			System.exit(1);
-		}
-		return q2Coordinate.getMin();
-	}
-
 
 	/**
 	 * Get the name of the field
@@ -330,32 +87,25 @@ public class Torus extends MagneticField {
 		return "Torus";
 	}
 	
-	 /**
-     * Check whether the field boundaries include the point
-     * @param x the x coordinate in the map units
-     * @param y the y coordinate in the map units
-     * @param z the z coordinate in the map units
-     * @return <code>true</code> if the point is included in the boundary of the field
-     */
+	/**
+	 * Check whether there is an assume 12-fold symmetry
+	 * @return <code>true</code> if this is a full map
+	 */
+	public boolean isFullMap() {
+		return _fullMap;
+	}
+	
+	/**
+	 * Get some data as a string.
+	 * 
+	 * @return a string representation.
+	 */
 	@Override
-    public boolean contains(double x, double y, double z) {
-		if (isRectangularGrid()) {
-			if ((x < getXMin()) || (x > getXMax())) {
-				return false;
-			}
-			if ((y < getYMin()) || (y > getYMax())) {
-				return false;
-			}
-			if ((z < getZMin()) || (z > getZMax())) {
-				return false;
-			}
-			return true;
-		}
-		
-		double rho = FastMath.sqrt(x * x + y * y);
-		double phi = FastMath.atan2Deg(y, x);
-        return containsCylindrical(phi, rho, z);
-    }
+	public final String toString() {
+		String s = "Torus " + (_fullMap ? " (Full Map)" : " (12-fold symmetry)\n");
+		s += super.toString();
+		return s;
+	}
 	
 	/**
 	 * Used to add the solenoid into the torus. Experimental!!
@@ -370,56 +120,14 @@ public class Torus extends MagneticField {
 		}
 		_addedSolenoid = true;
 	}
+	
+	/**
+	 * Get the minimum z coordinate of the field boundary
+	 * @return the minimum z coordinate of the field boundary
+	 */
+	public double getZMin() {
+		return q3Coordinate.getMin();
+	}
 
-	/**
-	 * Check whether the field boundaries include the point
-	 * 
-	 * @param phi
-	 *            azimuthal angle in degrees.
-	 * @param rho
-	 *            the cylindrical rho coordinate in cm.
-	 * @param z
-	 *            coordinate in cm
-	 * @return <code>true</code> if the point is included in the boundary of the
-	 *         field
-	 * 
-	 */
-	@Override
-	public boolean containsCylindrical(double phi, double rho, double z) {	
-		
-		if (isRectangularGrid()) {
-			System.err.println("Calling containsCylindrical for a rectangular grid.");
-			(new Throwable()).printStackTrace();
-			System.exit(1);
-		}
-		
-		if (z < _fakeZMin) {
-			return false;
-		}
 
-		if ((z < getZMin()) || (z > getZMax())) {
-			return false;
-		}
-		if ((rho < getRhoMin()) || (rho > getRhoMax())) {
-			return false;
-		}
-		return true;
-	}
-	
-	
-	/**
-	 * Get the fake z lim used to remove overlap with solenoid
-	 * @return the fake z lim used to remove overlap with solenoid (cm)
-	 */
-	public double getFakeZMin() {
-		return _fakeZMin;
-	}
-	
-	/**
-	 * Set the fake z lim used to remove overlap with solenoid
-	 * @param zlim the new value in cm
-	 */
-	public void setFakeZMin(double zlim) {
-		_fakeZMin = zlim;
-	}
 }

@@ -9,29 +9,30 @@ public class TorusProbe extends FieldProbe {
 	private Cell3D _cell;
 	
 	private Torus _torus;
-
+	
+	//12 -fold symmetry or full map?
+	private boolean _fullMap;
+		
+	/**
+	 * Create a probe for use with the torus
+	 * @param field the torus field
+	 */
 	public TorusProbe(Torus field) {
 		super(field);
 		_torus = (Torus)_field;
-		_cell = new Cell3D(field);
+		_cell = new Cell3D(this);
+		_scaleFactor = _torus.getScaleFactor();
+		_fullMap = _torus.isFullMap();
+		
+		q1Coordinate = _torus.q1Coordinate.clone();
+		q2Coordinate = _torus.q2Coordinate.clone();
+		q3Coordinate = _torus.q3Coordinate.clone();
+		
 	}
 	
 	@Override
 	public void field(float x, float y, float z, float result[]) {
-		
-
-		if (_torus.isRectangularGrid()) {
-			if (!_torus.contains(x, y, z)) {
-				result[0] = 0f;
-				result[1] = 0f;
-				result[2] = 0f;
-			} else {
-				_cell.calculate(x, y, z, result);
-			}
-			return;
-		}
-
-		
+				
 		if (!contains(x, y, z)) {
 			result[0] = 0f;
 			result[1] = 0f;
@@ -41,15 +42,133 @@ public class TorusProbe extends FieldProbe {
 
 		double rho = FastMath.sqrt(x * x + y * y);
 		double phi = FastMath.atan2Deg(y, x);
-		_torus.fieldCylindrical(_cell, phi, rho, z, result);
+		fieldCylindrical(_cell, phi, rho, z, result);
 	}
 
-	
 	@Override
 	public void fieldCylindrical(double phi, double rho, double z, float[] result) {
-		_torus.fieldCylindrical(_cell, phi, rho, z, result);
+		fieldCylindrical(_cell, phi, rho, z, result);
+	}
+		
+	/**
+	 * Get the field by trilinear interpolation.
+	 *
+	 * @param phi azimuthal angle in degrees.
+	 * @param rho the cylindrical rho coordinate in cm.
+	 * @param z coordinate in cm
+	 * @param result the result
+	 * @result a Cartesian vector holding the calculated field in kiloGauss.
+	 */
+	private void fieldCylindrical(Cell3D cell, double phi, double rho, double z,
+			float result[]) {
+		
+				
+		if (!containsCylindrical(phi, rho, z)) {
+			result[X] = 0f;
+			result[Y] = 0f;
+			result[Z] = 0f;
+			return;
+		}
+
+		if (isZeroField()) {
+			result[X] = 0f;
+			result[Y] = 0f;
+			result[Z] = 0f;
+			return;
+		}
+
+		while (phi >= 360.0) {
+			phi -= 360.0;
+		}
+		while (phi < 0.0) {
+			phi += 360.0;
+		}
+		
+
+		//must deal with 12-fold symmetry possibility
+		if (_fullMap) {
+			cell.calculate(phi, rho, z, result);	
+		}
+		else {  //12-fold symmmetric
+			// relativePhi (-30, 30) phi relative to middle of sector
+			double relativePhi = relativePhi(phi);
+
+			boolean flip = (relativePhi < 0.0);
+
+			cell.calculate(Math.abs(relativePhi), rho, z, result);
+			
+			// negate change x and z components
+			if (flip) {
+				result[X] = -result[X];
+				result[Z] = -result[Z];
+			}
+
+			// rotate onto to proper sector
+			
+			int sector = getSector(phi);
+
+			if (sector > 1) {
+				double cos = cosSect[sector];
+				double sin = sinSect[sector];
+				double bx = result[X];
+				double by = result[Y];
+				result[X] = (float) (bx * cos - by * sin);
+				result[Y] = (float) (bx * sin + by * cos);
+			}
+
+		}
+		
+		result[X] *= _scaleFactor;
+		result[Y] *= _scaleFactor;
+		result[Z] *= _scaleFactor;		
 	}
 	
+	/**
+	 * Must deal with the fact that we only have the field between 0 and 30
+	 * degrees.
+	 *
+	 * @param absolutePhi the absolute phi
+	 * @return the relative phi (-30, 30) from the nearest middle of a sector in
+	 *         degrees.
+	 */
+	private double relativePhi(double absolutePhi) {
+		if (absolutePhi < 0.0) {
+			absolutePhi += 360.0;
+		}
+
+		// make relative phi between 0 -30 and 30
+		double relativePhi = absolutePhi;
+		while (Math.abs(relativePhi) > 30.0) {
+			relativePhi -= 60.0;
+		}
+		return relativePhi;
+	}
+	
+	/**
+	 * Check whether the field boundaries include the point
+	 * 
+	 * @param phi
+	 *            azimuthal angle in degrees.
+	 * @param rho
+	 *            the cylindrical rho coordinate in cm.
+	 * @param z
+	 *            coordinate in cm
+	 * @return <code>true</code> if the point is included in the boundary of the
+	 *         field
+	 * 
+	 */
+	@Override
+	public boolean containsCylindrical(double phi, double rho, double z) {	
+		
+		if ((z < getZMin()) || (z > getZMax())) {
+			return false;
+		}
+		if ((rho < getRhoMin()) || (rho > getRhoMax())) {
+			return false;
+		}
+		return true;
+	}
+
 
 
 }

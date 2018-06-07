@@ -1,89 +1,176 @@
 package cnuphys.magfield;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
 public abstract class FieldProbe implements IField {
 
-//	protected static boolean CACHE = true;
+	// indices of components
+	protected static final int X = 0;
+	protected static final int Y = 1;
+	protected static final int Z = 2;
 	
-	protected static final double TINY = 1.0e-8;
+	// for rotating field
+	protected static final double ROOT3OVER2 = Math.sqrt(3.)/2.;
+	protected static final double cosSect[] = {Double.NaN, 1, 0.5, -0.5, -1, -0.5, 0.5};
+	protected static final double sinSect[] = {Double.NaN, 0, ROOT3OVER2, ROOT3OVER2, 0, -ROOT3OVER2, -ROOT3OVER2};
 	
 	//the field
-	protected IField _field;
+	protected IMagField _field;
+	
+	//cache the name of the field
+	protected String _name;
+	
+	//cache the field's scale factor
+	protected double _scaleFactor;
+
+	//cache the max field magnitude
+	private float _maxField;
 	
 	/**
-	 * 
-	 * @param field
+	 * Holds the grid info for the slowest changing coordinate.
+	 * This is cloned from the field.
 	 */
-	public FieldProbe(IField field) {
-		if (field instanceof FieldProbe) {
-			System.err.println("WARNING: Making a Magnetic Field Probe from a Probe.");
-		}
-		_field = field;
-	}
+	protected GridCoordinate q1Coordinate;
+
+	/**
+	 * Holds the grid info for the medium changing coordinate 
+	 * This is cloned from the field.
+	 */
+	protected GridCoordinate q2Coordinate;
+
+	/**
+	 * Holds the grid info for the fastest changing coordinate
+	 * This is cloned from the field.
+	 */
+	protected GridCoordinate q3Coordinate;
+
 	
+	/**
+	 * Create a probe, which is a thread safe way to use the field
+	 * @param field the underlying field
+	 */
+	public FieldProbe(IMagField field) {
+		_field = field;
+		if (_field != null) {
+			_maxField = field.getMaxFieldMagnitude();
+			_name = new String(field.getName());
+		} else { //zero field
+			_maxField = 0f;
+			_name = "No Field";
+		}
+	}
+
 	/**
 	 * Get the underlying field
+	 * 
 	 * @return the field that backs this probe
 	 */
-	public IField getField() {
+	public IMagField getField() {
 		return _field;
 	}
 
 	/**
-	 * Turn the caching on or off globally
-	 * 
-	 * @param cacheOn
-	 *            the value of the flag
-	 */
-	@Deprecated
-	public static void cache(boolean cacheOn) {
-//		CACHE = cacheOn;
-	}
-	
-	/**
-	 * Check whether cache is on
-	 * @return <code>true</code> if cache is on
-	 */
-	@Deprecated
-	public static boolean isCache() {
-//		return CACHE;
-		return true;
-	}
-	
-	/**
 	 * Get the name of the field
+	 * @return the name of the underlying field
 	 */
 	@Override
 	public String getName() {
-		return _field.getName();
+		return _name;
 	}
 
-	@Override
-	public float fieldMagnitudeCylindrical(double phi, double r, double z) {
-		return _field.fieldMagnitudeCylindrical(phi, r, z);
-	}
-
+	/**
+	 * Get the field magnitude in kiloGauss at a given location expressed in
+	 * Cartesian coordinates.
+	 * 
+	 * @param x
+	 *            the x coordinate in cm
+	 * @param y
+	 *            the y coordinate in cm
+	 * @param z
+	 *            the z coordinate in cm
+	 * @return the magnitude of the field in kiloGauss.
+	 */
 	@Override
 	public float fieldMagnitude(float x, float y, float z) {
-		return _field.fieldMagnitudeCylindrical(x, y, z);
+		float result[] = new float[3];
+		field(x, y, z, result);
+		return FastMath.vectorLength(result);
+	}
+	
+	/**
+	 * Get the field magnitude in kiloGauss at a given location expressed in
+	 * cylindrical coordinates.
+	 * 
+	 * @param phi
+	 *            azimuthal angle in degrees.
+	 * @param r
+	 *            in cm.
+	 * @param z
+	 *            in cm
+	 * @return the magnitude of the field in kiloGauss.
+	 */
+	@Override
+	public float fieldMagnitudeCylindrical(double phi, double r, double z) {
+		float result[] = new float[3];
+		fieldCylindrical(phi, r, z, result);
+		return FastMath.vectorLength(result);
+	}
+	
+	/**
+	 * Get the field magnitude in kiloGauss at a given location expressed in
+	 * cylindrical coordinates.
+	 * 
+	 * @param phi
+	 *            azimuthal angle in degrees.
+	 * @param r
+	 *            in cm.
+	 * @param z
+	 *            in cm
+	 * @param workSpace a float[3] that can be reused. It will
+	 * actually hold the vector field
+	 * @return the magnitude of the field in kiloGauss.
+	 */
+	@Override
+	public float fieldMagnitudeCylindrical(double phi, double r, double z, float[] workSpace) {
+		fieldCylindrical(phi, r, z, workSpace);
+		return FastMath.vectorLength(workSpace);
 	}
 
+	
+	/**
+	 * Obtain the maximum field magnitude of any point in the map.
+	 * 
+	 * @return the maximum field magnitude in the units of the map.
+	 */
 	@Override
 	public float getMaxFieldMagnitude() {
-		return _field.getMaxFieldMagnitude();
+		return _maxField;
 	}
 
-	@Override
-	public void readBinaryMagneticField(File binaryFile) throws FileNotFoundException {
-		_field.readBinaryMagneticField(binaryFile);
-	}
-
+	/**
+	 * Checks whether the field has been set to always return zero.
+	 * 
+	 * @return <code>true</code> if the field is set to return zero.
+	 */
 	@Override
 	public boolean isZeroField() {
-		return _field.isZeroField();
+		return (Math.abs(_scaleFactor) < 1.0e-6);
 	}
+	
+	/**
+	 * Get the composite index to take me to the correct place in the buffer.
+	 * 
+	 * @param n1
+	 *            the index in the q1 direction
+	 * @param n2
+	 *            the index in the q2 direction
+	 * @param n3
+	 *            the index in the q3 direction
+	 * @return the composite index (buffer offset)
+	 */
+	public final int getCompositeIndex(int n1, int n2, int n3) {
+		int n23 = q2Coordinate.getNumPoints() * q3Coordinate.getNumPoints();
+		return n1 * n23 + n2 * q3Coordinate.getNumPoints() + n3;
+	}
+
 	
 	
 	/**
@@ -119,7 +206,7 @@ public abstract class FieldProbe implements IField {
 
 	}
 
-
+	
     /**
      * Obtain an approximation for the magnetic field gradient at a given location expressed in Cartesian
      * coordinates. The field is returned as a Cartesian vector in kiloGauss/cm.
@@ -136,8 +223,27 @@ public abstract class FieldProbe implements IField {
      */
 	@Override
      public void gradient(float x, float y, float z, float result[]) {
-		_field.gradient(x, y, z, result);
-     }
+		
+		//use three point derivative
+		float del = 1f; //cm
+		float del2 = 2*del;
+		
+		float baseVal = fieldMagnitude(x, y, z);
+		float bv3 = -3*baseVal;
+		
+		float bx0 = fieldMagnitude(x+del, y, z);
+		float bx1 = fieldMagnitude(x+del2, y, z);
+		
+//		System.err.println(" " + baseVal + "  " + bx0 + "  " + bx1);
+		float by0 = fieldMagnitude(x, y+del, z);
+		float by1 = fieldMagnitude(x, y+del2, z);
+		float bz0 = fieldMagnitude(x, y, z+del);
+		float bz1 = fieldMagnitude(x, y, z+del2);
+		
+		result[0] = (bv3 + 4*bx0 - bx1)/del2;
+		result[1] = (bv3 + 4*by0 - by1)/del2;
+		result[2] = (bv3 + 4*bz0 - bz1)/del2;
+    }
 	
 	/**
      * Obtain an approximation for the magnetic field gradient at a given location expressed in cylindrical
@@ -161,13 +267,12 @@ public abstract class FieldProbe implements IField {
     	double y = rho*FastMath.sin(phi);
     	gradient((float)x, (float)y, (float)z, result);
     }
-
 	
 	/**
 	 * Get the appropriate probe for the active field
 	 * @return the probe for the active field
 	 */
-	public static IField factory() {
+	public static FieldProbe factory() {
 		return factory(MagneticFields.getInstance().getActiveField());
 	}
 	
@@ -176,16 +281,10 @@ public abstract class FieldProbe implements IField {
 	 * Get the appropriate probe for the given field
 	 * @return the probe for the givev field
 	 */
-	public static IField factory(IField field) {
+	public static FieldProbe factory(IMagField field) {
 		
-		
-
 		if (field != null) {
 			
-			if (MagneticFields.getInstance().isProbeOrCompositeProbe(field)) {
-				return field;
-			}
-
 			if (field instanceof Torus) {
 				return new TorusProbe((Torus) field);
 			} else if (field instanceof Solenoid) {
@@ -193,7 +292,7 @@ public abstract class FieldProbe implements IField {
 			} else if (field instanceof RotatedCompositeField) {
 				return new RotatedCompositeProbe((RotatedCompositeField) field);
 			} else if (field instanceof CompositeField) {
-				return new CompositeProbe((CompositeField) field);
+				return new CompositeProbe((CompositeField)field);
 			} else {
 				(new Throwable()).printStackTrace();
 				System.err.println("WARNING: cannot create probe for " + field.getName() + "  class: " + field.getClass().getName());
@@ -203,33 +302,21 @@ public abstract class FieldProbe implements IField {
 		return new ZeroProbe();
 	}
 	
-
-    /**
-     * Is the physical magnet represented by the map misaligned?
-     * @return <code>true</code> if magnet is misaligned
-     */
-    @Override
-	public boolean isMisaligned() {
-    	return _field.isMisaligned();
-    }
     
 
 	 /**
-	 * Check whether the field boundaries include the point
-	 * 
-	 * @param x
-	 *            the x coordinate in the map units
-	 * @param y
-	 *            the y coordinate in the map units
-	 * @param z
-	 *            the z coordinate in the map units
-	 * @return <code>true</code> if the point is included in the boundary of the
-	 *         field
-	 */
-	@Override
+     * Check whether the field boundaries include the point
+     * @param x the x coordinate in the map units
+     * @param y the y coordinate in the map units
+     * @param z the z coordinate in the map units
+     * @return <code>true</code> if the point is included in the boundary of the field
+     */
+    @Override
 	public boolean contains(double x, double y, double z) {
-		return _field.contains(x, y, z);
-	}
+		double rho = FastMath.sqrt(x * x + y * y);
+		double phi = FastMath.atan2Deg(y, x);
+        return containsCylindrical(phi, rho, z);
+    }
    
 	/**
 	 * Check whether the field boundaries include the point
@@ -245,13 +332,152 @@ public abstract class FieldProbe implements IField {
 	 * 
 	 */
 	@Override
-	public boolean containsCylindrical(double phi, double rho, double z) {
-		return _field.containsCylindrical(phi, rho, z);
-	}
+	public abstract boolean containsCylindrical(double phi, double rho, double z);
 
 	@Override
-	public void fieldCylindrical(double phi, double rho, double z, float[] result) {
-		_field.fieldCylindrical(phi, rho, z, result);
+	public abstract void fieldCylindrical(double phi, double rho, double z, float[] result);
+	
+	/**
+	 * Get the sector [1..6] from the phi value
+	 * 
+	 * @param phi
+	 *            the value of phi in degrees
+	 * @return the sector [1..6]
+	 */
+	protected int getSector(double phi) {
+		// convert phi to [0..360]
+
+		while (phi < 0) {
+			phi += 360.0;
+		}
+		while (phi > 360.0) {
+			phi -= 360.0;
+		}
+
+		if ((phi > 30.0) && (phi <= 90.0)) {
+			return 2;
+		}
+		if ((phi > 90.0) && (phi <= 150.0)) {
+			return 3;
+		}
+		if ((phi > 150.0) && (phi <= 210.0)) {
+			return 4;
+		}
+		if ((phi > 210.0) && (phi <= 270.0)) {
+			return 5;
+		}
+		if ((phi > 270.0) && (phi <= 330.0)) {
+			return 6;
+		}
+		return 1;
 	}
+	
+
+	/**
+	 * @return the phiCoordinate
+	 */
+	public GridCoordinate getPhiCoordinate() {
+		return q1Coordinate;
+	}
+
+	/**
+	 * @return the rCoordinate
+	 */
+	public GridCoordinate getRCoordinate() {
+		return q2Coordinate;
+	}
+
+	/**
+	 * @return the zCoordinate
+	 */
+	public GridCoordinate getZCoordinate() {
+		return q3Coordinate;
+	}
+
+	/**
+	 * Get the maximum z coordinate of the field boundary
+	 * @return the maximum z coordinate of the field boundary
+	 */
+	public double getZMax() {
+		return q3Coordinate.getMax();
+	}
+
+	/**
+	 * Get the minimum z coordinate of the field boundary
+	 * @return the minimum z coordinate of the field boundary
+	 */
+	public double getZMin() {
+		return q3Coordinate.getMin();
+	}
+
+	/**
+	 * Get the maximum rho coordinate of the field boundary
+	 * @return the maximum rho coordinate of the field boundary
+	 */
+	public double getRhoMax() {
+		return q2Coordinate.getMax();
+	}
+
+	/**
+	 * Get the minimum rho coordinate of the field boundary
+	 * @return the minimum rho coordinate of the field boundary
+	 */
+	public double getRhoMin() {
+		return q2Coordinate.getMin();
+	}
+	
+	/**
+	 * Get the maximum phi coordinate of the field boundary (deg)
+	 * @return the maximum phi coordinate of the field boundary
+	 */
+	public double getPhiMax() {
+		double phimax = q1Coordinate.getMax();
+		while (phimax < 0) {
+			phimax += 360.;
+		}
+		return phimax;
+	}
+
+	/**
+	 * Get the minimum phi coordinate of the field boundary (deg)
+	 * @return the minimum phi coordinate of the field boundary
+	 */
+	public double getPhiMin() {
+		return q1Coordinate.getMin();
+	}
+	
+	/**
+	 * Get B1 at a given index.
+	 * 
+	 * @param index
+	 *            the index.
+	 * @return the B1 at the given index.
+	 */
+	public final float getB1(int index) {
+		return _field.getB1(index);
+	}
+
+	/**
+	 * Get B2 at a given index.
+	 * 
+	 * @param index
+	 *            the index.
+	 * @return the B2 at the given index.
+	 */
+	public final float getB2(int index) {
+		return _field.getB2(index);
+	}
+
+	/**
+	 * Get B3 at a given index.
+	 * 
+	 * @param index
+	 *            the index.
+	 * @return the B3 at the given index.
+	 */
+	public final float getB3(int index) {
+		return _field.getB3(index);
+	}
+	
 
 }

@@ -4,9 +4,9 @@ public class RotatedCompositeProbe extends CompositeProbe {
 	
 	
 	// the angle in degrees for rotating between tilted ans sector CS
-	private double _angle = -25.0;
-	private double _sin25 = Math.sin(Math.toRadians(_angle));
-	private double _cos25 = Math.cos(Math.toRadians(_angle));
+	private final double _angle = -25.0;
+	private final double _sin25 = Math.sin(Math.toRadians(_angle));
+	private final double _cos25 = Math.cos(Math.toRadians(_angle));
 
 	public RotatedCompositeProbe(RotatedCompositeField field) {
 		super(field);
@@ -28,11 +28,11 @@ public class RotatedCompositeProbe extends CompositeProbe {
 	 *            components.
 	 */	
 	@Override
-	public void field(int sector, float xs, float ys, float zs, float[] result) {
+		public void field(int sector, float xs, float ys, float zs, float[] result) {
 		
 		//first rotate location to get to the sector coordinate system
 		float x = (float)(xs * _cos25 - zs * _sin25);
-		float y = (float)(ys);
+		float y = (ys);
 		float z = (float)(zs * _cos25 + xs * _sin25);
 		
 		
@@ -42,17 +42,6 @@ public class RotatedCompositeProbe extends CompositeProbe {
 		y = result[1];
 		z = result[2];
 		
-		//test 
-//		int testSect = MagneticFields.getSector(result[0], result[1]);
-//		if (testSect!= sector) {
-//			testSect = MagneticFields.getSector(result[0], result[1]);
-//			System.err.println("Sectors don't match sector: " + sector + "  testSect:   " + testSect);
-//			System.err.println("xs = " + xs + "   ys = " + ys);
-//			System.err.println("PHI = " + Math.toDegrees(Math.atan2(result[1], result[0])));
-//			System.exit(1);
-//		}
-	//	System.err.println("Sectors match");
-
 
 		float bx = 0, by = 0, bz = 0;
 		for (IField probe : probes) {
@@ -66,8 +55,7 @@ public class RotatedCompositeProbe extends CompositeProbe {
 		bx = result[0];
 		by = result[1];
 		bz = result[2];
-
-
+		
 		//now rotate the field in the opposite sense
 		result[0] = (float) (bx * _cos25 + bz * _sin25);
 		result[1] = (by);
@@ -94,8 +82,12 @@ public class RotatedCompositeProbe extends CompositeProbe {
 	 */
 	@Override
 	public void field(float xs, float ys, float zs, float[] result) {
-		field(1, xs, ys, zs, result);
+		System.err.println("SHOULD NOT HAPPEN. In rotated composite field probe, should not call field without the sector argument.");
 
+		(new Throwable()).printStackTrace();
+		System.exit(1);
+		
+		field(1, xs, ys, zs, result); //assume sector 1
 	}
 	
 

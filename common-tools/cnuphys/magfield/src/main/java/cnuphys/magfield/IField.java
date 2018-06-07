@@ -3,9 +3,6 @@
  */
 package cnuphys.magfield;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
 /**
  * The Interface IField.
  * 
@@ -80,6 +77,22 @@ public interface IField {
      * @return the magnitude of the field in kiloGauss.
      */
     public float fieldMagnitudeCylindrical(double phi, double r, double z);
+    
+	/**
+	 * Get the field magnitude in kiloGauss at a given location expressed in
+	 * cylindrical coordinates.
+	 * 
+	 * @param phi
+	 *            azimuthal angle in degrees.
+	 * @param r
+	 *            in cm.
+	 * @param z
+	 *            in cm
+	 * @param workSpace a float[3] that can be reused. It will
+	 * actually hold the vector field
+	 * @return the magnitude of the field in kiloGauss.
+	 */
+	public float fieldMagnitudeCylindrical(double phi, double r, double z, float[] workSpace);
 
     /**
      * Get the field magnitude in kiloGauss at a given location expressed in
@@ -137,30 +150,13 @@ public interface IField {
      */
     public float getMaxFieldMagnitude();
 
-    /**
-     * Read a magnetic field from a binary file. The file has the documented
-     * format.
-     *
-     * @param binaryFile
-     *            the binary file.
-     * @throws FileNotFoundException
-     *             the file not found exception
-     */
-    public void readBinaryMagneticField(File binaryFile)
-	    throws FileNotFoundException;
-    
+     
     /**
      * Check whether this field is the zero field (possibly
      * because the scale factor is set to 0)
      * @return <code>true</code> if this field is a zero field
      */
     public boolean isZeroField();
-    
-    /**
-     * Is the physical magnet represented by the map misaligned?
-     * @return <code>true</code> if magnet is misaligned
-     */
-    public boolean isMisaligned();
     
     /**
      * Check whether the field boundaries include the point

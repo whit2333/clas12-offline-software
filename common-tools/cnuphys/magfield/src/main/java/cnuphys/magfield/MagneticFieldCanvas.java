@@ -27,14 +27,13 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class MagneticFieldCanvas extends JComponent implements MouseListener,
-		MouseMotionListener {
+public class MagneticFieldCanvas extends JComponent implements MouseListener, MouseMotionListener {
 
-	RenderingHints renderHints = new RenderingHints(
-			RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+	RenderingHints renderHints = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+			RenderingHints.VALUE_ANTIALIAS_OFF);
+
 	{
-		renderHints.put(RenderingHints.KEY_RENDERING,
-				RenderingHints.VALUE_RENDER_QUALITY);
+		renderHints.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 	};
 
 	protected AffineTransform _localToWorld;
@@ -44,21 +43,23 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 
 	protected Font font = new Font("SandSerif", Font.PLAIN, 10);
 	protected Font font2 = new Font("SandSerif", Font.BOLD, 12);
-	
+
 	private boolean _showGradient = false;
-	
+
 	private String _extraText = "";
-	
-	private IField _field;
-	
+
+	private FieldProbe _field;
+	private SolenoidProbe _sProbe;
+	private TorusProbe _tProbe;
+
 	// coordinate system
 	public enum CSType {
 		XZ, YCOMP
 	}
 
 	private CSType _cstype;
-	
-	private int _sector; //1..6
+
+	private int _sector; // 1..6
 
 	private ColorScaleModel _colorModel;
 
@@ -74,8 +75,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 	 * @param width
 	 * @param height
 	 */
-	public MagneticFieldCanvas(int sector, double xmin, double perpMin, double width,
-			double height, CSType type) {
+	public MagneticFieldCanvas(int sector, double xmin, double perpMin, double width, double height, CSType type) {
 
 		_sector = sector;
 		_worldSystem = new Rectangle.Double(xmin, perpMin, width, height);
@@ -98,8 +98,9 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 			@Override
 			public void magneticFieldChanged() {
 				_colorModel = null;
-				System.err.println("Magnetic Field has changed. New torus is rectangular: " + MagneticFields.getInstance().getTorus().isRectangularGrid());
 				_field = FieldProbe.factory();
+				_sProbe = (SolenoidProbe) FieldProbe.factory(MagneticFields.getInstance().getSolenoid());
+				_tProbe = (TorusProbe) FieldProbe.factory(MagneticFields.getInstance().getTorus());
 				repaint();
 			}
 
@@ -107,15 +108,15 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		MagneticFields.getInstance().addMagneticFieldChangeListener(mflistener);
 
 	}
-	
+
 	public void setExtraText(String s) {
 		_extraText = s;
 	}
-	
+
 	public void setShowGradient(boolean grad) {
 		_showGradient = grad;
 	}
-	
+
 	public void setSector(int sect) {
 		_sector = sect;
 	}
@@ -135,8 +136,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 	 * @param yy
 	 * @param zz
 	 */
-	public void addTrajectory(double xx[], double yy[], double zz[], Color lc,
-			Stroke ls) {
+	public void addTrajectory(double xx[], double yy[], double zz[], Color lc, Stroke ls) {
 		_trajectories.addElement(new Trajectory(xx, yy, zz, lc, ls));
 		repaint();
 	}
@@ -165,29 +165,29 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		Path2D poly = null;
 		poly = new Path2D.Double();
 
-//		Point pp = new Point();
+		// Point pp = new Point();
 		Point.Double wp = new Point.Double();
 		Graphics2D g2 = (Graphics2D) g;
 		Stroke oldStroke = g2.getStroke();
 
 		for (Trajectory traj : _trajectories) {
-			
+
 			System.err.println("TRAJ HAS " + traj.size() + " points");
-			
+
 			Point pp[] = new Point[traj.size()];
 			for (int i = 0; i < pp.length; i++) {
 				pp[i] = new Point();
 			}
-			
+
 			switch (_cstype) {
 			case XZ:
 				wp.setLocation(traj.zz[0], traj.xx[0]);
 				break;
-//			case YZ:
-//				wp.setLocation(traj.zz[0], traj.yy[0]);
-//				break;
+			// case YZ:
+			// wp.setLocation(traj.zz[0], traj.yy[0]);
+			// break;
 			}
-			
+
 			worldToLocal(pp[0], wp);
 			poly.moveTo(pp[0].x, pp[0].y);
 
@@ -199,18 +199,18 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 				case XZ:
 					wp.setLocation(traj.zz[i], traj.xx[i]);
 					break;
-//				case YZ:
-//					wp.setLocation(traj.zz[i], traj.yy[i]);
-//					break;
+				// case YZ:
+				// wp.setLocation(traj.zz[i], traj.yy[i]);
+				// break;
 				}
 				worldToLocal(pp[i], wp);
 				poly.lineTo(pp[i].x, pp[i].y);
 			}
 			g2.draw(poly);
-			
+
 			g2.setColor(Color.black);
 			for (Point p : pp) {
-				g.fillRect(p.x-2, p.y-2, 4, 4);
+				g.fillRect(p.x - 2, p.y - 2, 4, 4);
 			}
 
 		} // over trajectories
@@ -232,12 +232,9 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		double scaleX = _worldSystem.width / bounds.width;
 		double scaleY = _worldSystem.height / bounds.height;
 
-		_localToWorld = AffineTransform.getTranslateInstance(_worldSystem.x,
-				_worldSystem.getMaxY());
-		_localToWorld.concatenate(AffineTransform.getScaleInstance(scaleX,
-				-scaleY));
-		_localToWorld.concatenate(AffineTransform.getTranslateInstance(
-				-bounds.x, -bounds.y));
+		_localToWorld = AffineTransform.getTranslateInstance(_worldSystem.x, _worldSystem.getMaxY());
+		_localToWorld.concatenate(AffineTransform.getScaleInstance(scaleX, -scaleY));
+		_localToWorld.concatenate(AffineTransform.getTranslateInstance(-bounds.x, -bounds.y));
 
 		try {
 			_worldToLocal = _localToWorld.createInverse();
@@ -249,19 +246,18 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 	// draw the grid
 	protected void drawGrid(Graphics g, Rectangle bounds) {
 		double hvals[] = { -25, 75, 175, 275, 375, 475, 575 };
-		double vvals[] = {0, 100, 200, 300 };
-		
+		double vvals[] = { 0, 100, 200, 300 };
+
 		g.setFont(font2);
 		g.setColor(Color.cyan);
 		g.drawString("Sector " + _sector + "  " + _extraText, bounds.x + 10, bounds.y + 20);
-
 
 		Point pp = new Point();
 		Point2D.Double wp = new Point2D.Double();
 		g.setColor(Color.black);
 
 		g.setFont(font);
-     	FontMetrics fm = getFontMetrics(font);
+		FontMetrics fm = getFontMetrics(font);
 
 		// vertical lines
 		wp.y = 0.;
@@ -288,8 +284,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 
 			if (wp.y == 0.) {
 				g.setColor(Color.white);
-				g.drawLine(bounds.x, pp.y - 1, bounds.x + bounds.width,
-						pp.y - 1);
+				g.drawLine(bounds.x, pp.y - 1, bounds.x + bounds.width, pp.y - 1);
 				g.setColor(Color.black);
 			}
 			String s = String.format(" %-4.0f ", vvals[i]);
@@ -325,9 +320,9 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		case XZ:
 			s = "X";
 			break;
-//		case YZ:
-//			s = "Y";
-//			break;
+		// case YZ:
+		// s = "Y";
+		// break;
 		}
 		g.setColor(Color.white);
 		g.drawString(s, xs - fm.stringWidth("s") / 2 + 1, ys - linlen - 4);
@@ -336,14 +331,13 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 
 	}
 
-	private static final double ROOT3OVER2 = Math.sqrt(3)/2;
+	private static final double ROOT3OVER2 = Math.sqrt(3) / 2;
 
 	// draw the magnetic field
 	protected void drawMagneticField(Graphics g, Rectangle bounds) {
 
 		if (_colorModel == null) {
-			_colorModel = new ColorScaleModel(getFieldValues(),
-					getFieldColors());
+			_colorModel = new ColorScaleModel(getFieldValues(), getFieldColors());
 		}
 
 		Point pp = new Point();
@@ -351,23 +345,13 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		float result[] = new float[3];
 		int w = 2;
 		int h = 2;
-		
-		
-		//use probes
-		
+
+		// get probes
 		if (_field == null) {
 			_field = FieldProbe.factory();
+			_sProbe = (SolenoidProbe) FieldProbe.factory(MagneticFields.getInstance().getSolenoid());
+			_tProbe = (TorusProbe) FieldProbe.factory(MagneticFields.getInstance().getTorus());
 		}
-		
-		if (_field == null) {
-			_field = FieldProbe.factory();
-		}
-
-		
-	//	IField ifield = FieldProbe.factory();
-	//	System.err.println("PROBE: " + ifield.getClass().getName());
-	//	IField ifield = MagneticFields.getInstance().getActiveField();
-
 
 		for (int sx = bounds.x; sx < bounds.x + bounds.width; sx += w) {
 			pp.x = sx;
@@ -390,43 +374,43 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 					globalY = 0f;
 					globalZ = (float) (wp.x);
 					break;
-//				case YZ:
-//					globalX = 0f;
-//					globalY = (float) (wp.y);
-//					globalZ = (float) (wp.x);
-//					break;
+				// case YZ:
+				// globalX = 0f;
+				// globalY = (float) (wp.y);
+				// globalZ = (float) (wp.x);
+				// break;
 				}
-				
+
 				if (!(_field instanceof RotatedCompositeProbe)) {
-				if (_sector > 1) {
-					switch (_sector) {
-					case 2:
-						cos = 0.5;
-						sin = ROOT3OVER2;
-						break;
-					case 3:
-						cos = -0.5;
-						sin = ROOT3OVER2;
-						break;
-					case 4:
-						cos = 1;
-						sin = 0;
-						break;
-					case 5:
-						cos = -0.5;
-						sin = -ROOT3OVER2;
-						break;
-					case 6:
-						cos = 0.5;
-						sin = -ROOT3OVER2;
-						break;
+					if (_sector > 1) {
+						switch (_sector) {
+						case 2:
+							cos = 0.5;
+							sin = ROOT3OVER2;
+							break;
+						case 3:
+							cos = -0.5;
+							sin = ROOT3OVER2;
+							break;
+						case 4:
+							cos = 1;
+							sin = 0;
+							break;
+						case 5:
+							cos = -0.5;
+							sin = -ROOT3OVER2;
+							break;
+						case 6:
+							cos = 0.5;
+							sin = -ROOT3OVER2;
+							break;
+						}
+
+						tx = globalX * cos - globalY * sin;
+						ty = globalY * cos + globalX * sin;
+						globalX = (float) tx;
+						globalY = (float) ty;
 					}
-					
-					tx = globalX*cos - globalY*sin;
-					ty = globalY*cos + globalX*sin;
-					globalX = (float)tx;
-					globalY = (float)ty;
-				}
 				}
 				if (_showGradient) {
 					_field.gradient(globalX, globalY, globalZ, result);
@@ -441,10 +425,12 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 					g.fillRect(pp.x, pp.y, w, h);
 				} else {
 					if (_field instanceof RotatedCompositeProbe) {
-						((RotatedCompositeProbe)_field).field(_sector, globalX, globalY, globalZ, result);
+						((RotatedCompositeProbe) _field).field(_sector, globalX, globalY, globalZ, result);
 					}
 
-					_field.field(globalX, globalY, globalZ, result);
+					else {
+						_field.field(globalX, globalY, globalZ, result);
+					}
 					float vx = result[0];
 					float vy = result[1];
 					float vz = result[2];
@@ -455,7 +441,6 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 					g.setColor(_colorModel.getColor(bmag));
 					g.fillRect(pp.x, pp.y, w, h);
 				}
-
 
 			}
 		}
@@ -506,7 +491,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		// float vy = _workResult[1];
 		// float vz = _workResult[2];
 		// double bmag = Math.sqrt(vx*vx + vy*vy + vz*vz);
-		// System.err.println("location: " + _workPoint + "  Bmag: " + bmag);
+		// System.err.println("location: " + _workPoint + " Bmag: " + bmag);
 	}
 
 	/**
@@ -609,14 +594,9 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 			@Override
 			public void mouseMoved(MouseEvent me) {
 				localToWorld(me.getPoint(), _workPoint);
-				
 
 				String s = null;
 
-				// IField ifield =
-				// MagneticFields.getInstance().getActiveField();
-				
-		//		IField ifield = FieldProbe.factory();
 				float xyz[] = new float[3];
 				MagneticFields.sectorToLab(_sector, xyz, (float) (_workPoint.y), 0f, (float) (_workPoint.x));
 
@@ -632,45 +612,43 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 					float Bx = _workResult[0];
 					float By = _workResult[1];
 					float Bz = _workResult[2];
-					
+
 					double phi = FastMath.atan2Deg(xyz[1], xyz[0]);
 					double rho = FastMath.hypot(xyz[0], xyz[1]);
-					
-					boolean inSolenoid = MagneticFields.getInstance().getSolenoid().contains(xyz[0], xyz[1], xyz[2]);
-					boolean inTorus = MagneticFields.getInstance().getTorus().contains(xyz[0], xyz[1], xyz[2]);
+
+					boolean inSolenoid = _sProbe.contains(xyz[0], xyz[1], xyz[2]);
+					boolean inTorus = _tProbe.contains(xyz[0], xyz[1], xyz[2]);
 
 					double bmag = Math.sqrt(Bx * Bx + By * By + Bz * Bz);
-					s = String
-							.format("  xyz ( %-4.2f,  %-4.2f,  %-4.2f) cyl ( %-4.2f,  %-4.2f,  %-4.2f) B %-4.2f (%-4.2f, %-4.2f,  %-4.2f)",
-									xyz[0], xyz[1], xyz[2], phi, rho, xyz[2], bmag / 10,
-									Bx / 10, By / 10, Bz / 10);
-					
-					
-					_field.gradient((float) (_workPoint.y), 0f,
-							(float) (_workPoint.x), _workResult);
+					s = String.format(
+							"  xyz ( %-4.2f,  %-4.2f,  %-4.2f) cyl ( %-4.2f,  %-4.2f,  %-4.2f) B %-4.2f (%-4.2f, %-4.2f,  %-4.2f)",
+							xyz[0], xyz[1], xyz[2], phi, rho, xyz[2], bmag / 10, Bx / 10, By / 10, Bz / 10);
+
+					_field.gradient((float) (_workPoint.y), 0f, (float) (_workPoint.x), _workResult);
 					float gx = _workResult[0];
 					float gy = _workResult[1];
 					float gz = _workResult[2];
 					double gmag = Math.sqrt(gx * gx + gy * gy + gz * gz);
-				
-					s += String.format(" Grad %-4.2f T/m", gmag*10);
-					
+
+					s += String.format(" Grad %-4.2f T/m", gmag * 10);
+
 					s += " inS " + inSolenoid + " inT " + inTorus;
-					
+
 					break;
-//				case YZ:
-//					ifield.field(0f, (float) (_workPoint.y),
-//							(float) (_workPoint.x), _workResult);
-//					Bx = _workResult[0];
-//					By = _workResult[1];
-//					Bz = _workResult[2];
-//					bmag = Math.sqrt(Bx * Bx + By * By + Bz * Bz);
-//
-//					s = String
-//							.format("  loc: ( 0,  %-4.2f, %-4.2f) Bmag %-4.2f T  B = (%-4.2f, %-4.2f,  %-4.2f",
-//									_workPoint.y, _workPoint.x, bmag / 10,
-//									Bx / 10, By / 10, Bz / 10);
-//					break;
+				// case YZ:
+				// ifield.field(0f, (float) (_workPoint.y),
+				// (float) (_workPoint.x), _workResult);
+				// Bx = _workResult[0];
+				// By = _workResult[1];
+				// Bz = _workResult[2];
+				// bmag = Math.sqrt(Bx * Bx + By * By + Bz * Bz);
+				//
+				// s = String
+				// .format(" loc: ( 0, %-4.2f, %-4.2f) Bmag %-4.2f T B =
+				// (%-4.2f, %-4.2f, %-4.2f",
+				// _workPoint.y, _workPoint.x, bmag / 10,
+				// Bx / 10, By / 10, Bz / 10);
+				// break;
 				}
 				label.setText(s);
 			}
@@ -693,8 +671,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 		public Color lineColor;
 		public Stroke stroke;
 
-		public Trajectory(double[] xx, double[] yy, double[] zz,
-				Color lineColor, Stroke stroke) {
+		public Trajectory(double[] xx, double[] yy, double[] zz, Color lineColor, Stroke stroke) {
 			super();
 			this.xx = xx;
 			this.yy = yy;
@@ -702,7 +679,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener,
 			this.stroke = stroke;
 			this.lineColor = lineColor;
 		}
-		
+
 		public int size() {
 			return (xx == null) ? 0 : xx.length;
 		}
