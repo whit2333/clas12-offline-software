@@ -4,6 +4,7 @@ import Jama.Matrix;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.jlab.clas.reco.ReconstructionEngine;
 import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.base.GeometryFactory;
@@ -37,6 +38,9 @@ import org.jlab.rec.dc.trajectory.StateVec;
 import org.jlab.rec.dc.trajectory.Trajectory;
 import org.jlab.rec.dc.trajectory.TrajectoryFinder;
 import org.jlab.rec.dc.trajectory.TrajectorySurfaces;
+import org.jlab.rec.fvt.track.fit.MeasVecs;
+import org.jlab.rec.fvt.track.fit.TrackMatch;
+import org.jlab.utils.CLASResources;
 
 public class DCTBEngine extends ReconstructionEngine {
 
@@ -45,7 +49,6 @@ public class DCTBEngine extends ReconstructionEngine {
     ECGeant4Factory ecDetector;
     PCALGeant4Factory pcalDetector; 
     TrajectorySurfaces tSurf;
-    
     private TimeToDistanceEstimator tde;
     public DCTBEngine() {
         super("DCTB","ziegler","4.0");
@@ -63,12 +66,15 @@ public class DCTBEngine extends ReconstructionEngine {
         this.getConstantsManager().setVariation("default");
         
         // Load the geometry
-        ConstantProvider provider = GeometryFactory.getConstants(DetectorType.DC, 11, "default");
+        String varname = CLASResources.getEnvironmentVariable("GEOMETRYDATABASEVARIATION");
+        String variationName = Optional.ofNullable(varname).orElse("default");
+
+        ConstantProvider provider = GeometryFactory.getConstants(DetectorType.DC, 11, variationName);
         dcDetector = new DCGeant4Factory(provider, DCGeant4Factory.MINISTAGGERON);
-        ConstantProvider providerFTOF = GeometryFactory.getConstants(DetectorType.FTOF, 11, "default");
+        ConstantProvider providerFTOF = GeometryFactory.getConstants(DetectorType.FTOF, 11, variationName);
         ftofDetector = new FTOFGeant4Factory(providerFTOF);
         
-        ConstantProvider providerEC = GeometryFactory.getConstants(DetectorType.ECAL, 11, "default");
+        ConstantProvider providerEC = GeometryFactory.getConstants(DetectorType.ECAL, 11, variationName);
         ecDetector = new ECGeant4Factory(providerEC);
         pcalDetector = new PCALGeant4Factory(providerEC);
         System.out.println(" -- Det Geometry constants are Loaded " );
@@ -95,6 +101,7 @@ public class DCTBEngine extends ReconstructionEngine {
         //}
         //TableLoader.Fill(this.getConstantsManager().getConstants(1000, "/calibration/dc/time_to_distance/time2dist")); 
         tde = new TimeToDistanceEstimator();
+        org.jlab.rec.fvt.track.fit.Constants.Load(); // re-load --> Fix this... everything should come from ccdb
         return true;
     }
     
@@ -105,6 +112,8 @@ public class DCTBEngine extends ReconstructionEngine {
             System.err.println("RUN CONDITIONS NOT READ AT TIMEBASED LEVEL!");
             return true;
         }
+        DCSwimmer swimmer = new DCSwimmer();
+        TrackMatch match2FMT = new TrackMatch();
         //if(event.getBank("RECHB::Event").getFloat("STTime", 0)<0)
         //    return true; // require the start time to reconstruct the tracks in the event
         
@@ -245,7 +254,7 @@ public class DCTBEngine extends ReconstructionEngine {
             //if(TrackArray[i].get_FitChi2()>200) {
             //    resetTrackParams(TrackArray[i], new DCSwimmer());
             //}
-            KFitter kFit = new KFitter(TrackArray[i], dcDetector, true);
+            KFitter kFit = new KFitter(TrackArray[i], dcDetector, true, swimmer);
             //kFit.totNumIter=30;
             kFit.useFilter = true;
             StateVec fn = new StateVec();
@@ -257,7 +266,7 @@ public class DCTBEngine extends ReconstructionEngine {
                 //set the track parameters if the filter does not fail
                 TrackArray[i].set_P(1./Math.abs(kFit.finalStateVec.Q));
                 TrackArray[i].set_Q((int)Math.signum(kFit.finalStateVec.Q));
-                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector);
+                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector, swimmer);
                 // candidate parameters are set from the state vector
                 TrackArray[i].set_FitChi2(kFit.chi2); 
                 TrackArray[i].set_FitNDF(kFit.NDF);
@@ -266,6 +275,14 @@ public class DCTBEngine extends ReconstructionEngine {
                 TrackArray[i].set_CovMat(kFit.finalCovMat.covMat);
                 if(TrackArray[i].get_Vtx0().toVector3D().mag()>500)
                     continue;
+                //match to FMT
+                List<Trajectory.TrajectoryStateVec> fMTTraj = TrackArray[i].FMTTrajectory(i+1, swimmer, TrackArray[i].get_Vtx0().x(), TrackArray[i].get_Vtx0().y(), TrackArray[i].get_Vtx0().z(), TrackArray[i].get_pAtOrig().x(), TrackArray[i].get_pAtOrig().y(), TrackArray[i].get_pAtOrig().z(), TrackArray[i].get_Q(), tSurf);
+                List<MeasVecs.MeasVec> matchDCTrack = match2FMT.matchDCTrack2FMTClusters(event, fMTTraj, 20);
+                if(matchDCTrack!=null && matchDCTrack.size()>2) {
+                    org.jlab.rec.fvt.track.fit.KFitter FMTKF 
+                            = new org.jlab.rec.fvt.track.fit.KFitter(TrackArray[i], matchDCTrack);
+                    FMTKF.runFitter(TrackArray[i]);
+                }
                 trkcands.add(TrackArray[i]);
             }
         }
@@ -283,8 +300,9 @@ public class DCTBEngine extends ReconstructionEngine {
             for(Track trk: trkcands) {
                 // reset the id
                 trk.set_Id(trkId);
-                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
-                trk.calcTrajectory(trkId, trkcandFinder.dcSwim, trk.get_Vtx0().x(), trk.get_Vtx0().y(), trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), ftofDetector, tSurf);
+                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector, swimmer);
+                
+                trk.calcTrajectory(trkId, swimmer, trk.get_Vtx0().x(), trk.get_Vtx0().y(), trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), ftofDetector, tSurf);
 //                for(int j = 0; j< trk.trajectory.size(); j++) {
 //                System.out.println(trk.get_Id()+" "+trk.trajectory.size()+" ("+trk.trajectory.get(j).getDetId()+") ["+
 //                            trk.trajectory.get(j).getDetName()+"] "+
@@ -349,7 +367,7 @@ public class DCTBEngine extends ReconstructionEngine {
                     -pz*thX, -pz*thY, -pz,
                      -q);
         
-        double[] Vt = dcSwim.SwimToPlane(100);
+        double[] Vt = dcSwim.SwimToPlane(track.get_Sector(), 100);
 
         track.set_pAtOrig(new Vector3D(-Vt[3], -Vt[4], -Vt[5]));
         track.set_Vtx0(new Point3D(Vt[0], Vt[1], Vt[2]));
