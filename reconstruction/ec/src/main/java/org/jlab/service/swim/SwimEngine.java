@@ -164,7 +164,7 @@ public class SwimEngine extends ReconstructionEngine {
         //this.initMagField();
         fastMC = new Clas12FastMC(-1.0,1.0);
     //    MagneticField.setMathLib(MagneticField.MathLib.FAST);
-        System.out.println("[swimmer] -------> FAST MONTE CARLO TEST. USING FAST MATH = " + MagneticField.MathLib.SUPERFAST);
+   //     System.out.println("[swimmer] -------> FAST MONTE CARLO TEST. USING FAST MATH = " + MagneticField.MathLib.SUPERFAST);
         return true;
     }
     
