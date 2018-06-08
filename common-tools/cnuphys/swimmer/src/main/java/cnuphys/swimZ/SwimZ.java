@@ -66,7 +66,7 @@ public class SwimZ {
 	private double _eps = 1.0e-3;
 
 	//absolute tolerances
-	private double _absolueTolerance[] = new double[4];
+	private double _absoluteTolerance[] = new double[4];
 	
 	
 	/**
@@ -78,7 +78,7 @@ public class SwimZ {
 	 */
 	public SwimZ() {
 		_probe = FieldProbe.factory();
-		setAbsoluteTolerance(1.0e-3);
+		initialize();
 	}
 	
 	/**
@@ -87,7 +87,7 @@ public class SwimZ {
 	 */
 	public SwimZ(MagneticField magneticField) {
 		_probe = FieldProbe.factory(magneticField);
-		setAbsoluteTolerance(1.0e-3);
+		initialize();
 	}
 	
 	/**
@@ -96,7 +96,13 @@ public class SwimZ {
 	 */
 	public SwimZ(IMagField magneticField) {
 		_probe = FieldProbe.factory(magneticField);
+		initialize();
+	}
+	
+	private void initialize() {
 		setAbsoluteTolerance(1.0e-3);
+		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
+		RungeKutta.setMinStepSize(RungeKutta.getMinStepSize()*100.);
 	}
 	
 	/**
@@ -113,10 +119,10 @@ public class SwimZ {
 		double pscale = 1.0; // track slope scale order of 1
 		double xTol = eps * xscale;
 		double pTol = eps * pscale;
-		_absolueTolerance = new double[6];
+		_absoluteTolerance = new double[6];
 		for (int i = 0; i < 2; i++) {
-			_absolueTolerance[i] = xTol;
-			_absolueTolerance[i + 2] = pTol;
+			_absoluteTolerance[i] = xTol;
+			_absoluteTolerance[i + 2] = pTol;
 		}
 	}
 
@@ -157,7 +163,6 @@ public class SwimZ {
 			SwimZStateVector start,
 			final double zf,
 			double stepSize,
-			double absError[],
 			double hdata[]) throws SwimZException {
 		
 		if (start == null) {
@@ -183,7 +188,7 @@ public class SwimZ {
 
 		int nStep = 0;
 		try {
-			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, zArray, yArray, deriv, _stopper, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, zArray, yArray, deriv, _stopper, _absoluteTolerance, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();
@@ -220,10 +225,6 @@ public class SwimZ {
 	 *            the final z value
 	 * @param stepSize
 	 *            the initial step size
-	 * @param relTolerance
-	 *            the absolute tolerances on each state variable [x, y, tx, ty]
-	 *            (q = const). So it is an array with four entries, like [1.0e-4
-	 *            cm, 1.0e-4 cm, 1.0e-5, 1.0e05]
 	 * @param hdata
 	 *            An array with three elements. Upon return it will have the
 	 *            min, average, and max step size (in that order).
@@ -236,7 +237,6 @@ public class SwimZ {
 			SwimZStateVector stop,
 			final double zf,
 			double stepSize,
-			double absError[],
 			double hdata[]) throws SwimZException {
 		if (start == null) {
 			throw new SwimZException("Null starting state vector.");
@@ -269,7 +269,7 @@ public class SwimZ {
 
 		int nStep = 0;
 		try {
-			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, _absoluteTolerance, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();
@@ -310,7 +310,6 @@ public class SwimZ {
 			Matrix covMat,
 			final double zf,
 			double stepSize,
-			double absError[],
 			double hdata[]) throws SwimZException {
 
 		if (start == null) {
@@ -431,7 +430,7 @@ public class SwimZ {
 
 		int nStep = 0;
 		try {
-			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, _absoluteTolerance, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();

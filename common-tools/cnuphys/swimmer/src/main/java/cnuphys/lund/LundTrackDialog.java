@@ -276,12 +276,10 @@ public class LundTrackDialog extends JDialog {
 								phi);
 						SwimZ sz = new SwimZ();
 
-						double adaptiveInitStepSize = 0.01;
-
-						double[] adaptiveAbsError = { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
+						double adaptiveInitStepSize = 0.5;
 
 						SwimZResult result = sz.adaptiveRK(lid.getCharge(), momentum, start, ztarget,
-								adaptiveInitStepSize, adaptiveAbsError, hdata);
+								adaptiveInitStepSize, hdata);
 						partialReport(result, "Z ADAPTIVE");
 						traj = result.toSwimTrajectory();
 

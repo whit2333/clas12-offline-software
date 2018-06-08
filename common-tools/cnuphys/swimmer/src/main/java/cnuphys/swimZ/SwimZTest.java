@@ -134,7 +134,7 @@ public class SwimZTest {
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				result = sz.adaptiveRK(Q, p, start, zf, adaptiveInitStepSize, adaptiveAbsError, hdata);
+				result = sz.adaptiveRK(Q, p, start, zf, adaptiveInitStepSize, hdata);
 			} catch (SwimZException e) {
 				e.printStackTrace();
 			}
@@ -162,7 +162,7 @@ public class SwimZTest {
 		
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				numStep = sz.transport(Q, p, start, stop, covMat, zf, adaptiveInitStepSize, adaptiveAbsError, hdata);
+				numStep = sz.transport(Q, p, start, stop, covMat, zf, adaptiveInitStepSize, hdata);
 			} catch (SwimZException e) {
 				e.printStackTrace();
 			}
@@ -187,7 +187,7 @@ public class SwimZTest {
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				numStep = sz.adaptiveRK(Q, p, start, stop, zf, adaptiveInitStepSize, adaptiveAbsError, hdata);
+				numStep = sz.adaptiveRK(Q, p, start, stop, zf, adaptiveInitStepSize, hdata);
 			} catch (SwimZException e) {
 				e.printStackTrace();
 			}

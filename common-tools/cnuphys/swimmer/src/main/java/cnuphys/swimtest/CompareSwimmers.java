@@ -49,16 +49,24 @@ public class CompareSwimmers {
 		SwimZ swimZ = new SwimZ();
 		
 		for (int i = 0; i < num; i++) {
-			charge[i] = ((rand.nextFloat() < 0.5f) ? -1 : 1);
-			pTot[i] = randVal(1., 2., rand);
-			theta[i] = randVal(12, 18, rand);
+//			charge[i] = ((rand.nextFloat() < 0.5f) ? -1 : 1);
+//			pTot[i] = randVal(1., 2., rand);
+//			theta[i] = randVal(12, 18, rand);
+//			phi[i] = 0;
+//			x0[i] = randVal(-2, 2, rand)/100;
+//			y0[i] = randVal(-2, 2, rand)/100;
+//			z0[i] = randVal(-2, 2, rand)/100;
+
+			
+			zTarg = 5.75;
+			zTargCM = zTarg*100; //cm
+			charge[i] = -1;
+			pTot[i] = 2.;
+			theta[i] = 15;
 			phi[i] = 0;
-			x0[i] = randVal(-2, 2, rand)/100;
-			y0[i] = randVal(-2, 2, rand)/100;
-			z0[i] = randVal(-2, 2, rand)/100;
-//			x0[i] = 0;
-//			y0[i] = 0;
-//			z0[i] = 0;
+			x0[i] = 0;
+			y0[i] = 0;
+			z0[i] = 0;
 			
 			//swimZ uses CM
 			szV[i] = new SwimZStateVector(x0[i]*100, y0[i]*100, z0[i]*100, pTot[i], theta[i], phi[i]);
@@ -140,16 +148,13 @@ public class CompareSwimmers {
 		System.err.println("Swimmer 2 no traj " + timeString(time, num) + "  max step size = " + hdata[2] + "  numStep: " + numStep);
 		SwimTest.printVect(finalV, "Last for swimmer 2 no traj");
 
-		//NOTE SWIMZ USES CM
-		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
-		RungeKutta.setMinStepSize(RungeKutta.getMinStepSize()*100.);
 		
 		System.err.println("\nSwimZ");
 		time = System.currentTimeMillis();
 		
 		for (int i = 0; i < num; i++) {
 			try {
-				szTraj[i] = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], zTargCM, stepSizeCM, Swimmer.CLAS_Tolerance, hdata);
+				szTraj[i] = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], zTargCM, stepSizeCM, hdata);
 			} catch (SwimZException e) {
 				e.printStackTrace();
 			}
@@ -164,7 +169,7 @@ public class CompareSwimmers {
 		SwimZStateVector stopSV = new SwimZStateVector();
 		for (int i = 0; i < num; i++) {
 			try {
-				numStep = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], stopSV, zTargCM, stepSizeCM, Swimmer.CLAS_Tolerance, hdata);
+				numStep = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], stopSV, zTargCM, stepSizeCM, hdata);
 			} catch (SwimZException e) {
 				e.printStackTrace();
 			}
