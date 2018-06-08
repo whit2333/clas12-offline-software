@@ -522,6 +522,11 @@ public class FittedHit extends Hit implements Comparable<Hit> {
 
     }
     
+    public double XatY(DCGeant4Factory DcDetector, double y) {
+        double x = this.calc_GeomCorr(DcDetector, y);
+        return x + this.get_LeftRightAmb() * (this.get_TimeToDistance()) ;
+    }
+    
     private double _WireLength;
 
     public double get_WireLength() {
@@ -542,6 +547,15 @@ public class FittedHit extends Hit implements Comparable<Hit> {
         this._WireMaxSag = _WireMaxSag;
     }
     
+    private double _TrkResid;
+    
+    public double get_TrkResid() {
+        return _TrkResid;
+    }
+
+    public void set_TrkResid(double _TrkResid) {
+        this._TrkResid = _TrkResid;
+    }
     
     private double calc_GeomCorr(DCGeant4Factory DcDetector, double y) {
         
@@ -614,9 +628,10 @@ public class FittedHit extends Hit implements Comparable<Hit> {
         
         x+=delta_x;
         
-        this.set_WireLength(wireLen);
-        this.set_WireMaxSag(MaxSag);
-        
+        if(_WireLength==0) { // not yet set
+            this.set_WireLength(wireLen);
+            this.set_WireMaxSag(MaxSag);
+        }
         return x;
         //System.out.println(this.printInfo()+ "x0 "+ DcDetector.getWireMidpoint(this.get_Superlayer()-1, this.get_Layer()-1, this.get_Wire()-1).x
         //+" x "+x);

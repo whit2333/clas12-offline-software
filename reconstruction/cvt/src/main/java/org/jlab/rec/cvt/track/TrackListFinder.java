@@ -9,11 +9,11 @@ import org.jlab.rec.cvt.Constants;
 import org.jlab.rec.cvt.cross.Cross;
 import org.jlab.rec.cvt.trajectory.Trajectory;
 import org.jlab.rec.cvt.trajectory.TrajectoryFinder;
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 
 public class TrackListFinder {
 
-    private TrkSwimmer bstSwim = new TrkSwimmer();
+    private CVTSwimmer bstSwim = new CVTSwimmer();
 
     public TrackListFinder() {
         // TODO Auto-generated constructor stub

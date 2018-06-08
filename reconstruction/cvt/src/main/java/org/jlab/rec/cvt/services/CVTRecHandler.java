@@ -37,7 +37,7 @@ import org.jlab.rec.cvt.track.TrackListFinder;
 import org.jlab.rec.cvt.track.TrackSeederCA;
 import org.jlab.rec.cvt.track.fit.KFitter;
 import org.jlab.rec.cvt.trajectory.TrajectoryFinder;
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 
 /**
  *
@@ -94,7 +94,7 @@ public class CVTRecHandler {
             Constants.Load(isCosmics, isSVTonly, (double) bank.getFloat("solenoid", 0));
             // Load the Fields
             System.out.println("************************************************************SETTING FIELD SCALE *****************************************************");
-            TrkSwimmer.setMagneticFieldScale(bank.getFloat("solenoid", 0)); // something changed in the configuration
+            CVTSwimmer.setMagneticFieldScale(bank.getFloat("solenoid", 0)); // something changed in the configuration
             //double shift =0;
             //if(bank.getInt("run", 0)>1840)
             //    shift = -1.9;
@@ -504,7 +504,7 @@ public class CVTRecHandler {
         cp.disconnect();    
         this.setSVTDB(cp);
         
-        TrkSwimmer.getMagneticFields();
+        CVTSwimmer.getMagneticFields();
         return true;
     }
     private DatabaseConstantProvider _SVTDB;

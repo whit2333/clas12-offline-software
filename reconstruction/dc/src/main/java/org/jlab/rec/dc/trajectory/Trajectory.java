@@ -260,6 +260,42 @@ public class Trajectory extends ArrayList<Cross> {
        return panel;
     }
     
+    public List<TrajectoryStateVec> FMTTrajectory(int id, DCSwimmer dcSwim, double x, double y,  double z, double px, double py, double pz, int q, TrajectorySurfaces ts) {
+        List<TrajectoryStateVec> fMTTrajectory = new ArrayList<TrajectoryStateVec>();
+        dcSwim.SetSwimParameters(x, y, z, px, py, pz, q);
+       
+        double[] trkPars = new double[8];
+        
+        int is = this._Sector-1;
+        for(int j = 0; j<6; j++) {
+            
+            if(j>=1 ) {
+                dcSwim.SetSwimParameters(trkPars[0], trkPars[1], trkPars[2], trkPars[3], trkPars[4], trkPars[5], q);
+            }
+            trkPars = dcSwim.SwimToPlaneBoundary(ts.getDetectorPlanes().get(is).get(j).get_d(), new Vector3D(ts.getDetectorPlanes().get(is).get(j).get_nx(),
+            ts.getDetectorPlanes().get(is).get(j).get_ny(),ts.getDetectorPlanes().get(is).get(j).get_nz()),1);
+            if(trkPars==null)
+                return null;
+            
+            if(trkPars!=null)  {
+                TrajectoryStateVec sv = new TrajectoryStateVec();
+                sv.setTrkId(id);
+                sv.setX(trkPars[0]);
+                sv.setY(trkPars[1]);
+                sv.setZ(trkPars[2]);
+                sv.setpX(trkPars[3]);
+                sv.setpY(trkPars[4]);
+                sv.setpZ(trkPars[5]);
+                fMTTrajectory.add(sv);
+            }
+            
+        }
+        if(fMTTrajectory.size()<6)
+            return null;
+        
+        return fMTTrajectory;
+    }
+    
     public List<TrajectoryStateVec> trajectory;
     public void calcTrajectory(int id, DCSwimmer dcSwim, double x, double y,  double z, double px, double py, double pz, int q, FTOFGeant4Factory ftofDetector, TrajectorySurfaces ts) {
         trajectory = new ArrayList<TrajectoryStateVec>();

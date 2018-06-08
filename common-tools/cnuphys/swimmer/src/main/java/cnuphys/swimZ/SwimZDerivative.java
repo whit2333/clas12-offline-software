@@ -1,12 +1,12 @@
 package cnuphys.swimZ;
 
-import cnuphys.magfield.IField;
+import cnuphys.magfield.FieldProbe;
 import cnuphys.rk4.IDerivative;
 
 public class SwimZDerivative implements IDerivative {
 
 	// obtains the field in kG, coordinates should be in cm
-	private IField _field;
+	private FieldProbe _field;
 
 	// magnitude of the momentum in GeV/c
 	private double _p;
@@ -29,11 +29,11 @@ public class SwimZDerivative implements IDerivative {
 	 * @param field
 	 *            the magnetic field getter
 	 */
-	public SwimZDerivative(int Q, double p, IField field) {
+	public SwimZDerivative(int Q, double p, FieldProbe probe) {
 		_Q = Q;
 		_p = p;
 		_q = Q / p;
-		_field = field;
+		_field = probe;
 	}
 
 	/**

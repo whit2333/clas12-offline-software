@@ -20,10 +20,9 @@ import org.jlab.rec.cvt.banks.RecoBankWriter;
 import org.jlab.rec.cvt.bmt.CCDBConstantsLoader;
 import org.jlab.rec.cvt.track.StraightTrack;
 import org.jlab.rec.cvt.track.Track;
-import org.jlab.rec.cvt.trajectory.TrkSwimmer;
+import org.jlab.rec.cvt.trajectory.CVTSwimmer;
 //import org.jlab.service.eb.EBHBEngine;
 //import org.jlab.service.eb.EBTBEngine;
-
 /**
  * Service to return reconstructed BST track candidates- the output is in Evio
  * format
@@ -80,7 +79,7 @@ public class CVTReconstruction extends ReconstructionEngine {
             Constants.Load(isCosmics, isSVTonly, (double) bank.getFloat("solenoid", 0));
             // Load the Fields
             System.out.println("************************************************************SETTING FIELD SCALE *****************************************************");
-            TrkSwimmer.setMagneticFieldScale(bank.getFloat("solenoid", 0)); // something changed in the configuration
+            CVTSwimmer.setMagneticFieldScale(bank.getFloat("solenoid", 0)); // something changed in the configuration
             //double shift =0;
             //if(bank.getInt("run", 0)>1840)
             //    shift = -1.9;
@@ -162,7 +161,7 @@ public class CVTReconstruction extends ReconstructionEngine {
         this.setSVTDB(cp);
         
         
-        TrkSwimmer.getMagneticFields();
+        CVTSwimmer.getMagneticFields();
         return true;
     }
     private DatabaseConstantProvider _SVTDB;

@@ -1,5 +1,7 @@
 package org.jlab.rec.cvt.trajectory;
 
+import cnuphys.magfield.MagneticFields;
+import cnuphys.magfield.SolenoidProbe;
 import java.io.File;
 import java.io.FileNotFoundException;
 
@@ -19,10 +21,20 @@ import org.jlab.utils.CLASResources;
  * @author ziegler
  *
  */
-public class TrkSwimmer {
+public class CVTSwimmer {
 
-    private static Solenoid sField;
-    private static Swimmer swimmer;
+    private  SolenoidProbe prob;
+    
+    private Swimmer swimmer;
+
+    public Swimmer getSwimmer() {
+        return swimmer;
+    }
+
+    public void setSwimmer(Swimmer swimmer) {
+        this.swimmer = swimmer;
+    }
+    
     // get some fit results
 
     private double _x0;
@@ -39,13 +51,14 @@ public class TrkSwimmer {
 
     public int nSteps;
 
-    public TrkSwimmer() {
+    public CVTSwimmer() {
         //create a swimmer for our magnetic field
         //swimmer = new Swimmer(rcompositeField);
         // create a swimmer for the torus field
         //if(areFieldsLoaded==false)
         //   getMagneticFields();
-        swimmer = new Swimmer(sField);
+        prob = new SolenoidProbe(MagneticFields.getInstance().getSolenoid());
+        swimmer = new Swimmer(MagneticFields.getInstance().getSolenoid());
     }
 
     /**
@@ -139,7 +152,7 @@ public class TrkSwimmer {
                     _theta, _phi, z, accuracy, _maxPathLength,
                     _maxPathLength, stepSize, Swimmer.CLAS_Tolerance, hdata);
 
-            traj.computeBDL(sField);
+            traj.computeBDL(prob);
             double[] lastY = traj.lastElement();
 
             value[0] = lastY[0] * 1000.; // convert back to mm
@@ -169,7 +182,7 @@ public class TrkSwimmer {
         double stepSize = 1e-4; // m
 
         SwimTrajectory st = swimmer.swim(_charge, _x0, _y0, _z0, _pTot, _theta, _phi, stopper, _maxPathLength, stepSize, 0.0005);
-        st.computeBDL(sField);
+        st.computeBDL(prob);
         double[] lastY = st.lastElement();
 
         value[0] = lastY[0] * 1000; // convert back to mm
@@ -197,7 +210,7 @@ public class TrkSwimmer {
 
         float result[] = new float[3];
 
-        sField.field((float) x_cm, (float) y_cm, (float) z_cm, result);
+        prob.field((float) x_cm, (float) y_cm, (float) z_cm, result);
 
         return new Point3D(result[0] / 10., result[1] / 10., result[2] / 10.);
 
@@ -228,37 +241,17 @@ public class TrkSwimmer {
             e.printStackTrace();
         }
 
-        if (solenoid != null) {
-            System.out.println("                     SOLENOID MAP LOADED                    !!! ");
-            sField = solenoid;
-        }
+        
         FieldsLoaded = true;
     }
 
     public static synchronized void setMagneticFieldScale(double SolenoidScale) {
 
-        if (sField != null) {
-            sField.setScaleFactor(SolenoidScale);
-            System.out.println("CENTRAL TRACKING ***** ****** ****** THE SOLENOID IS BEING SCALED BY " + (SolenoidScale * 100) + "  %   *******  ****** **** ");
-        }
+        MagneticFields.getInstance().getSolenoid().setScaleFactor(SolenoidScale);
 
     }
 
-    public static Solenoid getField() {
-        return sField;
-    }
-
-    public static void setField(Solenoid sField) {
-        TrkSwimmer.sField = sField;
-    }
-
-    public static Swimmer getSwimmer() {
-        return swimmer;
-    }
-
-    public static void setSwimmer(Swimmer swimmer) {
-        TrkSwimmer.swimmer = swimmer;
-    }
+    
 
     public double get_x0() {
         return _x0;

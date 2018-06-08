@@ -41,6 +41,7 @@ import org.jlab.rec.dc.trajectory.DCSwimmer;
 import org.jlab.rec.dc.trajectory.RoadFinder;
 import org.jlab.rec.dc.trajectory.Road;
 import org.jlab.utils.CLASResources;
+
 import org.jlab.utils.groups.IndexedTable;
 
 public class DCHBEngine extends ReconstructionEngine {
@@ -150,7 +151,7 @@ public class DCHBEngine extends ReconstructionEngine {
         if(event.hasBank("RUN::config")==false ) {
                 return true;
         }
-
+        DCSwimmer swimmer = new DCSwimmer();
         DataBank bank = event.getBank("RUN::config");
         long   timeStamp = bank.getLong("timestamp", 0);
         double triggerPhase =0;
@@ -169,13 +170,8 @@ public class DCHBEngine extends ReconstructionEngine {
             int    phase  = tabJ.getIntValue("phase", 0,0,0);
             int    cycles = tabJ.getIntValue("cycles", 0,0,0);
             
-            if(cycles>0) triggerPhase=period*((timeStamp+phase)%cycles); 
-//            if(newRun>1000) {
-//                MagneticFields.getInstance().initializeMagneticFields(clasDictionaryPath+"/data/magfield/", TorusMap.SYMMETRIC);
-//            } else {
-//                MagneticFields.getInstance().initializeMagneticFields(clasDictionaryPath+"/data/magfield/", TorusMap.SYMMETRIC);
-//            }
-            
+            if(cycles>0) triggerPhase=period*((timeStamp+phase)%cycles);
+
             TableLoader.FillT0Tables(newRun);
             TableLoader.Fill(this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist")); 
             //CCDBTables.add(this.getConstantsManager().getConstants(newRun, "/calibration/dc/signal_generation/doca_resolution"));
@@ -187,6 +183,7 @@ public class DCHBEngine extends ReconstructionEngine {
                 shift = -1.9;
             }
             DCSwimmer.setMagneticFieldsScales(bank.getFloat("solenoid", 0), bank.getFloat("torus", 0), shift);
+            
             Run.set(newRun);
             if(event.hasBank("MC::Particle")==true)
                 Constants.setMCDIST(0);
@@ -279,11 +276,11 @@ public class DCHBEngine extends ReconstructionEngine {
 
 
         CrossListFinder crossLister = new CrossListFinder();
-        CrossList crosslist = crossLister.candCrossLists(crosses, false, this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null);
+        CrossList crosslist = crossLister.candCrossLists(crosses, false, this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null, swimmer);
 
         //6) find the list of  track candidates
         TrackCandListFinder trkcandFinder = new TrackCandListFinder("HitBased");
-        trkcands = trkcandFinder.getTrackCands(crosslist, dcDetector, DCSwimmer.getTorScale() ) ;
+        trkcands = trkcandFinder.getTrackCands(crosslist, dcDetector, DCSwimmer.getTorScale(), swimmer) ;
 
 
         // track found	
@@ -295,7 +292,7 @@ public class DCHBEngine extends ReconstructionEngine {
             for(Track trk: trkcands) {
                 // reset the id
                 trk.set_Id(trkId);
-                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
+                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector, swimmer);
                 for(Cross c : trk) { 
                     c.get_Segment1().isOnTrack=true;
                     c.get_Segment2().isOnTrack=true;
@@ -359,9 +356,9 @@ public class DCHBEngine extends ReconstructionEngine {
         List<Cross> pcrosses = crossMake.find_Crosses(segments, dcDetector);
 
         //
-        CrossList pcrosslist = crossLister.candCrossLists(pcrosses, false, this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null);
+        CrossList pcrosslist = crossLister.candCrossLists(pcrosses, false, this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null, swimmer);
 
-        List<Track> mistrkcands =trkcandFinder.getTrackCands(pcrosslist, dcDetector, DCSwimmer.getTorScale());
+        List<Track> mistrkcands =trkcandFinder.getTrackCands(pcrosslist, dcDetector, DCSwimmer.getTorScale(), swimmer);
         if(mistrkcands.size()>0) {    
             trkcandFinder.removeOverlappingTracks(mistrkcands);		// remove overlaps
 
@@ -369,7 +366,7 @@ public class DCHBEngine extends ReconstructionEngine {
 
                 // reset the id
                 trk.set_Id(trkId);
-                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
+                trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector, swimmer);
                 for(Cross c : trk) { 
                     for(FittedHit h1 : c.get_Segment1()) { 
                             h1.set_AssociatedHBTrackID(trk.get_Id());
@@ -399,7 +396,7 @@ public class DCHBEngine extends ReconstructionEngine {
         //String outputFile = args[1];
         //String inputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305.hipo";
         //String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/rec_out_mu-_testDCjar_hipo/mu_30nA_bg_out.ev.hipo";
-        String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/gemc_out_mu-_hipo/mu-_30nA_bg_out.ev.hipo";
+        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec.hipo";
         //System.err.println(" \n[PROCESSING FILE] : " + inputFile);
         
         DCHBEngine en = new DCHBEngine();
@@ -417,7 +414,7 @@ public class DCHBEngine extends ReconstructionEngine {
         //Writer
         
         //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGD.hipo";
-        String outputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/rec_out_mu-_testDCjar_hipo/mu_30nA_bg_out.recn2.hipo";
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec2.hipo";
         writer.open(outputFile);
         TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
         long t1 = 0;
@@ -439,7 +436,7 @@ public class DCHBEngine extends ReconstructionEngine {
             System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
            // event.show();
             if (event.getBank("RUN::config").getInt("event", 0) > 11) {
-                break;
+             //   break;
             }
             
             

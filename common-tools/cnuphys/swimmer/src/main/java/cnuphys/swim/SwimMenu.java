@@ -8,7 +8,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 import javax.swing.ButtonGroup;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -117,28 +116,53 @@ public class SwimMenu extends JMenu implements ActionListener {
 
 		String s = DoubleFormat.doubleFormat(Swimmer.getEps(), 1, true);
 		final JTextField epsTF = new JTextField(s, 10);
+		
+		ActionListener al = new ActionListener() {
 
-		KeyAdapter ka = new KeyAdapter() {
 			@Override
-			public void keyReleased(KeyEvent kev) {
-				if (kev.getKeyCode() == KeyEvent.VK_ENTER) {
-					double enumber;
-					MenuSelectionManager.defaultManager().clearSelectedPath();
-					try {
-						enumber = Double.parseDouble(epsTF.getText());
-						enumber = Math.min(1.0e-4, Math.max(1.0e-10, enumber));
-						Swimmer.setCLASTolerance(enumber);
-					} catch (Exception e) {
-						// e.printStackTrace();
-						enumber = Swimmer.getEps();
-					}
-					String s = DoubleFormat.doubleFormat(Swimmer.getEps(), 1,
-							true);
-					epsTF.setText(s);
+			public void actionPerformed(ActionEvent ae) {
+				double enumber;
+				MenuSelectionManager.defaultManager().clearSelectedPath();
+				try {
+					enumber = Double.parseDouble(epsTF.getText());
+					enumber = Math.min(1.0e-4, Math.max(1.0e-10, enumber));
+					System.err.println("new tolerance: " + enumber);
+					Swimmer.setCLASTolerance(enumber);
+				} catch (Exception e) {
+					// e.printStackTrace();
+					enumber = Swimmer.getEps();
 				}
+				String s = DoubleFormat.doubleFormat(Swimmer.getEps(), 1,
+						true);
+				epsTF.setText(s);
 			}
+			
 		};
-		epsTF.addKeyListener(ka);
+
+//		KeyAdapter ka = new KeyAdapter() {
+//			@Override
+//			public void keyReleased(KeyEvent kev) {
+//				if (kev.getKeyCode() == KeyEvent.VK_ENTER) {
+//					double enumber;
+//					MenuSelectionManager.defaultManager().clearSelectedPath();
+//					try {
+//						enumber = Double.parseDouble(epsTF.getText());
+//						enumber = Math.min(1.0e-4, Math.max(1.0e-10, enumber));
+//						System.err.println("new tolerance: " + enumber);
+//						Swimmer.setCLASTolerance(enumber);
+//					} catch (Exception e) {
+//						// e.printStackTrace();
+//						enumber = Swimmer.getEps();
+//					}
+//					String s = DoubleFormat.doubleFormat(Swimmer.getEps(), 1,
+//							true);
+//					epsTF.setText(s);
+//				}
+//			}
+//		};
+//		epsTF.addKeyListener(ka);
+		
+		epsTF.addActionListener(al);
 
 		sp.add(label);
 		sp.add(epsTF);
@@ -230,8 +254,7 @@ public class SwimMenu extends JMenu implements ActionListener {
 	
 	//clear all the tracks
 	private void clearTracks() {
-		Swimming.clearMCTrajectories();
-		Swimming.clearReconTrajectories();
+		Swimming.clearAllTrajectories();
 	}
 
 	/**
