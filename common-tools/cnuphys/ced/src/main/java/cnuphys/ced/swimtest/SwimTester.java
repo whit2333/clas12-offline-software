@@ -299,8 +299,6 @@ public class SwimTester extends JFrame implements ListSelectionListener, ActionL
 	private void initMagFields() {
 		MagneticFields.getInstance().initializeMagneticFields();
 		MagneticFields.getInstance().setActiveField(FieldType.TORUS);
-		// swimmer = new Swimmer(MagneticFields.getInstance().getActiveField());
-
 		System.out.println("Active Field Description: " + MagneticFields.getInstance().getActiveFieldDescription());
 	}
 	

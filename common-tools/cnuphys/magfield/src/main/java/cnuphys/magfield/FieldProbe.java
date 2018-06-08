@@ -19,7 +19,7 @@ public abstract class FieldProbe implements IField {
 	protected String _name;
 	
 	//cache the field's scale factor
-	protected double _scaleFactor;
+	protected double _scaleFactor = 1;
 
 	//cache the max field magnitude
 	private float _maxField;

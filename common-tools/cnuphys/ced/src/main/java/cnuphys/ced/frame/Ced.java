@@ -79,13 +79,13 @@ import cnuphys.ced.trigger.TriggerManager;
 import cnuphys.ced.trigger.TriggerMenuPanel;
 import cnuphys.lund.X11Colors;
 import cnuphys.magfield.FastMath;
+import cnuphys.magfield.MagTests;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.splot.example.MemoryUsageDialog;
 import cnuphys.splot.plot.PlotPanel;
 import cnuphys.swim.SwimMenu;
 import cnuphys.swim.Swimmer;
-import cnuphys.swim.Swimming;
 import cnuphys.bCNU.eliza.ElizaDialog;
 import cnuphys.bCNU.fortune.FortuneManager;
 import cnuphys.bCNU.graphics.ImageManager;
@@ -110,7 +110,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	// the singleton
 	private static Ced _instance;
 	
-	private static final String _release = "build 1.004a";
+	private static final String _release = "build 1.004b";
 
 	// used for one time inits
 	private int _firstTime = 0;
@@ -591,8 +591,8 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	private void addToMagneticFieldMenu() {
 		JMenu magMenu = MagneticFields.getInstance().getMagneticFieldMenu();
 		final JMenuItem plotItem = new JMenuItem("Plot the Field...");
-//		final JMenuItem loadItem = new JMenuItem("Load a Different Torus...");
-
+		final JMenuItem reconfigItem = new JMenuItem("Remove Solenoid and Torus Overlap");
+		final JMenuItem samenessItem = new JMenuItem("Sameness Test with/without Overlap Removal");
 		magMenu.addSeparator();
 
 		ActionListener al = new ActionListener() {
@@ -608,15 +608,20 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 					_plotFieldDialog.setVisible(true);
 
 				} 
-//				else if (e.getSource() == loadItem) {
-//					MagneticFields.getInstance().openNewTorus();
-//				}
+				else if (e.getSource() == reconfigItem) {
+					MagneticFields.getInstance().removeMapOverlap();
+				}
+				else if (e.getSource() == samenessItem) {
+					MagTests.samenessTest();
+				}
 			}
 		};
 
-//		loadItem.addActionListener(al);
+		reconfigItem.addActionListener(al);
+		samenessItem.addActionListener(al);
 		plotItem.addActionListener(al);
-//		magMenu.add(loadItem);
+		magMenu.add(reconfigItem);
+		magMenu.add(samenessItem);
 		magMenu.add(plotItem);
 
 		MenuManager.getInstance().addMenu(magMenu);
@@ -730,7 +735,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 				
 				Object source = e.getSource();
 
-				if (source == _memoryUsage) {
+				if (source == memPlot) {
 					if (_memoryUsage == null) {
 						_memoryUsage = new MemoryUsageDialog(Ced.getFrame());
 					}
@@ -1037,6 +1042,12 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 		title += "   [Magnetic Field (" +
 		MagneticFields.getInstance().getVersion() + ") "
 				+ MagneticFields.getInstance().getActiveFieldDescription();
+		
+		if (MagneticFields.getInstance().hasTorus()) {
+			String path = MagneticFields.getInstance().getTorusBaseName();
+			title  += " (" + path + ")";
+		}
+		
 		title += "] [Swimmer (" + Swimmer.getVersion() + ")]";
 		
 		title += ("  " + ClasIoEventManager.getInstance().getCurrentSourceDescription());
@@ -1045,7 +1056,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 
 	@Override
 	public void magneticFieldChanged() {
-		Swimming.clearAllTrajectories();
+//		Swimming.clearAllTrajectories();
 		fixTitle();
 		ClasIoEventManager.getInstance().reloadCurrentEvent();
 	}

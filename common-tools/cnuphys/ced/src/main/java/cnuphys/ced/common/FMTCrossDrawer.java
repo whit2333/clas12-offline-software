@@ -43,6 +43,12 @@ public class FMTCrossDrawer extends CedViewDrawer  {
 
 	@Override
 	public void draw(Graphics g, IContainer container) {
+		
+		if (!_view.showFMTCrosses()) {
+			return;
+		}
+		
+		
 		if (ClasIoEventManager.getInstance().isAccumulating()) {
 			return;
 		}

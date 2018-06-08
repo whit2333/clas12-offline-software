@@ -34,17 +34,6 @@ public class SwimZResult {
 	// the sign of pz
 	private int _pzSign;
 
-	// /**
-	// * Constructor
-	// * Create a SwimZResult with the trajectory initialized but empty.
-	// * @param Q the integer charge (-1 for electron)
-	// * @param p the momentum in Gev/c
-	// * @param zo the final z value;
-	// * @param zf the final z value;
-	// */
-	// public SwimZResult(int Q, double p, double zo, double zf) {
-	// this(Q, p, zo, zf, 100,100);
-	// }
 
 	/**
 	 * Constructor Create a SwimZResult with the trajectory initialized but
@@ -55,13 +44,11 @@ public class SwimZResult {
 	 * @param p
 	 *            the momentum in Gev/c
 	 * @param zo
-	 *            the final z value;
+	 *            the initial z value in cm;
 	 * @param zf
-	 *            the final z value;
+	 *            the final z value in cm;
 	 * @param capacity
 	 *            the initial capacity of the trajectory
-	 * @param increment
-	 *            the increment when more space is needed
 	 */
 	public SwimZResult(int Q, double p, double zo, double zf, int capacity) {
 		_Q = Q;

@@ -61,6 +61,7 @@ public class ReconDrawer extends SectorViewDrawer  {
 		if (_view.showClusters()) {
 			drawClusters(g, container);
 		}
+		
 	}
 	
 	// draw reconstructed clusters

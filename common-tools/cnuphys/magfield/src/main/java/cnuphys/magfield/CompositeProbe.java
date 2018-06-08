@@ -92,6 +92,21 @@ public class CompositeProbe extends FieldProbe {
 		result[2] = bz;
 	}
 
+	/**
+	 * Checks whether the field has been set to always return zero.
+	 * 
+	 * @return <code>true</code> if the field is set to return zero.
+	 */
+	@Override
+	public boolean isZeroField() {
+		for (IField probe : probes) {
+			if (!probe.isZeroField()) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
 
     /**
      * Obtain an approximation for the magnetic field gradient at a given location expressed in cylindrical

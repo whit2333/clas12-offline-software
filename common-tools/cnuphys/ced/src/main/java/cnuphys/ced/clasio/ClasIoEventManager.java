@@ -38,7 +38,6 @@ import cnuphys.ced.event.AccumulationManager;
 import cnuphys.ced.event.data.ECAL;
 import cnuphys.ced.event.data.PCAL;
 import cnuphys.ced.frame.Ced;
-import cnuphys.ced.trigger.TriggerFilter;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundSupport;
 import cnuphys.swim.SwimMenu;

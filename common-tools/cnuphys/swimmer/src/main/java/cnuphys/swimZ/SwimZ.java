@@ -13,7 +13,7 @@ import cnuphys.rk4.RungeKutta;
 import cnuphys.rk4.RungeKuttaException;
 
 /**
- * This static class holds the parameters and static methods for the swimZ
+ * This class holds the parameters and static methods for the swimZ
  * integration. The swimZ integration follows the method described for the
  * HERA-B magnet here: http://arxiv.org/pdf/physics/0511177v1.pdf<br>
  * <p>
@@ -29,10 +29,6 @@ import cnuphys.rk4.RungeKuttaException;
  * <li>B (mag field) is in kGauss
  * </ul>
  * <p>
- * The global parameters are:
- * <ul>
- * 
- * </ul>
  * 
  * @author heddle
  *
@@ -40,7 +36,7 @@ import cnuphys.rk4.RungeKuttaException;
 public class SwimZ {
 
 	/** The speed of light in these units: (GeV/c)(1/kG)(1/cm) */
-	public static final double V = 0.000299792458;
+	public static final double C = 2.99792458e-04;
 
 	/** Argon radiation length in cm */
 	public static final double ARGONRADLEN = 14.;
@@ -54,28 +50,24 @@ public class SwimZ {
 	// create a do nothing stopper for now
 	private IStopper _stopper = new DefaultStopper();
 	
+	//need an integrator
+	private RungeKutta _rk4 = new RungeKutta();
+
+	//storage
+	private ArrayList<Double> zArray = new ArrayList<Double>(100);
+	private ArrayList<double[]> yArray = new ArrayList<double[]>(100);
+
+	
 	/**
 	 * In swimming routines that require a tolerance vector, this is a
 	 * reasonable one to use for CLAS. These represent absolute errors in the
 	 * adaptive stepsize algorithms
 	 */
-	// private static double _eps = 1.0e-6;
-	private static double _eps = 1.0e-3;
-	// private static double _eps = 1.0e-4;
-	public static double CLAS_Tolerance[];
+	private double _eps = 1.0e-3;
+
+	//absolute tolerances
+	private double _absolueTolerance[] = new double[4];
 	
-	public static final String VERSION = "1.0";
-
-	
-	static {
-		setCLASTolerance(_eps);
-		System.out.println("\n***********************************");
-		System.out.println("* SwimZ package version: " + VERSION);
-		System.out.println("* contact: david.heddle@cnu.edu");
-		System.out.println("***********************************\n");
-	}
-
-
 	
 	/**
 	 * SwimZ constructor. Here we create a Swimmer that will use the given
@@ -86,6 +78,7 @@ public class SwimZ {
 	 */
 	public SwimZ() {
 		_probe = FieldProbe.factory();
+		setAbsoluteTolerance(1.0e-3);
 	}
 	
 	/**
@@ -94,6 +87,7 @@ public class SwimZ {
 	 */
 	public SwimZ(MagneticField magneticField) {
 		_probe = FieldProbe.factory(magneticField);
+		setAbsoluteTolerance(1.0e-3);
 	}
 	
 	/**
@@ -102,6 +96,7 @@ public class SwimZ {
 	 */
 	public SwimZ(IMagField magneticField) {
 		_probe = FieldProbe.factory(magneticField);
+		setAbsoluteTolerance(1.0e-3);
 	}
 	
 	/**
@@ -112,16 +107,16 @@ public class SwimZ {
 	 *            stay in the range 1e-10 (accurate but slow) to 1e-4
 	 *            (inaccurate but fast)
 	 */
-	public static void setCLASTolerance(double eps) {
+	public void setAbsoluteTolerance(double eps) {
 		_eps = eps;
-		double xscale = 1.0; // position scale order of meters
-		double pscale = 1.0; // direct cosine px/P etc scale order of 1
+		double xscale = 1.0; // position scale order of cm
+		double pscale = 1.0; // track slope scale order of 1
 		double xTol = eps * xscale;
 		double pTol = eps * pscale;
-		CLAS_Tolerance = new double[6];
-		for (int i = 0; i < 3; i++) {
-			CLAS_Tolerance[i] = xTol;
-			CLAS_Tolerance[i + 3] = pTol;
+		_absolueTolerance = new double[6];
+		for (int i = 0; i < 2; i++) {
+			_absolueTolerance[i] = xTol;
+			_absolueTolerance[i + 2] = pTol;
 		}
 	}
 
@@ -130,11 +125,9 @@ public class SwimZ {
 	 * 
 	 * @return the tolerance used by the CLAS_Toleance array
 	 */
-	public static double getEps() {
+	public double getEps() {
 		return _eps;
 	}
-
-
 
 	/**
 	 * Swim to a fixed z over short distances using RK adaptive stepsize
@@ -166,12 +159,15 @@ public class SwimZ {
 			double stepSize,
 			double absError[],
 			double hdata[]) throws SwimZException {
+		
 		if (start == null) {
 			throw new SwimZException("Null starting state vector.");
 		}
 
 		// straight line?
 		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
+			System.err.println("HEY MAN");
+			boolean zeroF = _probe.isZeroField();
 			System.out.println("Z adaptive swimmer detected straight line.");
 			return straightLineResult(Q, p, start, zf);
 		}
@@ -179,18 +175,15 @@ public class SwimZ {
 		// need a new derivative
 		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
-		// need a RK4 object
-		RungeKutta rk4 = new RungeKutta();
-
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
 		// create the lists to hold the trajectory
-		ArrayList<Double> z = new ArrayList<Double>(100);
-		ArrayList<double[]> y = new ArrayList<double[]>(100);
+		zArray.clear();
+		yArray.clear();
 
 		int nStep = 0;
 		try {
-			nStep = rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, z, y, deriv, _stopper, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, zArray, yArray, deriv, _stopper, absError, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();
@@ -202,9 +195,9 @@ public class SwimZ {
 
 		SwimZResult result = new SwimZResult(Q, p, start.z, zf, nStep);
 		result.add(start);
-		for (int i = 0; i < z.size(); i++) {
-			double v[] = y.get(i);
-			SwimZStateVector sv = new SwimZStateVector(z.get(i), v);
+		for (int i = 0; i < zArray.size(); i++) {
+			double v[] = yArray.get(i);
+			SwimZStateVector sv = new SwimZStateVector(zArray.get(i), v);
 			result.add(sv);
 		}
 
@@ -213,7 +206,7 @@ public class SwimZ {
 	}
 
 	/**
-	 * Swim to a fixed z over short distances using RK adaptive stepsize
+	 * Swim to a fixed z using RK adaptive stepsize
 	 * 
 	 * @param Q
 	 *            the integer charge of the particle (-1 for electron)
@@ -259,9 +252,6 @@ public class SwimZ {
 		// need a new derivative
 		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
-		// need a RK4 object
-		RungeKutta rk4 = new RungeKutta();
-
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
 		IRkListener listener = new IRkListener() {
@@ -279,7 +269,7 @@ public class SwimZ {
 
 		int nStep = 0;
 		try {
-			nStep = rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();
@@ -337,9 +327,6 @@ public class SwimZ {
 		// need a new derivative
 		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
-		// need a RK4 object
-		RungeKutta rk4 = new RungeKutta();
-
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
 		// listens for each step
@@ -361,15 +348,15 @@ public class SwimZ {
 
 				// transport covMat
 				double delx_deltx0 = s;
-				double dely_deltx0 = 0.5 * Q * V * s * s * dA[2];
-				double deltx_delty0 = Q * V * s * dA[1];
-				double delx_delQ = 0.5 * V * s * s * A[0];
-				double deltx_delQ = V * s * A[0];
-				double delx_delty0 = 0.5 * Q * V * s * s * dA[1];
+				double dely_deltx0 = 0.5 * Q * C * s * s * dA[2];
+				double deltx_delty0 = Q * C * s * dA[1];
+				double delx_delQ = 0.5 * C * s * s * A[0];
+				double deltx_delQ = C * s * A[0];
+				double delx_delty0 = 0.5 * Q * C * s * s * dA[1];
 				double dely_delty0 = s;
-				double delty_deltx0 = Q * V * s * dA[2];
-				double dely_delQ = 0.5 * V * s * s * A[1];
-				double delty_delQ = V * s * A[1];
+				double delty_deltx0 = Q * C * s * dA[2];
+				double dely_delQ = 0.5 * C * s * s * A[1];
+				double delty_delQ = C * s * A[1];
 
 				double[][] transpStateJacobian = new double[][] { { 1, 0, delx_deltx0, delx_delty0, delx_delQ },
 						{ 0, 1, dely_deltx0, dely_delty0, dely_delQ }, { 0, 0, 1, deltx_delty0, deltx_delQ },
@@ -444,7 +431,7 @@ public class SwimZ {
 
 		int nStep = 0;
 		try {
-			nStep = rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, deriv, _stopper, listener, absError, hdata);
 		}
 		catch (RungeKuttaException e) {
 			e.printStackTrace();
@@ -533,9 +520,6 @@ public class SwimZ {
 		// need a new derivative
 		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
 
-		// need a RK4 object
-		RungeKutta rk4 = new RungeKutta();
-
 		// obtain a range
 		SwimZRange swimZrange = new SwimZRange(start.z, zf, stepSize);
 
@@ -549,7 +533,7 @@ public class SwimZ {
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 		double z[] = new double[nStep];
 		double y[][] = new double[nDim][nStep];
-		nStep = rk4.uniformStep(yo, start.z, zf, y, z, deriv, stopper);
+		nStep = _rk4.uniformStep(yo, start.z, zf, y, z, deriv, stopper);
 
 		SwimZResult result = new SwimZResult(Q, p, start.z, zf, nStep + 1);
 		result.add(start);
@@ -623,7 +607,7 @@ public class SwimZ {
 			double Ay = fact * (-tx0 * (ty0 * B[1] + B[2]) + (1 + tysq) * B[0]);
 
 			double s = stepSize;
-			double qvs = q * V * s;
+			double qvs = q * C * s;
 			double qvsq = 0.5 * qvs * s;
 
 			double x1 = x0 + tx0 * s + qvsq * Ax;

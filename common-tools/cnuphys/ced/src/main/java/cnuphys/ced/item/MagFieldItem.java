@@ -19,7 +19,7 @@ import cnuphys.ced.clasio.ClasIoEventManager;
 import cnuphys.ced.component.MagFieldDisplayArray;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.GridCoordinate;
-import cnuphys.magfield.IField;
+import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
 
 /**
@@ -30,10 +30,12 @@ import cnuphys.magfield.MagneticFields;
  * @author heddle
  * 
  */
-public class MagFieldItem extends AItem {
+public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 
 	// sector view parent
 	private CedView _view;
+	
+	private FieldProbe _activeProbe;
 
 	// if mag field failed to , give up
 	private static boolean _failedToLoad = false;
@@ -66,6 +68,7 @@ public class MagFieldItem extends AItem {
 		_style.setFillColor(null);
 		_style.setLineColor(Color.red);
 		_style.setLineStyle(LineStyle.DASH);
+		MagneticFields.getInstance().addMagneticFieldChangeListener(this);
 	}
 
 	/**
@@ -91,8 +94,12 @@ public class MagFieldItem extends AItem {
 		if (_failedToLoad) {
 			return;
 		}
+		
+		if (_activeProbe == null) {
+			_activeProbe = FieldProbe.factory();
+		}
 
-		if (MagneticFields.getInstance().getActiveField() == null) {
+		if (_activeProbe == null) {
 			return;
 		}
 
@@ -145,7 +152,6 @@ public class MagFieldItem extends AItem {
 		Point pp = new Point();
 
 		int pstep2 = pixelStep / 2;
-		IField probe = FieldProbe.factory();  //uses active field
 
 		float result[] = new float[3];
 		double coords[] = new double[5];
@@ -165,14 +171,14 @@ public class MagFieldItem extends AItem {
 
 				if (displayOption == MagFieldDisplayArray.BMAGDISPLAY) {
 					// note conversion to cm from mm
-					double bmag = probe.fieldMagnitudeCylindrical(phi, rho / 10, z / 10) / 10.;
+					double bmag = _activeProbe.fieldMagnitudeCylindrical(phi, rho / 10, z / 10, result) / 10.;
 
 					Color color = _colorScaleModelSolenoid.getColor(bmag);
 					g.setColor(color);
 					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
 				}
 				else if (displayOption == MagFieldDisplayArray.BGRADDISPLAY) {
-					probe.gradientCylindrical(phi, rho, z, result);
+					_activeProbe.gradientCylindrical(phi, rho, z, result);
 					double gmag = Math.sqrt(result[0]*result[0] +
 							result[1]*result[1] + result[2]*result[2]);
 					
@@ -184,7 +190,7 @@ public class MagFieldItem extends AItem {
 				}
 				else { // one of the components
 					// note conversion to cm from mm
-					probe.fieldCylindrical(phi, rho / 10, z / 10, result);
+					_activeProbe.fieldCylindrical(phi, rho / 10, z / 10, result);
 					double comp = 0.0;
 					switch (displayOption) {
 					case MagFieldDisplayArray.BXDISPLAY:
@@ -258,8 +264,7 @@ public class MagFieldItem extends AItem {
 			boolean hasSolenoid) {
 
 
-		IField probe = FieldProbe.factory();
-		if (probe == null) {
+		if (_activeProbe == null) {
 			return;
 		}
 		
@@ -301,17 +306,17 @@ public class MagFieldItem extends AItem {
 				double rho = coords[3];
 				double phi = coords[4];
 				
-				if (probe.containsCylindrical(phi, rho, z)) {
+				if (_activeProbe.containsCylindrical(phi, rho, z)) {
 
 				if (displayOption == MagFieldDisplayArray.BMAGDISPLAY) {
-					double bmag = probe.fieldMagnitudeCylindrical(phi, rho, z) / 10.;
+					double bmag = _activeProbe.fieldMagnitudeCylindrical(phi, rho, z) / 10.;
 
 					Color color = _colorScaleModelTorus.getColor(bmag);
 					g.setColor(color);
 					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
 				}
 				else if (displayOption == MagFieldDisplayArray.BGRADDISPLAY) {
-					probe.gradientCylindrical(phi, rho, z, result);
+					_activeProbe.gradientCylindrical(phi, rho, z, result);
 					double gmag = Math.sqrt(result[0]*result[0] +
 							result[1]*result[1] + result[2]*result[2]);
 					
@@ -330,7 +335,7 @@ public class MagFieldItem extends AItem {
 					
 				}
 				else { // one of the components
-					probe.fieldCylindrical(phi, rho, z, result);
+					_activeProbe.fieldCylindrical(phi, rho, z, result);
 					double comp = 0.0;
 					switch (displayOption) {
 					case MagFieldDisplayArray.BXDISPLAY:
@@ -590,6 +595,11 @@ public class MagFieldItem extends AItem {
 	@Override
 	public Rectangle2D.Double getWorldBounds() {
 		return null;
+	}
+
+	@Override
+	public void magneticFieldChanged() {
+		_activeProbe = FieldProbe.factory();
 	}
 
 }

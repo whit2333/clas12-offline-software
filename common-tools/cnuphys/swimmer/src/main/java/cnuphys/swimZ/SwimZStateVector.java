@@ -1,10 +1,17 @@
 package cnuphys.swimZ;
 
+/**
+ * Holds the position and track slopes. The positions (x, y, z) are in 
+ * cm, while the track slopes are dimensionless. Note: z is not an actual component of
+ * the "true" state vector, it is the independent variable. But it rides
+ * along here because we will want to know z at every step.
+ * @author heddle
+ *
+ */
 public class SwimZStateVector {
 
 	// NOTE: not including q = Q/p as an element because it is a constant. It is
-	// held in the
-	// SwimZResult object
+	// held in the SwimZResult object
 
 	/** the x coordinate (cm) */
 	public double x;
@@ -21,13 +28,17 @@ public class SwimZStateVector {
 	/** the y track slope, py/pz */
 	public double ty;
 
-	
+	/**
+	 * Create a state vector for the SwimZ package
+	 * with all NaNs for the components
+	 */
 	public SwimZStateVector() {
 		this(Double.NaN,Double.NaN, Double.NaN, Double.NaN, Double.NaN);
 	}
 	
 	/**
-	 * Constructor
+	 * Constructor for a state vector for the SwimZ package.
+	 * Note that it uses CM for distance units
 	 * 
 	 * @param x
 	 *            the x coordinate (cm)
@@ -54,7 +65,9 @@ public class SwimZStateVector {
 	 * Create a state variable from an array (probably from RK integration)
 	 * 
 	 * @param z
-	 *            the value of z
+	 *            the value of z in cm. Note: z is not an actual component of
+	 *            the state vector, it is the independent variable. But it rides
+	 *            along here.
 	 * @param v
 	 *            the array with, in order, x,y,tx,ty,q
 	 */
@@ -73,26 +86,7 @@ public class SwimZStateVector {
 	public SwimZStateVector(SwimZStateVector sv) {
 		this(sv.x, sv.y, sv.z, sv.tx, sv.ty);
 	}
-
-	/**
-	 * Copy from another state vector
-	 * @param sv the state vector to copy
-	 */
-	public void copy(SwimZStateVector sv) {
-		x = sv.x;
-		y = sv.y;
-		z = sv.z;
-		tx = sv.tx;
-		ty = sv.ty;
-	}
 	
-	public void set(double z, double v[]) {
-		this.z = z;
-		x = v[0];
-		y = v[1];
-		tx = v[0];
-		ty = v[1];
-	}
 
 	/**
 	 * Constructor
@@ -123,6 +117,36 @@ public class SwimZStateVector {
 		tx = px / pz;
 		ty = py / pz;
 	}
+
+	/**
+	 * Copy from another state vector
+	 * @param sv the state vector to copy
+	 */
+	public void copy(SwimZStateVector sv) {
+		x = sv.x;
+		y = sv.y;
+		z = sv.z;
+		tx = sv.tx;
+		ty = sv.ty;
+	}
+	
+	/**
+	 * Set the state vector
+	 * @param z
+	 *            the value of z in cm. Note: z is not an actual component of
+	 *            the state vector, it is the independent variable. But it rides
+	 *            along here.
+	 * @param v
+	 *            the array with, in order, x,y,tx,ty,
+	 */
+	public void set(double z, double v[]) {
+		this.z = z;
+		x = v[0];
+		y = v[1];
+		tx = v[0];
+		ty = v[1];
+	}
+
 
 	/**
 	 * Get a string representation
