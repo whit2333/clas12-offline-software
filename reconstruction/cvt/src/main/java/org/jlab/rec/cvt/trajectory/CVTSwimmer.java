@@ -237,6 +237,10 @@ public class CVTSwimmer {
         File solenoidFile = new File(solenoidFileName);
         try {
             solenoid = Solenoid.fromBinaryFile(solenoidFile);
+
+	    //DH added this or the MagneticFields singleton would not know about this field
+	    MagneticFields.getInstance().setSolenoid(solenoid);
+	    
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
