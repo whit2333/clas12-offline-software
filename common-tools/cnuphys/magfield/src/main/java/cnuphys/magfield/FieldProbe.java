@@ -13,7 +13,7 @@ public abstract class FieldProbe implements IField {
 	protected static final double sinSect[] = {Double.NaN, 0, ROOT3OVER2, ROOT3OVER2, 0, -ROOT3OVER2, -ROOT3OVER2};
 	
 	//the field
-	protected IMagField _field;
+	protected final IMagField _field;
 	
 	//cache the name of the field
 	protected String _name;
@@ -56,6 +56,26 @@ public abstract class FieldProbe implements IField {
 			_maxField = 0f;
 			_name = "No Field";
 		}
+		
+		MagneticFieldChangeListener mfl = new MagneticFieldChangeListener() {
+
+			@Override
+			public void magneticFieldChanged() {
+				magFieldChanged();
+			}
+
+		};
+
+		MagneticFields.getInstance().addMagneticFieldChangeListener(mfl);
+
+	}
+	
+	/**
+	 * The field has changed. Fixed cached values.
+	 * Default implementation does nothing. Torus
+	 * and Solenoid must recache scale factor!!
+	 */
+	protected void magFieldChanged() {
 	}
 
 	/**

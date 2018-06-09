@@ -30,6 +30,17 @@ public class TorusProbe extends FieldProbe {
 		
 	}
 	
+	/**
+	 * The field has changed. Fixed cached values that
+	 * may have changed.
+	 */
+	@Override
+	protected void magFieldChanged() {
+		System.err.println("Torus probe responding to field change.");
+		_scaleFactor = _torus.getScaleFactor();
+	}
+
+	
 	@Override
 	public void field(float x, float y, float z, float result[]) {
 				

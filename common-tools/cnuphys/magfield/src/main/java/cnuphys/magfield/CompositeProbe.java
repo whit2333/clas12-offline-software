@@ -6,6 +6,10 @@ public class CompositeProbe extends FieldProbe {
 	
 	protected ArrayList<FieldProbe> probes = new ArrayList<FieldProbe>();
 
+	/**
+	 * Create a composite probe from a composite field.
+	 * @param field the composite field
+	 */
 	public CompositeProbe(CompositeField field) {
 		super(field);
 		for (IMagField f : field) {

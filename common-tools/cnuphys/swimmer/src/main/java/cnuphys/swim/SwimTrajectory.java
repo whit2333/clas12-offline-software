@@ -387,7 +387,7 @@ public class SwimTrajectory extends ArrayList<double[]> {
 	}
 
 
-	// replace the 6D state vector at the given index with
+	// replace the 6D state vector <at the given index with
 	// and 8D vector that appends pathelength (m) and integral
 	// b dot dl (kg-m)
 	private void augment(double p[], double pl, double bdl, int index) {
