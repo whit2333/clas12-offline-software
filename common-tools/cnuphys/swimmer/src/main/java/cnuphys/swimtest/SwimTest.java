@@ -105,7 +105,7 @@ public class SwimTest {
 		final JMenuItem createTrajItem = new JMenuItem("Create Test Trajectories...");
 		final JMenuItem testSectorItem = new JMenuItem("Test Sector Swim");
 		final JMenuItem threadItem = new JMenuItem("Thread Test");
-		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. Swimmer2 Test");
+		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. SwimZ Test");
 
 		ActionListener al = new ActionListener() {
 

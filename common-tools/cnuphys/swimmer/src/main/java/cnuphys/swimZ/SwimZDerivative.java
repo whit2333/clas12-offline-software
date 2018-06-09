@@ -7,7 +7,7 @@ import cnuphys.rk4.IDerivative;
 public class SwimZDerivative implements IDerivative {
 
 	// obtains the field in kG, coordinates should be in cm
-	private FieldProbe _field;
+	private FieldProbe _probe;
 
 	// the constant member of the state vector
 	private double _q;
@@ -15,8 +15,13 @@ public class SwimZDerivative implements IDerivative {
 	//q times v
 	private double _qv;
 
+	//hold the mag field
 	private float B[] = new float[3];
 
+	public SwimZDerivative() {
+		set(0, Double.NaN, null);
+	}
+	
 	/**
 	 * The derivative for swimming through a magnetic field
 	 * 
@@ -24,12 +29,26 @@ public class SwimZDerivative implements IDerivative {
 	 *            -1 for electron, +1 for proton, etc.
 	 * @param p
 	 *            the magnitude of the momentum in GeV/c.
-	 * @param field
+	 * @param probe
 	 *            the magnetic field getter
 	 */
 	public SwimZDerivative(int Q, double p, FieldProbe probe) {
+		set(Q, p, probe);
+	}
+	
+	/**
+	 * Set the parameters
+	 * 
+	 * @param Q
+	 *            -1 for electron, +1 for proton, etc.
+	 * @param p
+	 *            the magnitude of the momentum in GeV/c.
+	 * @param probe
+	 *            the magnetic field getter
+	 */
+	public void set(int Q, double p, FieldProbe probe) {
 		_q = Q / p;
-		_field = probe;
+		_probe = probe;
 		_qv = _q * SwimZ.C;
 	}
 
@@ -51,7 +70,7 @@ public class SwimZDerivative implements IDerivative {
 	public void derivative(double z, double[] x, double[] dxdz) {
 
 		// get the field
-		_field.field((float) x[0], (float) x[1], (float) z, B);
+		_probe.field((float) x[0], (float) x[1], (float) z, B);
 
 		// some needed factors
 		double tx = x[2];

@@ -279,7 +279,7 @@ public abstract class FieldProbe implements IField {
 	
 	/**
 	 * Get the appropriate probe for the given field
-	 * @return the probe for the givev field
+	 * @return the probe for the given field
 	 */
 	public static FieldProbe factory(IMagField field) {
 		
@@ -299,6 +299,8 @@ public abstract class FieldProbe implements IField {
 			}
 		}
 
+		System.err.println("WARNING: creating a Zero probe");
+		
 		return new ZeroProbe();
 	}
 	

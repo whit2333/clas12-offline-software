@@ -49,24 +49,24 @@ public class CompareSwimmers {
 		SwimZ swimZ = new SwimZ();
 		
 		for (int i = 0; i < num; i++) {
-//			charge[i] = ((rand.nextFloat() < 0.5f) ? -1 : 1);
-//			pTot[i] = randVal(1., 2., rand);
-//			theta[i] = randVal(12, 18, rand);
-//			phi[i] = 0;
-//			x0[i] = randVal(-2, 2, rand)/100;
-//			y0[i] = randVal(-2, 2, rand)/100;
-//			z0[i] = randVal(-2, 2, rand)/100;
+			charge[i] = ((rand.nextFloat() < 0.5f) ? -1 : 1);
+			pTot[i] = randVal(1., 2., rand);
+			theta[i] = randVal(15, 25, rand);
+			phi[i] = randVal(-10, 10, rand);
+			x0[i] = randVal(-2, 2, rand)/100;
+			y0[i] = randVal(-2, 2, rand)/100;
+			z0[i] = randVal(-2, 2, rand)/100;
 
 			
-			zTarg = 5.75;
-			zTargCM = zTarg*100; //cm
-			charge[i] = -1;
-			pTot[i] = 2.;
-			theta[i] = 15;
-			phi[i] = 0;
-			x0[i] = 0;
-			y0[i] = 0;
-			z0[i] = 0;
+//			zTarg = 5.75;
+//			zTargCM = zTarg*100; //cm
+//			charge[i] = -1;
+//			pTot[i] = 2.;
+//			theta[i] = 15;
+//			phi[i] = 0;
+//			x0[i] = 0;
+//			y0[i] = 0;
+//			z0[i] = 0;
 			
 			//swimZ uses CM
 			szV[i] = new SwimZStateVector(x0[i]*100, y0[i]*100, z0[i]*100, pTot[i], theta[i], phi[i]);
@@ -118,16 +118,16 @@ public class CompareSwimmers {
 		int maxDiffIndex = -1;
 		double maxDiff = -1;
 		
-		System.err.println("Computing diffs");
+		System.err.println("Computing Swimmer1-Swimmer2 diffs");
 		for (int i = 0; i < num; i++) {
-			double diff = locDiff(traj1[i].lastElement(), traj1[i].lastElement());
+			double diff = locDiff(traj1[i].lastElement(), traj2[i].lastElement());
 			if (diff > maxDiff) {
 				maxDiff = diff;
 				maxDiffIndex = i;
 			}
 		}
 		
-		System.err.println("Max difference at index " + maxDiffIndex + " = " + maxDiff);
+		System.err.println("Max Swimmer1-Swimmer2 difference at index " + maxDiffIndex + " = " + maxDiff);
 		
 		//SWIMMER 2 NO TRAJ
 		System.err.println("\nSwimmer 2 No Traj");
@@ -163,6 +163,20 @@ public class CompareSwimmers {
 		System.err.println("SwimZ time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (szTraj[num-1].size()));
 		SwimTest.printSwimZ(szTraj[num-1].last(), "Last for swimZ");
 		
+		maxDiffIndex = -1;
+		maxDiff = -1;
+		
+		System.err.println("Computing Swimmer1-SwimZ diffs");
+		for (int i = 0; i < num; i++) {
+			double diff = locDiff(traj1[i].lastElement(), szTraj[i].last());
+			if (diff > maxDiff) {
+				maxDiff = diff;
+				maxDiffIndex = i;
+			}
+		}
+		
+		System.err.println("Max Swimmer1-SwimZ difference at index " + maxDiffIndex + " = " + maxDiff);		
+		
 		System.err.println("\nSwimZ no traj");
 		time = System.currentTimeMillis();
 		
@@ -195,4 +209,12 @@ public class CompareSwimmers {
 		double dz = v2[2] - v1[2];
 		return Math.sqrt(dx*dx + dy*dy + dz*dz);
 	}
+	
+	private static double locDiff(double v1[], SwimZStateVector szv) {
+		double dx = szv.x/100. - v1[0];
+		double dy = szv.y/100. - v1[1];
+		double dz = szv.z/100. - v1[2];
+		return Math.sqrt(dx*dx + dy*dy + dz*dz);
+	}
+
 }

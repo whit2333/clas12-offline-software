@@ -21,6 +21,8 @@ public abstract class AsciiReader {
 	
 	public int iVal;
 	
+	private boolean _reading;
+	
 	/**
 	 * Constructor
 	 * 
@@ -44,17 +46,24 @@ public abstract class AsciiReader {
 		FileReader fileReader = new FileReader(file);
 		final BufferedReader bufferedReader = new BufferedReader(fileReader);
 
-		boolean reading = true;
-		while (reading) {
+		_reading = true;
+		while (_reading) {
 			String s = AsciiReadSupport.nextNonComment(bufferedReader);
 			if (s != null) {
 				nonCommentLineCount++;
 				processLine(s);
 			} else {
-				reading = false;
+				_reading = false;
 			}
 		}
 		done();
+	}
+	
+	/**
+	 * Stop the reading
+	 */
+	public void stop() {
+		_reading = false;
 	}
 
 	/**

@@ -19,12 +19,12 @@ import cnuphys.rk4.RungeKuttaException;
  * <p>
  * The state vector has five elements: <br>
  * (x, y, tx, ty, q) <br>
- * Where x and y are the transverse coordinates (cm), tx = px/pz, ty = py/pz,
+ * Where x and y are the transverse coordinates (meters), tx = px/pz, ty = py/pz,
  * and q = Q/|p| where Q is the integer charge (e.g. -1 for an electron)
  * <p>
  * UNITS
  * <ul>
- * <li>x, y, and z are in cm
+ * <li>x, y, and z are in meters
  * <li>p is in GeV/c
  * <li>B (mag field) is in kGauss
  * </ul>
@@ -57,6 +57,8 @@ public class SwimZ {
 	private ArrayList<Double> zArray = new ArrayList<Double>(100);
 	private ArrayList<double[]> yArray = new ArrayList<double[]>(100);
 
+	//derivative
+	private SwimZDerivative deriv = new SwimZDerivative();
 	
 	/**
 	 * In swimming routines that require a tolerance vector, this is a
@@ -99,6 +101,7 @@ public class SwimZ {
 		initialize();
 	}
 	
+	//some initialization
 	private void initialize() {
 		setAbsoluteTolerance(1.0e-3);
 		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
@@ -109,9 +112,7 @@ public class SwimZ {
 	 * Set the tolerance used by the CLAS_Tolerance array
 	 * 
 	 * @param eps
-	 *            the baseline tolerance. The default is 1.0e-5. Probably should
-	 *            stay in the range 1e-10 (accurate but slow) to 1e-4
-	 *            (inaccurate but fast)
+	 *            the baseline absolute tolerance. 
 	 */
 	public void setAbsoluteTolerance(double eps) {
 		_eps = eps;
@@ -119,7 +120,6 @@ public class SwimZ {
 		double pscale = 1.0; // track slope scale order of 1
 		double xTol = eps * xscale;
 		double pTol = eps * pscale;
-		_absoluteTolerance = new double[6];
 		for (int i = 0; i < 2; i++) {
 			_absoluteTolerance[i] = xTol;
 			_absoluteTolerance[i + 2] = pTol;
@@ -141,11 +141,11 @@ public class SwimZ {
 	 * @param Q
 	 *            the integer charge of the particle (-1 for electron)
 	 * @param p
-	 *            the momentum in Gev/c
+	 *            the momentum in GeV/c
 	 * @param start
 	 *            the starting state vector
 	 * @param zf
-	 *            the final z value
+	 *            the final z value (cm)
 	 * @param stepSize
 	 *            the initial step size
 	 * @param relTolerance
@@ -171,14 +171,11 @@ public class SwimZ {
 
 		// straight line?
 		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
-			System.err.println("HEY MAN");
-			boolean zeroF = _probe.isZeroField();
-			System.out.println("Z adaptive swimmer detected straight line.");
 			return straightLineResult(Q, p, start, zf);
 		}
 
-		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
+		// need to set the derivative
+		deriv.set(Q, p, _probe);
 
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
@@ -249,8 +246,8 @@ public class SwimZ {
 			return 2;
 		}
 
-		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
+		// need to set the derivative
+		deriv.set(Q, p, _probe);
 
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
@@ -284,15 +281,15 @@ public class SwimZ {
 	 * @param Q
 	 *            the integer charge of the particle (-1 for electron)
 	 * @param p
-	 *            the momentum in Gev/c
+	 *            the momentum in GeV/c
 	 * @param start
 	 *            the starting state vector
 	 * @param covMat
 	 *            the initial covariance matrix
 	 * @param zf
-	 *            the final z value
+	 *            the final z value (cm)
 	 * @param stepSize
-	 *            the initial step size
+	 *            the initial step size (cm)
 	 * @param relTolerance
 	 *            the absolute tolerances on each state variable [x, y, tx, ty]
 	 *            (q = const). So it is an array with four entries, like [1.0e-4
@@ -322,9 +319,11 @@ public class SwimZ {
 
 		// initialize
 		stop.copy(start);
+		
+		float result[] = new float[3];
 
-		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
+		// need to set the derivative
+		deriv.set(Q, p, _probe);
 
 		double yo[] = { start.x, start.y, start.tx, start.ty };
 
@@ -340,10 +339,9 @@ public class SwimZ {
 				double tx = stop.tx;
 				double ty = stop.ty;
 
-				B bf = new B(z, x, y, tx, ty);
-
-				double[] A = A(tx, ty, bf.Bx, bf.By, bf.Bz);
-				double[] dA = delA_delt(tx, ty, bf.Bx, bf.By, bf.Bz);
+				_probe.field((float)x, (float)y, (float)z, result);
+				double[] A = A(tx, ty, result[0], result[1], result[2]);
+				double[] dA = delA_delt(tx, ty, result[0], result[1], result[2]);
 
 				// transport covMat
 				double delx_deltx0 = s;
@@ -439,6 +437,7 @@ public class SwimZ {
 		return nStep;
 	}
 	
+	//copy a matrix
 	private void matrixCopy(Matrix source, Matrix dest) {
 		for (int rw = 0; rw < source.getRowDimension(); rw++) {
 			for (int cl = 0; cl < source.getColumnDimension(); cl++) {
@@ -447,58 +446,17 @@ public class SwimZ {
 		}
 	}
 
-	// /**
-	// * Integrator that uses the RungeKutta advance with a Butcher Tableau and
-	// * adaptive stepsize and a tolerance vector.
-	// *
-	// * This version uses an IRk4Listener to notify
-	// * the listener that the next step has been advanced.
-	// *
-	// * A very typical case is a 2nd order ODE converted to a 1st order where
-	// the
-	// * dependent variables are x, y, z, vx, vy, vz and the independent
-	// variable is
-	// * time.
-	// *
-	// * @param yo initial values. Probably something like (xo, yo, zo, vxo,
-	// vyo,
-	// * vzo).
-	// * @param to the initial value of the independent variable, e.g., time.
-	// * @param tf the maximum value of the independent variable.
-	// * @param h the starting steps size
-	// * @param t a list of the values of t at each step
-	// * @param y a list of the values of the state vector at each step
-	// * @param deriv the derivative computer (interface). This is where the
-	// problem specificity resides.
-	// * @param stopper if not <code>null</code> will be used to exit the
-	// * integration early because some condition has been reached.
-	// * @param tableau the Butcher Tableau
-	// * @param relTolerance the error tolerance as fractional diffs. Note it is
-	// a vector, the same
-	// * dimension of the problem, e.g., 6 for [x,y,z,vx,vy,vz].
-	// * @param hdata if not null, should be double[3]. Upon return, hdata[0] is
-	// the min stepsize
-	// * used, hdata[1] is the average stepsize used, and hdata[2] is the max
-	// stepsize used
-	// * @return the number of steps used.
-	// * @throws RungeKuttaException
-	// */
-	// public int adaptiveStep(double yo[], double to, double tf, double h,
-	// final List<Double> t, final List<double[]> y, IDerivative deriv,
-	// IStopper stopper, ButcherTableau tableau, double relTolerance[],
-	// double hdata[]) throws RungeKuttaException {
-
 	/**
 	 * Swim to a fixed z over short distances using uniform stepsize RK4
 	 * 
 	 * @param Q
 	 *            the integer charge of the particle (-1 for electron)
 	 * @param p
-	 *            the momentum in Gev/c
+	 *            the momentum in GeV/c
 	 * @param start
 	 *            the starting state vector
 	 * @param zf
-	 *            the final z value
+	 *            the final z value (cm)
 	 * @param stepSize
 	 *            the step size
 	 * @return the swim result
@@ -516,8 +474,8 @@ public class SwimZ {
 			return straightLineResult(Q, p, start, zf);
 		}
 
-		// need a new derivative
-		SwimZDerivative deriv = new SwimZDerivative(Q, p, _probe);
+		// need to set the derivative
+		deriv.set(Q, p, _probe);
 
 		// obtain a range
 		SwimZRange swimZrange = new SwimZRange(start.z, zf, stepSize);
@@ -554,11 +512,11 @@ public class SwimZ {
 	 * @param Q
 	 *            the integer charge of the particle (-1 for electron)
 	 * @param p
-	 *            the momentum in Gev/c
+	 *            the momentum in GeV/c
 	 * @param start
 	 *            the starting state vector
 	 * @param zf
-	 *            the final z value
+	 *            the final z value (cm)
 	 * @param stepSize
 	 *            the step size
 	 * @return the swim result
@@ -673,44 +631,6 @@ public class SwimZ {
 		return new double[] { delAx_deltx, delAx_delty, delAy_deltx, delAy_delty };
 	}
 
-	// container for mag field
-	private class B {
-		final double z;
-		double x;
-		double y;
-		double tx;
-		double ty;
-		float result[] = new float[3];
-
-		public double Bx;
-		public double By;
-		public double Bz;
-
-		public B(SwimZStateVector sv) {
-			this(sv.z, sv.x, sv.y, sv.tx, sv.ty);
-		}
-
-		public B(double z, double x, double y, double tx, double ty) {
-			this.z = z;
-			this.x = x;
-			this.y = y;
-			this.tx = tx;
-			this.ty = ty;
-
-			if ((_probe == null) || _probe.isZeroField()) {
-				this.Bx = 0;
-				this.By = 0;
-				this.Bz = 0;
-			}
-			else {
-				_probe.field((float) x, (float) y, (float) z, result);
-			}
-
-			this.Bx = result[0];
-			this.By = result[1];
-			this.Bz = result[2];
-		}
-	}
 
 	public String massHypo = "electron";
 

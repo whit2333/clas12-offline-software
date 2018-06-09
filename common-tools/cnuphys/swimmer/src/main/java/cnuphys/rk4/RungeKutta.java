@@ -15,7 +15,7 @@ public class RungeKutta {
 	// for adaptive stepsize, this is how much h will grow
 	private static final double HGROWTH = 1.5;
 
-	private static double MINSTEPSIZE = 1.0e-8;
+	private static double MINSTEPSIZE = 1.0e-5;
 	private static double MAXSTEPSIZE = 0.4;
 
 	// the max dimension we'll use is probably 6, for state vectors
