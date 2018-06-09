@@ -526,6 +526,8 @@ public class MagneticFields {
 			return _solenoid;
 		}
 
+		System.err.println("Requested the solenoid, but it is currently null.");
+		
 		Solenoid solenoid = null;
 
 		// try env variable first
@@ -545,6 +547,20 @@ public class MagneticFields {
 		}
 
 		return solenoid;
+	}
+	
+	/**
+	 * In case someone loads a solenoid externally.
+	 * @param solenoid
+	 */
+	public void setSolenoid(Solenoid solenoid) {
+		if (solenoid != null) {
+			if (solenoid != _solenoid) {
+				System.err.println("Manually setting solenoid");
+				_solenoid = solenoid;
+				notifyListeners();
+			}
+		}
 	}
 
 	// read the solenoidal field
