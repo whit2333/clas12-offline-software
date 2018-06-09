@@ -34,7 +34,6 @@ public class SolenoidProbe extends FieldProbe {
 	 */
 	@Override
 	protected void magFieldChanged() {
-		System.err.println("Solenoid probe responding to field change.");
 		_scaleFactor = _solenoid.getScaleFactor();
 		_shiftZ = _solenoid.getShiftZ();
 	}

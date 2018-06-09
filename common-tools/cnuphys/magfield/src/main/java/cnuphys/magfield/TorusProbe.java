@@ -36,7 +36,6 @@ public class TorusProbe extends FieldProbe {
 	 */
 	@Override
 	protected void magFieldChanged() {
-		System.err.println("Torus probe responding to field change.");
 		_scaleFactor = _torus.getScaleFactor();
 	}
 
