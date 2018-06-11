@@ -7,6 +7,29 @@ import org.apache.commons.math3.ode.FirstOrderDifferentialEquations;
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
 
+/**
+ * This class holds the derivatives (ODE) for swimmin with z as the
+ * independent variable. The integration follows the method described for the
+ * HERA-B magnet here: http://arxiv.org/pdf/physics/0511177v1.pdf<br>
+ * <p>
+ * The "official" state vector has five elements: <br>
+ * (x, y, tx, ty, q) <br>
+ * Where x and y are the transverse coordinates (meters), tx = px/pz, ty = py/pz,
+ * and q = Q/|p| where Q is the integer charge (e.g. -1 for an electron)
+ * <p>
+ * However, since q is a constant, we only have four first order differential eqns.
+ * <p>
+ * UNITS
+ * <ul>
+ * <li>x, y, and z are in meters
+ * <li>p is in GeV/c
+ * <li>B (mag field) is in kGauss
+ * </ul>
+ * <p>
+ * 
+ * @author heddle
+ *
+ */
 final class SwimZODE implements FirstOrderDifferentialEquations {
 	
 	

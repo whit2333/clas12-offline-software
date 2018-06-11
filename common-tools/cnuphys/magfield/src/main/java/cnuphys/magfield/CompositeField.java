@@ -129,7 +129,10 @@ public class CompositeField extends ArrayList<IMagField> implements IMagField {
 		}
 		return max;
 	}
-	
 
+	@Override
+	public double getScaleFactor() {
+		return 1;
+	}
 
 }

@@ -178,6 +178,7 @@ public class MagneticFields {
 		boolean activeFieldWasTorus = (_activeField == oldTorus);
 
 		// load the torus
+		_torus = null;
 		_torus = readTorus(path);
 
 		if (activeFieldWasTorus) {
@@ -562,9 +563,31 @@ public class MagneticFields {
 			}
 		}
 	}
+	
+	/**
+	 * In case someone loads a torus externally.
+	 * @param torus
+	 */
+	public void setTorus(Torus torus) {
+		if (torus != null) {
+			if (torus != _torus) {
+				System.err.println("Manually setting torus");
+				_torus = torus;
+				notifyListeners();
+			}
+		}
+	}
+
 
 	// read the solenoidal field
 	private Solenoid readSolenoid(String fullPath) {
+		
+		if (_solenoid != null) {
+			System.err.println("Reading a solenoid but already have one. Nothing changes");
+//			System.exit(1);
+		}
+		
+		
 		File file = new File(fullPath);
 		String cp;
 		try {
@@ -591,6 +614,12 @@ public class MagneticFields {
 
 	// read the torus field
 	private Torus readTorus(String fullPath) {
+		
+		if (_torus != null) {
+			System.err.println("Reading a torus but already have one. Nothing changes");
+//			System.exit(1);
+		}
+
 		File file = new File(fullPath);
 		String cp;
 		try {
@@ -1170,6 +1199,9 @@ public class MagneticFields {
 		// avoid adding duplicates
 		_listenerList.remove(MagneticFieldChangeListener.class, magChangeListener);
 		_listenerList.add(MagneticFieldChangeListener.class, magChangeListener);
+		
+//		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
+//		(new Throwable()).printStackTrace();
 	}
 
 	/**

@@ -6,8 +6,10 @@ package cnuphys.magfield;
  */
 public class TorusProbe extends FieldProbe {
 
+	//cell used to cache corner information
 	private Cell3D _cell;
 	
+	//the torus field
 	private Torus _torus;
 	
 	//12 -fold symmetry or full map?
@@ -19,9 +21,13 @@ public class TorusProbe extends FieldProbe {
 	 */
 	public TorusProbe(Torus field) {
 		super(field);
-		_torus = (Torus)_field;
+		if (MagneticFields.getInstance().getTorus() != field) {
+			MagneticFields.getInstance().setTorus(field);
+		}
+
+		_torus = MagneticFields.getInstance().getTorus();
+
 		_cell = new Cell3D(this);
-		_scaleFactor = _torus.getScaleFactor();
 		_fullMap = _torus.isFullMap();
 		
 		q1Coordinate = _torus.q1Coordinate.clone();
@@ -31,15 +37,9 @@ public class TorusProbe extends FieldProbe {
 	}
 	
 	/**
-	 * The field has changed. Fixed cached values that
-	 * may have changed.
+	 * Get the field in kG
+	 * @param x the x coor
 	 */
-	@Override
-	protected void magFieldChanged() {
-		_scaleFactor = _torus.getScaleFactor();
-	}
-
-	
 	@Override
 	public void field(float x, float y, float z, float result[]) {
 				
@@ -128,9 +128,10 @@ public class TorusProbe extends FieldProbe {
 
 		}
 		
-		result[X] *= _scaleFactor;
-		result[Y] *= _scaleFactor;
-		result[Z] *= _scaleFactor;		
+		double sf = _torus._scaleFactor;
+		result[X] *= sf;
+		result[Y] *= sf;
+		result[Z] *= sf;		
 	}
 	
 	/**

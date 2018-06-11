@@ -184,10 +184,10 @@ public class Swimming {
 
 
 	public static void printSummary(String message, int nstep, double momentum,
-			double Q[], double hdata[]) {
+			double y[], double hdata[]) {
 		System.out.println(message);
-		double R = Math.sqrt(Q[0] * Q[0] + Q[1] * Q[1] + Q[2] * Q[2]);
-		double norm = Math.sqrt(Q[3] * Q[3] + Q[4] * Q[4] + Q[5] * Q[5]);
+		double R = Math.sqrt(y[0] * y[0] + y[1] * y[1] + y[2] * y[2]);
+		double norm = Math.sqrt(y[3] * y[3] + y[4] * y[4] + y[5] * y[5]);
 		double P = momentum * norm;
 
 		System.out.println("Number of steps: " + nstep);
@@ -200,8 +200,8 @@ public class Swimming {
 		System.out
 				.println(String
 						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
-								Q[0], Q[1], Q[2], R, P * Q[3], P * Q[4], P
-										* Q[5], P));
+								y[0], y[1], y[2], R, P * y[3], P * y[4], P
+										* y[5], P));
 		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}

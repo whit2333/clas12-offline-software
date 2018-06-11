@@ -1,47 +1,51 @@
 package cnuphys.magfield;
 
 public class SolenoidProbe extends FieldProbe {
-	
-	private static final double MISALIGNTOL = 1.0e-6; //cm
 
-	
 	private Cell2D _cell;
-	
+
 	private Solenoid _solenoid;
 
-	//cache the z shift
-	private double _shiftZ;
-	
-	private double _fakeZMax;
+	// cache the z shift
+	// private double _shiftZ;
+
+	// private double _fakeZMax;
 
 	public SolenoidProbe(Solenoid field) {
 		super(field);
-		_solenoid = (Solenoid)_field;
+
+		if (MagneticFields.getInstance().getSolenoid() != field) {
+			MagneticFields.getInstance().setSolenoid(field);
+		}
+
+		_solenoid = MagneticFields.getInstance().getSolenoid();
 		_cell = new Cell2D(this);
-		_scaleFactor = _solenoid.getScaleFactor();
-		_shiftZ = _solenoid.getShiftZ();
-		_fakeZMax = _solenoid.getFakeZMax();
-		
+		// _scaleFactor =
+		// MagneticFields.getInstance().getSolenoid().getScaleFactor();
+		// _shiftZ = MagneticFields.getInstance().getSolenoid().getShiftZ();
+		// _fakeZMax = MagneticFields.getInstance().getSolenoid().getFakeZMax();
+
 		q1Coordinate = _solenoid.q1Coordinate.clone();
 		q2Coordinate = _solenoid.q2Coordinate.clone();
 		q3Coordinate = _solenoid.q3Coordinate.clone();
 
 	}
-	
+
 	/**
-	 * The field has changed. Fixed cached values that
-	 * may have changed.
+	 * Get the field magnitude in kiloGauss at a given location expressed in
+	 * Cartesian coordinates.
+	 * 
+	 * @param x
+	 *            the x coordinate in cm
+	 * @param y
+	 *            the y coordinate in cm
+	 * @param z
+	 *            the z coordinate in cm
+	 * @return the magnitude of the field in kiloGauss.
 	 */
 	@Override
-	protected void magFieldChanged() {
-		_scaleFactor = _solenoid.getScaleFactor();
-		_shiftZ = _solenoid.getShiftZ();
-	}
-
-	
-	@Override
 	public void field(float x, float y, float z, float result[]) {
-		
+
 		if (!contains(x, y, z)) {
 			result[0] = 0f;
 			result[1] = 0f;
@@ -54,13 +58,11 @@ public class SolenoidProbe extends FieldProbe {
 		fieldCylindrical(phi, rho, z, result);
 	}
 
-	
 	@Override
 	public void fieldCylindrical(double phi, double rho, double z, float[] result) {
 		fieldCylindrical(_cell, phi, rho, z, result);
 	}
-	
-	
+
 	/**
 	 * Get the field by trilinear interpolation.
 	 * 
@@ -77,63 +79,54 @@ public class SolenoidProbe extends FieldProbe {
 	 * @result a Cartesian vector holding the calculated field in kiloGauss.
 	 */
 	private void fieldCylindrical(Cell2D cell, double phi, double rho, double z, float result[]) {
-		
+
 		if (!containsCylindrical(phi, rho, z)) {
 			result[X] = 0f;
 			result[Y] = 0f;
 			result[Z] = 0f;
 			return;
 		}
-		
+
 		if (isZeroField()) {
 			result[X] = 0f;
 			result[Y] = 0f;
 			result[Z] = 0f;
 			return;
 		}
-		
-		//misalignment??
-		if (isMisaligned()) {
-			z = z - _shiftZ;
+
+		// misalignment??
+		if (_solenoid.isMisaligned()) {
+			z = z - _solenoid.getShiftZ();
 		}
-		
 
 		if (phi < 0.0) {
 			phi += 360.0;
 		}
 
-		//this will return
-		//result[0] = bphi = 0;
-		//result[1] = brho
-		//result[2] = bphi
+		// this will return
+		// result[0] = bphi = 0;
+		// result[1] = brho
+		// result[2] = bphi
 
 		cell.calculate(rho, z, result);
 		// rotate onto to proper phi
-		
-//		if (phi > 0.001) {
-			double rphi = Math.toRadians(phi);
-			double cos = Math.cos(rphi);
-			double sin = Math.sin(rphi);
-			double bphi = result[0];
-			double brho = result[1];
-			result[X] = (float) (brho * cos - bphi * sin);
-			result[Y] = (float) (brho * sin + bphi * cos);
-//		}
 
-		result[X] *= _scaleFactor;
-		result[Y] *= _scaleFactor;
-		result[Z] *= _scaleFactor;
+		// if (phi > 0.001) {
+		double rphi = Math.toRadians(phi);
+		double cos = Math.cos(rphi);
+		double sin = Math.sin(rphi);
+		double bphi = result[0];
+		double brho = result[1];
+		result[X] = (float) (brho * cos - bphi * sin);
+		result[Y] = (float) (brho * sin + bphi * cos);
+		// }
+
+		double sf = _solenoid.getScaleFactor();
+		result[X] *= sf;
+		result[Y] *= sf;
+		result[Z] *= sf;
 	}
-	
-    /**
-     * Is the physical solenoid represented by the map misaligned?
-     * @return <code>true</code> if solenoid is misaligned
-     */
-	public boolean isMisaligned() {
-    	return (Math.abs(_shiftZ) > MISALIGNTOL);
-    }
 
-	
 	/**
 	 * Check whether the field boundaries include the point
 	 * 
@@ -149,11 +142,11 @@ public class SolenoidProbe extends FieldProbe {
 	 */
 	@Override
 	public boolean containsCylindrical(double phi, double rho, double z) {
-		
-		if (z >= _fakeZMax) {
+
+		if (z >= _solenoid.getFakeZMax()) {
 			return false;
 		}
-		
+
 		if ((z < getZMin()) || (z > getZMax())) {
 			return false;
 		}
@@ -162,6 +155,5 @@ public class SolenoidProbe extends FieldProbe {
 		}
 		return true;
 	}
-
 
 }

@@ -17,13 +17,7 @@ public abstract class FieldProbe implements IField {
 	
 	//cache the name of the field
 	protected String _name;
-	
-	//cache the field's scale factor
-	protected double _scaleFactor = 1;
-
-	//cache the max field magnitude
-	private float _maxField;
-	
+		
 	/**
 	 * Holds the grid info for the slowest changing coordinate.
 	 * This is cloned from the field.
@@ -50,33 +44,13 @@ public abstract class FieldProbe implements IField {
 	public FieldProbe(IMagField field) {
 		_field = field;
 		if (_field != null) {
-			_maxField = field.getMaxFieldMagnitude();
 			_name = new String(field.getName());
 		} else { //zero field
-			_maxField = 0f;
 			_name = "No Field";
 		}
 		
-		MagneticFieldChangeListener mfl = new MagneticFieldChangeListener() {
-
-			@Override
-			public void magneticFieldChanged() {
-				magFieldChanged();
-			}
-
-		};
-
-		MagneticFields.getInstance().addMagneticFieldChangeListener(mfl);
-
 	}
 	
-	/**
-	 * The field has changed. Fixed cached values.
-	 * Default implementation does nothing. Torus
-	 * and Solenoid must recache scale factor!!
-	 */
-	protected void magFieldChanged() {
-	}
 
 	/**
 	 * Get the underlying field
@@ -162,7 +136,7 @@ public abstract class FieldProbe implements IField {
 	 */
 	@Override
 	public float getMaxFieldMagnitude() {
-		return _maxField;
+		return _field.getMaxFieldMagnitude();
 	}
 
 	/**
@@ -172,7 +146,7 @@ public abstract class FieldProbe implements IField {
 	 */
 	@Override
 	public boolean isZeroField() {
-		return (Math.abs(_scaleFactor) < 1.0e-6);
+		return _field.isZeroField();
 	}
 	
 	/**

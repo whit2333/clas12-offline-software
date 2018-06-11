@@ -24,7 +24,7 @@ import cnuphys.rk4.RungeKuttaException;
  * <p>
  * UNITS
  * <ul>
- * <li>x, y, and z are in meters
+ * <li>x, y, and z are in cm
  * <li>p is in GeV/c
  * <li>B (mag field) is in kGauss
  * </ul>
@@ -53,11 +53,13 @@ public class SwimZ {
 	//need an integrator
 	private RungeKutta _rk4 = new RungeKutta();
 
-	//storage
+	//storage for values of independent variable z
 	private ArrayList<Double> zArray = new ArrayList<Double>(100);
+	
+	//storage for values of the dependent variables (state vector)
 	private ArrayList<double[]> yArray = new ArrayList<double[]>(100);
 
-	//derivative
+	//the derivatives (i.e., the ODEs)
 	private SwimZDerivative deriv = new SwimZDerivative();
 	
 	/**
@@ -69,7 +71,6 @@ public class SwimZ {
 
 	//absolute tolerances
 	private double _absoluteTolerance[] = new double[4];
-	
 	
 	/**
 	 * SwimZ constructor. Here we create a Swimmer that will use the given
@@ -104,6 +105,7 @@ public class SwimZ {
 	//some initialization
 	private void initialize() {
 		setAbsoluteTolerance(1.0e-3);
+		//the 100 is because the steps size assumed in RK is meters
 		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
 		RungeKutta.setMinStepSize(RungeKutta.getMinStepSize()*100.);
 	}
@@ -258,7 +260,7 @@ public class SwimZ {
 				stop.x = newStateVec[0];
 				stop.y = newStateVec[1];
 				stop.tx = newStateVec[2];
-				stop.tx = newStateVec[3];
+				stop.ty = newStateVec[3];
 				stop.z = newZ;
 			}
 
@@ -502,6 +504,69 @@ public class SwimZ {
 		}
 
 		return result;
+	}
+	
+	/**
+	 * Swim to a fixed z over short distances using a parabolic estimate, without intermediate points
+	 * 
+	 * @param Q
+	 *            the integer charge of the particle (-1 for electron)
+	 * @param p
+	 *            the momentum in GeV/c
+	 * @param start
+	 *            the starting state vector
+	 * @param stop at end, holds final state vector
+	 * @param zf
+	 *            the final z value (cm)
+	 * @return the swim result
+	 * @throws SwimZException
+	 */
+
+	public void parabolicEstimate(int Q, double p, SwimZStateVector start, SwimZStateVector stop, double zf)
+			throws SwimZException {
+		
+
+		if (start == null) {
+			throw new SwimZException("Null starting state vector.");
+		}
+
+		// straight line?
+		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
+			System.out.println("Z parabolicEstimate swimmer detected straight line.");
+			straightLineResult(Q, p, start, stop, zf);
+			return;
+		}
+		
+		double q = Q / p;
+
+		
+		// get the field
+		float B[] = new float[3];
+		double x0 = start.x;
+		double y0 = start.y;
+		double z0 = start.z;
+		double tx0 = start.tx;
+		double ty0 = start.ty;
+
+		_probe.field((float) x0, (float) y0, (float) z0, B);
+
+		// some needed factors
+		double txsq = tx0 * tx0;
+		double tysq = ty0 * ty0;
+		double fact = Math.sqrt(1 + txsq + tysq);
+		double Ax = fact * (ty0 * (tx0 * B[0] + B[2]) - (1 + txsq) * B[1]);
+		double Ay = fact * (-tx0 * (ty0 * B[1] + B[2]) + (1 + tysq) * B[0]);
+
+		double s = (stop.z - start.z);
+		double qvs = q * C * s;
+		double qvsq = 0.5 * qvs * s;
+
+		stop.z = zf;
+		stop.x = start.x + tx0 * s + qvsq * Ax;
+		stop.y = start.y + ty0 * s + qvsq * Ay;
+		stop.tx = tx0 + qvs * Ax;
+		stop.ty = ty0 + qvs * Ay;
+
 	}
 	
 
