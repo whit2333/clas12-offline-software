@@ -67,16 +67,6 @@ public final class Swimmer {
 	public Swimmer() {
 		//make a probe using the current active field
 		_probe = FieldProbe.factory();
-		MagneticFieldChangeListener mfl = new MagneticFieldChangeListener() {
-
-			@Override
-			public void magneticFieldChanged() {
-				_probe = FieldProbe.factory();
-			}
-
-		};
-
-		MagneticFields.getInstance().addMagneticFieldChangeListener(mfl);
 	}
 	
 	/**
