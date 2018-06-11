@@ -1200,7 +1200,7 @@ public class MagneticFields {
 		_listenerList.remove(MagneticFieldChangeListener.class, magChangeListener);
 		_listenerList.add(MagneticFieldChangeListener.class, magChangeListener);
 		
-//		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
+		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
 //		(new Throwable()).printStackTrace();
 	}
 
@@ -1450,7 +1450,7 @@ public class MagneticFields {
 			float x, float y, float z) {
 
 		if ((sector < 1) || (sector > 6)) {
-			String wstr = "Bad sector: " + sector + " in RotatedCompositesectorToLab";
+			String wstr = "Bad sector: " + sector + " in MagneticFields sectorToLab";
 			System.err.println(wstr);
 			return;
 		}
@@ -1489,7 +1489,7 @@ public class MagneticFields {
 			float x, float y, float z) {
 
 		if ((sector < 1) || (sector > 6)) {
-			String wstr = "Bad sector: " + sector + " in RotatedCompositesectorToLab";
+			String wstr = "Bad sector: " + sector + " in MagneticFields labToSector";
 			System.err.println(wstr);
 			return;
 		}

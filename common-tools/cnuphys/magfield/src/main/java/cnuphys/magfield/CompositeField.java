@@ -10,8 +10,6 @@ import java.util.ArrayList;
 @SuppressWarnings("serial")
 public class CompositeField extends ArrayList<IMagField> implements IMagField {
 	
-	private boolean _zeroField;
-
 	/**
 	 * Checks whether the field has been set to always return zero.
 	 * 
