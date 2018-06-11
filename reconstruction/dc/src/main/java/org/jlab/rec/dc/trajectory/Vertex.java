@@ -13,7 +13,7 @@ public class Vertex {
 
     Random rn = new Random();
     public static double SMEARING_FAC = 0;
-    DCSwimmer swim2 = new DCSwimmer();
+    //DCSwimmer swim2 = new DCSwimmer();
 
     public Vertex() {
 
@@ -41,7 +41,7 @@ public class Vertex {
      * @param event HipoDataEvent
      * @param thecand The track candidate
      */
-    public void resetTrackAtRasterRadius(DataEvent event, Track thecand) {
+    public void resetTrackAtRasterRadius(DataEvent event, Track thecand, DCSwimmer swim2) {
         // Resets the track at the estimated raster radius.
         // For MC studies only
         double r = vertexEstimator(event) ;
