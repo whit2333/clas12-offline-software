@@ -596,10 +596,10 @@ public class MagTests {
 		try {
 			// mf.initializeMagneticFields(mfdir.getPath(), "torus.dat",
 			// "Symm_solenoid_r601_phi1_z1201_2008.dat");
-			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_08May2018.dat",
-					"Symm_solenoid_r601_phi1_z1201_2008.dat");
-//			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_18Apr2018.dat",
+//			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_08May2018.dat",
 //					"Symm_solenoid_r601_phi1_z1201_2008.dat");
+			mf.initializeMagneticFields(mfdir.getPath(), "Symm_torus_r2501_phi16_z251_24Apr2018.dat",
+					"Symm_solenoid_r601_phi1_z1201_2008.dat");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			System.exit(1);
