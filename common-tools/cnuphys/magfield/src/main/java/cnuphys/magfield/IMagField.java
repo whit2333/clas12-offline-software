@@ -50,5 +50,6 @@ public interface IMagField {
 	 */
 	public float getMaxFieldMagnitude();
 
+	public double getScaleFactor();
 
 }

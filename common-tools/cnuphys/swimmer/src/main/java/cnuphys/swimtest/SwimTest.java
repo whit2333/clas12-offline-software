@@ -10,6 +10,8 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Random;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -94,7 +96,7 @@ public class SwimTest {
 		sb.append(" Free memory in JVM: " + String.format("%6.1f", free) + "MB\n");
 		sb.append(" Used memory in JVM: " + String.format("%6.1f", used) + "MB\n");
 
-		System.err.println(sb.toString());
+		System.out.println(sb.toString());
 	}
 	
 	
@@ -106,6 +108,7 @@ public class SwimTest {
 		final JMenuItem testSectorItem = new JMenuItem("Test Sector Swim");
 		final JMenuItem threadItem = new JMenuItem("Thread Test");
 		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. SwimZ Test");
+		final JMenuItem polyItem = new JMenuItem("SwimZ vs. Poly Approx Test");
 
 		ActionListener al = new ActionListener() {
 
@@ -121,7 +124,10 @@ public class SwimTest {
 					ThreadTest.threadTest(100, 8);
 				}
 				else if (e.getSource() == oneVtwoItem) {
-					CompareSwimmers.swimmerVswimmer2Test(3344632211L, 5000);
+					CompareSwimmers.swimmerVswimmer2Test(3344632211L, 10000);
+				}
+				else if (e.getSource() == polyItem) {
+					SmallDZTest.smallDZTest(3344632211L, 10000, 100);
 				}
 				else if (e.getSource() == reconfigItem) {
 					MagneticFields.getInstance().removeMapOverlap();
@@ -134,10 +140,12 @@ public class SwimTest {
 		threadItem.addActionListener(al);	
 		createTrajItem.addActionListener(al);	
 		oneVtwoItem.addActionListener(al);	
+		polyItem.addActionListener(al);	
 		testSectorItem.addActionListener(al);	
 		reconfigItem.addActionListener(al);	
 		menu.add(createTrajItem);
 		menu.add(oneVtwoItem);
+		menu.add(polyItem);
 		menu.add(testSectorItem);
 		menu.add(reconfigItem);
 		menu.add(threadItem);
@@ -169,7 +177,7 @@ public class SwimTest {
 		WindowAdapter windowAdapter = new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent event) {
-				System.err.println("Done");
+				System.out.println("Done");
 				System.exit(1);
 			}
 		};
@@ -179,7 +187,7 @@ public class SwimTest {
 			@Override
 			public void magneticFieldChanged() {
 				label.setText(" Torus: " + MagneticFields.getInstance().getTorusPath());
-				System.err.println("Field changed. Torus path: " + MagneticFields.getInstance().getTorusPath());
+				System.out.println("Field changed. Torus path: " + MagneticFields.getInstance().getTorusPath());
 //				Swimming.clearAllTrajectories();
 //				canvas1.clearTrajectories();
 //				Swimming.clearAllTrajectories();
@@ -313,10 +321,20 @@ public class SwimTest {
 	 */
 	public static void printSwimZ(SwimZStateVector v, String s) {
 				
-		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f]", s, v.x/100., v.y/100., v.z/100.);
+		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f] [%-12.5f, %-12.5f]", s, v.x/100., v.y/100., v.z/100., v.tx, v.ty);
 		System.out.println(out);
 	}
 
+	/**
+	 * Print a vector to the standard output
+	 * @param v the double vector
+	 * @param s an info string
+	 */
+	public static void printSwimZCM(SwimZStateVector v, String s) {
+				
+		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f] [%-12.5f, %-12.5f]", s, v.x, v.y, v.z, v.tx, v.ty);
+		System.out.println(out);
+	}
 
 	/**
 	 * Print a vector to the standard output
@@ -336,10 +354,55 @@ public class SwimTest {
 		System.out.println(out);
 	}
 
-	private static void printSummary(String message, int nstep, double momentum, double Q[], double hdata[]) {
+
+	private static void hdataReport(double hdata[], double toCM) {
+		String s = String.format("Min step: %-12.5e   Avg Step: %-12.5f   Max Step: %-12.5f cm", toCM * hdata[0],
+				toCM * hdata[1], toCM * hdata[2]);
+		System.out.println(s);
+	}
+	
+	/**
+	 * Computer a random double between two limits
+	 * @param min the min value
+	 * @param max the max value
+	 * @param rand the generator
+	 * @return  a random double between two limits
+	 */
+	public static double randVal(double min, double max, Random rand) {
+		return min + (max - min)*rand.nextDouble();
+	}
+
+	/**
+	 * Compute the distance between two vectors
+	 * @param v1 the first vector
+	 * @param v2 the second vector
+	 * @return the euclidean distance between two vectors 
+	 */
+	public static double locDiff(double v1[], double v2[]) {
+		double dx = v2[0] - v1[0];
+		double dy = v2[1] - v1[1];
+		double dz = v2[2] - v1[2];
+		return Math.sqrt(dx*dx + dy*dy + dz*dz);
+	}
+	
+	/**
+	 * Compute the distance between a vector and a SwimZStateVector
+	 * @param v1 the vector (in m)
+	 * @param szv the SwimZStateVector (assumed in cm)
+	 * @return the euclidean distance between two vectors in meters
+	 */
+	public static double locDiff(double v1[], SwimZStateVector szv) {
+		double dx = szv.x/100. - v1[0];
+		double dy = szv.y/100. - v1[1];
+		double dz = szv.z/100. - v1[2];
+		return Math.sqrt(dx*dx + dy*dy + dz*dz);
+	}
+	
+	public static void printSummary(String message, int nstep, double momentum,
+			double y[], double hdata[]) {
 		System.out.println(message);
-		double R = Math.sqrt(Q[0] * Q[0] + Q[1] * Q[1] + Q[2] * Q[2]);
-		double norm = Math.sqrt(Q[3] * Q[3] + Q[4] * Q[4] + Q[5] * Q[5]);
+		double R = Math.sqrt(y[0] * y[0] + y[1] * y[1] + y[2] * y[2]);
+		double norm = Math.sqrt(y[3] * y[3] + y[4] * y[4] + y[5] * y[5]);
 		double P = momentum * norm;
 
 		System.out.println("Number of steps: " + nstep);
@@ -349,22 +412,44 @@ public class SwimTest {
 			System.out.println("avg stepsize: " + hdata[1]);
 			System.out.println("max stepsize: " + hdata[2]);
 		}
-		System.out.println(
-				String.format("R = [%8.5f, %8.5f, %8.5f] |R| = %7.4f cm\nP = [%7.4e, %7.4e, %7.4e] |P| =  %9.6e GeV/c",
-						100 * Q[0], 100 * Q[1], 100 * Q[2], 100 * R, P * Q[3], P * Q[4], P * Q[5], P));
+		System.out
+				.println(String
+						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
+								y[0], y[1], y[2], R, P * y[3], P * y[4], P
+										* y[5], P));
 		System.out.println("norm (should be 1): " + norm);
+		System.out.println("--------------------------------------\n");
+	}
+	
+	public static void printSummary(String message, int nstep, double momentum, double theta0,
+			SwimZStateVector sv, double hdata[]) {
+		System.out.println(message);
+		double R = Math.sqrt(sv.x * sv.x +sv.y * sv.y + sv.z * sv.z);
+		
+		double pznorm = Math.cos(Math.toRadians(theta0));
+		double pxnorm = sv.tx*pznorm;
+		double pynorm = sv.ty*pznorm;
+		
+		double norm = Math.sqrt(pxnorm*pxnorm + pynorm*pynorm  + pznorm*pznorm );
+		double P = momentum * norm;
+
+		System.out.println("Number of steps: " + nstep);
+
 		if (hdata != null) {
-			hdataReport(hdata, 100.);
+			System.out.println("min stepsize: " + hdata[0]);
+			System.out.println("avg stepsize: " + hdata[1]);
+			System.out.println("max stepsize: " + hdata[2]);
 		}
+		System.out
+				.println(String
+						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
+								sv.x, sv.y, sv.z, R, P * pxnorm, P * pynorm, P
+										* pznorm, P));
+		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}
 
-	private static void hdataReport(double hdata[], double toCM) {
-		String s = String.format("Min step: %-12.5e   Avg Step: %-12.5f   Max Step: %-12.5f cm", toCM * hdata[0],
-				toCM * hdata[1], toCM * hdata[2]);
-		System.out.println(s);
-	}
-	
+
 
 	/**
 	 * main program

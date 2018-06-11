@@ -6,7 +6,7 @@
  */
 package cnuphys.magfield;
 
-public class Cell2D implements MagneticFieldChangeListener {
+public class Cell2D {
 
 	// used for debug printing
 	private boolean printedOnce = false;
@@ -37,7 +37,6 @@ public class Cell2D implements MagneticFieldChangeListener {
 	 */
 	public Cell2D(FieldProbe probe) {
 		this._probe = probe;
-		MagneticFields.getInstance().addMagneticFieldChangeListener(this);
 
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 2; j++) {
@@ -177,8 +176,7 @@ public class Cell2D implements MagneticFieldChangeListener {
 		result[2] = b[N2][N3].z;
 	}
 
-	@Override
-	public void magneticFieldChanged() {
+	public void reset() {
 		q2Min = Double.POSITIVE_INFINITY;
 		q2Max = Double.NEGATIVE_INFINITY;
 		q3Min = Double.POSITIVE_INFINITY;

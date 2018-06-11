@@ -123,6 +123,11 @@ public abstract class MagneticField implements IMagField {
 		MagneticFields.getInstance().changedScale(this);
 	}
 	
+	@Override
+	public double getScaleFactor() {
+		return _scaleFactor;
+	}
+	
 	/**
 	 * Change the shift in the z direction
 	 * @param shiftZ the shift in cm
@@ -132,17 +137,6 @@ public abstract class MagneticField implements IMagField {
 		MagneticFields.getInstance().changedShift(this);
 	}
 
-	/**
-	 * Get the factor that scales the field. Only scale factors between 0 and 1
-	 * are permitted. For negative scale factors, use in combination with an
-	 * inverted setting
-	 * 
-	 * @param scale
-	 *            the scale factor between 0 and 1
-	 */
-	public final double getScaleFactor() {
-		return _scaleFactor;
-	}
 	
 	/**
 	 * Get the shift in z. 
