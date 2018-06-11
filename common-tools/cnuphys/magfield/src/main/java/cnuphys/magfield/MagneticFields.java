@@ -1200,7 +1200,7 @@ public class MagneticFields {
 		_listenerList.remove(MagneticFieldChangeListener.class, magChangeListener);
 		_listenerList.add(MagneticFieldChangeListener.class, magChangeListener);
 		
-//		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
+		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
 //		(new Throwable()).printStackTrace();
 	}
 
