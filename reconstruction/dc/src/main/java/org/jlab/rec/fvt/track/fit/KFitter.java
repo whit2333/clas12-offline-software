@@ -4,6 +4,7 @@ import Jama.Matrix;
 import java.util.List;
 
 import org.jlab.rec.dc.track.Track;
+import org.jlab.rec.dc.trajectory.DCSwimmer;
 import org.jlab.rec.fvt.track.fit.StateVecs.StateVec;
 
 public class KFitter {
@@ -15,10 +16,10 @@ public class KFitter {
 
     public StateVec finalStateVec;
 
-    public KFitter(Track trk, List<MeasVecs.MeasVec> meas) {
+    public KFitter(Track trk, List<MeasVecs.MeasVec> meas, DCSwimmer swim) {
         this.init(trk.get_Vtx0().z(), meas);
         // 
-        sv.init(trk, this);
+        sv.init(trk, this, swim);
     }
     
     

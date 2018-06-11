@@ -2,12 +2,12 @@ package org.jlab.rec.dc.banks;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jlab.jnp.hipo.data.HipoEvent;
-import org.jlab.jnp.hipo.data.HipoGroup;
 
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.HipoDataEvent;
+import org.jlab.jnp.hipo.data.HipoEvent;
+import org.jlab.jnp.hipo.data.HipoGroup;
 import org.jlab.rec.dc.cluster.FittedCluster;
 import org.jlab.rec.dc.cross.Cross;
 import org.jlab.rec.dc.hit.FittedHit;
