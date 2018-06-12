@@ -859,7 +859,9 @@ public class MagneticFields {
 	private boolean initializeMagneticFields(File magdir) {
 		
 		String defaultMap = "Symm_torus_LOWRES_2008.dat";
-		String desiredMap = "Full_torus_r251_phi181_z251_08May2018.dat";
+		//Symm_torus_r2501_phi16_z251_24Apr2018
+//		String desiredMap = "Full_torus_r251_phi181_z251_08May2018.dat";
+		String desiredMap = "Symm_torus_r2501_phi16_z251_24Apr2018.dat";
 
 		File torusFile = new File(magdir, desiredMap);
 		if (!torusFile.exists() || !torusFile.canRead()) {
@@ -1201,7 +1203,7 @@ public class MagneticFields {
 		_listenerList.remove(MagneticFieldChangeListener.class, magChangeListener);
 		_listenerList.add(MagneticFieldChangeListener.class, magChangeListener);
 		
-		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
+//		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
 //		(new Throwable()).printStackTrace();
 	}
 

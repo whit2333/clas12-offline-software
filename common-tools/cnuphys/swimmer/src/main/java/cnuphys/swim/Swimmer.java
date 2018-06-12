@@ -447,6 +447,60 @@ public final class Swimmer {
 
 		return trajectory;
 	}
+	
+
+	/**
+	 * Swims a charged particle in a sector coordinate system. This swims to a
+	 * fixed z value. This is for the trajectory mode, where you want to cache
+	 * steps along the path. Uses an adaptive stepsize algorithm. THIS IS ONLY
+	 * VALID IF THE FIELD IS A RotatedComnpositeField or RotatedCompositeProbe
+	 * 
+	 * @param sector
+	 *            the sector [1..6]
+	 * @param charge
+	 *            the charge: -1 for electron, 1 for proton, etc
+	 * @param xo
+	 *            the x vertex position in meters
+	 * @param yo
+	 *            the y vertex position in meters
+	 * @param zo
+	 *            the z vertex position in meters
+	 * @param momentum
+	 *            initial momentum in GeV/c
+	 * @param theta
+	 *            initial polar angle in degrees
+	 * @param phi
+	 *            initial azimuthal angle in degrees
+	 * @param fixedZ
+	 *            the fixed z value (meters) that terminates (or maxPathLength
+	 *            if reached first)
+	 * @param accuracy
+	 *            the accuracy of the fixed z termination, in meters
+	 * @param sMax
+	 *            Max path length in meters. This determines the max number of
+	 *            steps based on the step size. If a stopper is used, the
+	 *            integration might terminate before all the steps are taken. A
+	 *            reasonable value for CLAS is 8. meters
+	 * @param stepSize
+	 *            the initial step size in meters.
+	 * @param relTolerance
+	 *            the error tolerance as fractional diffs. Note it is a vector,
+	 *            the same dimension of the problem, e.g., 6 for
+	 *            [x,y,z,vx,vy,vz]. It might be something like {1.0e-10,
+	 *            1.0e-10, 1.0e-10, 1.0e-8, 1.0e-8, 1.0e-8}
+	 * @param hdata
+	 *            if not null, should be double[3]. Upon return, hdata[0] is the
+	 *            min stepsize used (m), hdata[1] is the average stepsize used
+	 *            (m), and hdata[2] is the max stepsize (m) used
+	 * @return the trajectory of the particle
+	 * @throws RungeKuttaException
+	 */
+	public SwimTrajectory sectorSwim(int sector, int charge, double xo, double yo, double zo, double momentum,
+			double theta, double phi, final double fixedZ, double accuracy, double sMax, double stepSize,
+			double relTolerance[], double hdata[]) throws RungeKuttaException {
+		return sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, Double.POSITIVE_INFINITY, sMax, stepSize,
+				relTolerance, hdata);
+	}
 
 	/**
 	 * Swims a charged particle in a sector coordinate system. This swims to a
@@ -506,7 +560,7 @@ public final class Swimmer {
 		if (_probe instanceof RotatedCompositeProbe) {
 			SwimTrajectory traj = null;
 			try {
-				traj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, sMax, stepSize,
+				traj = sectorSwimB(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, maxRad, sMax, stepSize,
 						relTolerance, hdata);
 
 			} catch (Exception e) {
@@ -531,7 +585,7 @@ public final class Swimmer {
 				_probe.getField().printConfiguration(System.err);			
 			}
 			return traj;		}
-		System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
+		System.err.println("Can only call sectorSwim with a RotatedComposite Probe");
 		System.exit(1);
 		return null;
 	}
@@ -563,6 +617,7 @@ public final class Swimmer {
 	 *            if reached first)
 	 * @param accuracy
 	 *            the accuracy of the fixed z termination, in meters
+	 * @param maxRad maximum radial coordinate in meters
 	 * @param sMax
 	 *            Max path length in meters. This determines the max number of
 	 *            steps based on the step size. If a stopper is used, the
@@ -583,12 +638,12 @@ public final class Swimmer {
 	 * @throws RungeKuttaException
 	 */
 	//can only work for rotated composite fields or probes
-	public SwimTrajectory sectorSwim(int sector, int charge, double xo, double yo, double zo, double momentum,
-			double theta, double phi, final double fixedZ, double accuracy, double sMax, double stepSize,
+	private SwimTrajectory sectorSwimB(int sector, int charge, double xo, double yo, double zo, double momentum,
+			double theta, double phi, final double fixedZ, double accuracy, double maxRad, double sMax, double stepSize,
 			double relTolerance[], double hdata[]) throws RungeKuttaException {
 		
 		if (!(_probe instanceof RotatedCompositeProbe)) {
-			System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
+			System.err.println("Can only call sectorSwim with a RotatedComposite Probe");
 			System.exit(1);
 			return null;
 		}
@@ -602,14 +657,14 @@ public final class Swimmer {
 		// normally we swim from small z to a larger z cutoff.
 		// but we can handle either
 		final boolean normalDirection = (fixedZ > zo);
-		IStopper stopper = new DefaultZStopper(0, sMax, fixedZ, accuracy, normalDirection);
+		IStopper stopper = new DefaultZStopper(0, maxRad, sMax, fixedZ, accuracy, normalDirection);
 
 		SwimTrajectory traj = null;
 		// First try
 
 		// SECTOR SWIM B
 		try {
-			traj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, 0, sMax, stepSize,
+			traj = sectorSwimC(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, 0, sMax, stepSize,
 					relTolerance, hdata);
 			
 			if (traj == null) {
@@ -674,13 +729,13 @@ public final class Swimmer {
 			// System.err.println("New start state = " + String.format("(%9.6f,
 			// %9.6f, %9.6f) (%9.6f, %9.6f, %9.6f)", xo, yo, zo, px, py, pz));
 
-			stopper = new DefaultZStopper(finalPathLength, sMax, fixedZ, accuracy, normalDirection);
+			stopper = new DefaultZStopper(finalPathLength, maxRad, sMax, fixedZ, accuracy, normalDirection);
 
 			// momentum = traj.getFinalMomentum();
 			theta = FastMath.acos2Deg(pz);
 			phi = FastMath.atan2Deg(py, px);
 
-			SwimTrajectory addTraj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, finalPathLength, sMax,
+			SwimTrajectory addTraj = sectorSwimC(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, finalPathLength, sMax,
 					stepSize, relTolerance, hdata);
 
 			finalPathLength = stopper.getFinalT();
@@ -755,13 +810,13 @@ public final class Swimmer {
 	 * @return the trajectory of the particle
 	 * @throws RungeKuttaException
 	 */
-	public SwimTrajectory sectorSwim(int sector, int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
+	private SwimTrajectory sectorSwimC(int sector, int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
 			IStopper stopper, double s0, double sMax, double stepSize, double relTolerance[], double hdata[])
 			throws RungeKuttaException {
 		
 		//can only work for rotated composite fields or probes
 		if (!(_probe instanceof RotatedCompositeProbe)) {
-			System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
+			System.err.println("Can only call sectorSwim with a RotatedComposite Probe");
 			System.exit(1);
 			return null;
 		}

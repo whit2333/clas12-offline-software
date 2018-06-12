@@ -6,6 +6,7 @@ import Jama.Matrix;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.IMagField;
 import cnuphys.magfield.MagneticField;
+import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.DefaultStopper;
 import cnuphys.rk4.IRkListener;
 import cnuphys.rk4.IStopper;
@@ -60,7 +61,7 @@ public class SwimZ {
 	private ArrayList<double[]> yArray = new ArrayList<double[]>(100);
 
 	//the derivatives (i.e., the ODEs)
-	private SwimZDerivative deriv = new SwimZDerivative();
+	private SwimZDerivative deriv;
 	
 	/**
 	 * In swimming routines that require a tolerance vector, this is a
@@ -104,6 +105,14 @@ public class SwimZ {
 	
 	//some initialization
 	private void initialize() {
+		
+		if (_probe instanceof RotatedCompositeProbe) {
+			deriv = new SectorSwimZDerivative();
+		}
+		else {
+			deriv = new SwimZDerivative();
+		}
+
 		setAbsoluteTolerance(1.0e-3);
 		//the 100 is because the steps size assumed in RK is meters
 		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
@@ -208,6 +217,86 @@ public class SwimZ {
 		return result;
 
 	}
+	
+	/**
+	 * Swim to a fixed z over short distances using RK adaptive stepsize
+	 * 
+	 * @param sector 
+	 * @param Q
+	 *            the integer charge of the particle (-1 for electron)
+	 * @param p
+	 *            the momentum in GeV/c
+	 * @param start
+	 *            the starting state vector
+	 * @param zf
+	 *            the final z value (cm)
+	 * @param stepSize
+	 *            the initial step size
+	 * @param relTolerance
+	 *            the absolute tolerances on each state variable [x, y, tx, ty]
+	 *            (q = const). So it is an array with four entries, like [1.0e-4
+	 *            cm, 1.0e-4 cm, 1.0e-5, 1.0e05]
+	 * @param hdata
+	 *            An array with three elements. Upon return it will have the
+	 *            min, average, and max step size (in that order).
+	 * @return the swim result
+	 * @throws SwimZException
+	 */
+	public SwimZResult sectorAdaptiveRK(int sector,
+			int Q,
+			double p,
+			SwimZStateVector start,
+			final double zf,
+			double stepSize,
+			double hdata[]) throws SwimZException {
+		
+		if (!(_probe instanceof RotatedCompositeProbe)) {
+			System.err.println("Can only call sectorAdaptiveRK with a RotatedComposite Probe");
+			System.exit(1);
+			return null;
+		}
+		
+		if (start == null) {
+			throw new SwimZException("Null starting state vector.");
+		}
+
+		// straight line?
+		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
+			return straightLineResult(Q, p, start, zf);
+		}
+
+		// need to set the derivative
+		((SectorSwimZDerivative)deriv).set(sector, Q, p, _probe);
+
+		double yo[] = { start.x, start.y, start.tx, start.ty };
+
+		// create the lists to hold the trajectory
+		zArray.clear();
+		yArray.clear();
+
+		int nStep = 0;
+		try {
+			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, zArray, yArray, deriv, _stopper, _absoluteTolerance, hdata);
+		}
+		catch (RungeKuttaException e) {
+			e.printStackTrace();
+		}
+
+		if (nStep == 0) {
+			return null;
+		}
+
+		SwimZResult result = new SwimZResult(Q, p, start.z, zf, nStep);
+		result.add(start);
+		for (int i = 0; i < zArray.size(); i++) {
+			double v[] = yArray.get(i);
+			SwimZStateVector sv = new SwimZStateVector(zArray.get(i), v);
+			result.add(sv);
+		}
+
+		return result;
+
+	}
 
 	/**
 	 * Swim to a fixed z using RK adaptive stepsize
@@ -276,6 +365,8 @@ public class SwimZ {
 
 		return nStep;
 	}
+	
+	
 
 	/**
 	 * Transport to a fixed z over short distances using RK adaptive stepsize

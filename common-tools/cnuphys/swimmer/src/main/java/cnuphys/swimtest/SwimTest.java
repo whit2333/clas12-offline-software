@@ -60,7 +60,10 @@ public class SwimTest {
 		File mfdir = new File(System.getProperty("user.home"), "magfield");
 		System.out.println("mfdir exists: " + (mfdir.exists() && mfdir.isDirectory()));
 		try {
-			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_08May2018.dat",
+			//Symm_torus_r2501_phi16_z251_24Apr2018
+//			mf.initializeMagneticFields(mfdir.getPath(), "Full_torus_r251_phi181_z251_08May2018.dat",
+//					"Symm_solenoid_r601_phi1_z1201_2008.dat");
+			mf.initializeMagneticFields(mfdir.getPath(), "Symm_torus_r2501_phi16_z251_24Apr2018.dat",
 					"Symm_solenoid_r601_phi1_z1201_2008.dat");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -118,7 +121,7 @@ public class SwimTest {
 					CreateTestTrajectories.createTestTraj(3344632211L, 1000);
 				}
 				else if (e.getSource() == testSectorItem) {
-					SectorTest.testSectorSwim();
+					SectorTest.testSectorSwim(100000);
 				}
 				else if (e.getSource() == threadItem) {
 					ThreadTest.threadTest(100, 8);
@@ -426,11 +429,11 @@ public class SwimTest {
 		System.out.println(message);
 		double R = Math.sqrt(sv.x * sv.x +sv.y * sv.y + sv.z * sv.z);
 		
-		double pznorm = Math.cos(Math.toRadians(theta0));
-		double pxnorm = sv.tx*pznorm;
-		double pynorm = sv.ty*pznorm;
+		double pz = momentum/Math.sqrt(1. + sv.tx*sv.tx + sv.ty*sv.ty);
+		double px = sv.tx*pz;
+		double py = sv.ty*pz;
 		
-		double norm = Math.sqrt(pxnorm*pxnorm + pynorm*pynorm  + pznorm*pznorm );
+		double norm = Math.sqrt(px*px + py*py + pz*pz)/momentum;
 		double P = momentum * norm;
 
 		System.out.println("Number of steps: " + nstep);
@@ -443,8 +446,7 @@ public class SwimTest {
 		System.out
 				.println(String
 						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
-								sv.x, sv.y, sv.z, R, P * pxnorm, P * pynorm, P
-										* pznorm, P));
+								sv.x, sv.y, sv.z, R, px, py, pz, P));
 		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}

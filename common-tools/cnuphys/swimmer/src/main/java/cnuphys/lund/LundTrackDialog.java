@@ -27,7 +27,6 @@ import javax.swing.border.TitledBorder;
 
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
-import cnuphys.magfield.MagneticFields;
 import cnuphys.rk4.RungeKuttaException;
 import cnuphys.swim.DefaultSwimStopper;
 import cnuphys.swim.SwimTrajectory;
@@ -151,7 +150,7 @@ public class LundTrackDialog extends JDialog {
 		};
 		addWindowListener(wa);
 
-//		_swimmer = new Swimmer(MagneticFields.getInstance().getCompositeField());
+		_swimmer = new Swimmer();
 		addComponents();
 		pack();
 		centerComponent(this);
