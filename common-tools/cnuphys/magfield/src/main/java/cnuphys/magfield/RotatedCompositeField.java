@@ -1,6 +1,23 @@
 package cnuphys.magfield;
 
+import java.io.PrintStream;
+
 public final class RotatedCompositeField extends CompositeField {
+	
+	/**
+	 * Print the current configuration
+	 * @param ps the print stream
+	 */
+	@Override
+	public void printConfiguration(PrintStream ps) {
+		ps.println("ROTATED COMPOSITE FIELD");
+		for (IMagField field : this) {
+			field.printConfiguration(ps);
+			
+		}
+	}
+
+
 	
 	@Override
 	public String getName() {

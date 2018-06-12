@@ -10,9 +10,6 @@ import java.awt.event.WindowEvent;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Random;
 
 import javax.swing.ButtonGroup;
@@ -633,6 +630,7 @@ public class MagTests {
 				label.setText(" Torus: " + MagneticFields.getInstance().getTorusPath());
 				System.err.println("Field changed. Torus path: " + MagneticFields.getInstance().getTorusPath());
 				fixMenus();
+				MagneticFields.getInstance().printCurrentConfiguration(System.err);
 			}
 			
 		};

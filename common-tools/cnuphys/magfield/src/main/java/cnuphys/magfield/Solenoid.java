@@ -10,6 +10,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.StringTokenizer;
 
 /**
@@ -114,6 +115,14 @@ public final class Solenoid extends MagneticField {
 		return s;
 	}
 	
+	/**
+	 * Print the current configuration
+	 * @param ps the print stream
+	 */
+	@Override
+	public void printConfiguration(PrintStream ps) {
+		ps.println(String.format("SOLENOID scale: %6.3f file: %s", _scaleFactor, MagneticFields.getInstance().getSolenoidBaseName()));
+	}
 
 	/**
 	 * main method used for testing.

@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -1646,6 +1647,11 @@ public class MagneticFields {
 	 */
 	public static void main(String arg[]) {
 		MagTests.runTests();
+	}
+	
+	public void printCurrentConfiguration(PrintStream ps) {
+		ps.println("Current magfied configuration: ");
+		getActiveField().printConfiguration(ps);
 	}
 
 }

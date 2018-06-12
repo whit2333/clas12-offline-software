@@ -501,11 +501,36 @@ public final class Swimmer {
 			double theta, double phi, final double fixedZ, double accuracy, double maxRad, double sMax, double stepSize,
 			double relTolerance[], double hdata[]) throws RungeKuttaException {
 
-		//can only work for rotated composite fields or probes
+		// can only work for rotated composite fields or probes
+		//SECTOR SWIM A
 		if (_probe instanceof RotatedCompositeProbe) {
-			return sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, sMax, stepSize,
-					relTolerance, hdata);
-		}
+			SwimTrajectory traj = null;
+			try {
+				traj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, fixedZ, accuracy, sMax, stepSize,
+						relTolerance, hdata);
+
+			} catch (Exception e) {
+				System.err.println("SECTOR SWIM A Exception");
+				e.printStackTrace();
+			}
+
+			if (traj == null) {
+				System.err.println("ERROR null trajectory in SECTOR SWIM A. Method arguments:");
+				System.err.println("sector = " + sector);
+				System.err.println("charge = " + charge);
+				System.err.println("target Z: " + fixedZ + "   setpSize = " + stepSize);
+				System.err.println("(xo, yo, zo) = (" + xo + ", " + yo + ", " + zo + ")");
+				System.err.println("(p, theta, phi) = (" + momentum + ", " + theta + ", " + phi + ")");
+				System.err.println("(accuracy, maxRad, sMax) = (" + accuracy + ", " + maxRad + ", " + sMax + ")");
+				System.err.print("Rel tolerance: ");
+				for (double v : relTolerance) {
+					System.err.print(" " + v);
+				}
+				System.err.println("");
+						
+				_probe.getField().printConfiguration(System.err);			
+			}
+			return traj;		}
 		System.err.println("Can only call sectorSwim with a RotatedComposite Field or Probe");
 		System.exit(1);
 		return null;
@@ -582,8 +607,32 @@ public final class Swimmer {
 		SwimTrajectory traj = null;
 		// First try
 
-		traj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, 0, sMax, stepSize, relTolerance, hdata);
+		// SECTOR SWIM B
+		try {
+			traj = sectorSwim(sector, charge, xo, yo, zo, momentum, theta, phi, stopper, 0, sMax, stepSize,
+					relTolerance, hdata);
+			
+			if (traj == null) {
+				System.err.println("ERROR null trajectory in SECTOR SWIM A. Method arguments:");
+				System.err.println("sector = " + sector);
+				System.err.println("charge = " + charge);
+				System.err.println("target Z: " + fixedZ + "   setpSize = " + stepSize);
+				System.err.println("(xo, yo, zo) = (" + xo + ", " + yo + ", " + zo + ")");
+				System.err.println("(p, theta, phi) = (" + momentum + ", " + theta + ", " + phi + ")");
+				System.err.println("(accuracy, sMax) = (" + accuracy + ", " + ", " + sMax + ")");
+				System.err.print("Rel tolerance: ");
+				for (double v : relTolerance) {
+					System.err.print(" " + v);
+				}
+				System.err.println("");
+						
+				_probe.getField().printConfiguration(System.err);			
+			}
 
+		} catch (Exception e) {
+			System.err.println("SECTOR SWIM B Exception");
+			e.printStackTrace();
+		}
 		// if we stopped because of max radius, we are done (never reached
 		// target z)
 		double finalPathLength = stopper.getFinalT();
@@ -731,8 +780,18 @@ public final class Swimmer {
 		SectorDerivative deriv = new SectorDerivative(sector, charge, momentum, (RotatedCompositeProbe)_probe);
 
 		// integrate
-		(new RungeKutta()).adaptiveStep(uo, s0, sMax, stepSize, s, u, deriv, stopper, _defaultTableau, relTolerance,
-				hdata);
+		// SECTOR SWIM C
+		try {
+			(new RungeKutta()).adaptiveStep(uo, s0, sMax, stepSize, s, u, deriv, stopper, _defaultTableau, relTolerance,
+					hdata);
+		} catch (RungeKuttaException e) {
+			System.err.println("SECTOR SWIM C RungeKutta Exception");
+			System.err.println("Tableau: " + _defaultTableau.getClass().getName());
+			e.printStackTrace();
+			trajectory = null;
+			throw(e);
+		}
+		
 		// now cycle through and get the save points
 		for (int i = 0; i < u.size(); i++) {
 			trajectory.add(u.get(i));

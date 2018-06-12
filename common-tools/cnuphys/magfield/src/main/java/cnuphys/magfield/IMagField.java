@@ -1,5 +1,7 @@
 package cnuphys.magfield;
 
+import java.io.PrintStream;
+
 public interface IMagField {
 	
 	/**
@@ -50,6 +52,15 @@ public interface IMagField {
 	 */
 	public float getMaxFieldMagnitude();
 
+	/**
+	 * Get the scale factor
+	 * @return the scale factor
+	 */
 	public double getScaleFactor();
 
+	/**
+	 * Print the current configuration
+	 * @param ps the print stream
+	 */
+	public void printConfiguration(PrintStream ps);
 }
