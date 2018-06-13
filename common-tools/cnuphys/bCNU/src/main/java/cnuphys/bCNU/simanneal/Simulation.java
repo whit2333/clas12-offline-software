@@ -4,12 +4,13 @@ import java.util.Properties;
 import java.util.Random;
 
 import javax.management.modelmbean.InvalidTargetObjectTypeException;
+import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 
 import cnuphys.bCNU.attributes.Attribute;
 import cnuphys.bCNU.attributes.Attributes;
 
-public class Simulation {
+public abstract class Simulation extends Thread {
 	
 	//common attribute keys
 	public static final String RANDSEED = "randseed";
@@ -50,6 +51,8 @@ public class Simulation {
 	
 	//max steps (temp reductions) until stop (unless min temp is reached)
 	private int _maxSteps = 100;
+	
+	private Solution _initialSolution;
 
 		
 	/**
@@ -64,10 +67,12 @@ public class Simulation {
 		createRandomGenerator();
 		setParametersFromAttributes();
 		
-		_currentSolution = initialSolution;
-		
+		_initialSolution = initialSolution;
+		_currentSolution = initialSolution.copy();
 		setInitialTemperature();
 	}
+	
+	public abstract void reset();
 	
 	/**
 	 * Accessor for the attributes
@@ -238,7 +243,9 @@ public class Simulation {
 	/**
 	 * run the simulation
 	 */
+	@Override
 	public void run() {
+		
 		double factor = 1. - _coolRate;
 		Solution oldSolution = _currentSolution.copy();
 		
@@ -301,6 +308,7 @@ public class Simulation {
 						.updateSolution(this, newSolution, oldSolution);
 			}
 		}
+		
 	}
 	
 

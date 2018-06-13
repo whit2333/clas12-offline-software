@@ -1,13 +1,21 @@
 package cnuphys.bCNU.simanneal;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Insets;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import cnuphys.bCNU.attributes.AttributePanel;
 
+/**
+ * This panel will display the attributes for the simulation, the
+ * run and reset buttons, and a plot
+ * @author heddle
+ *
+ */
 public class SimulationPanel extends JPanel {
 	
 	//the underlying simulation
@@ -27,6 +35,7 @@ public class SimulationPanel extends JPanel {
 		addEast();
 	}
 
+	//add the panel
 	private void addEast() {
 		JPanel panel = new JPanel() {
 			@Override
@@ -42,8 +51,24 @@ public class SimulationPanel extends JPanel {
 		_attributePanel = new AttributePanel(_simulation.getAttributes());
 	    panel.add(_attributePanel, BorderLayout.NORTH);
 		
+	    JPanel bPanel = new JPanel();
+	    bPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 2));
+	    JButton runButton = new JButton("Run");
+	    runButton.addActionListener(e -> _simulation.start());
+	    
+	    JButton resetButton = new JButton("Reset");
+	    runButton.addActionListener(e -> reset());
+
+	    
+	    bPanel.add(runButton);
+	    bPanel.add(resetButton);
+	    panel.add(bPanel, BorderLayout.SOUTH);
 	    
 	    add(panel, BorderLayout.EAST);
+	}
+	
+	private void reset() {
+//		_simulation.reset();
 	}
 	
 	@Override

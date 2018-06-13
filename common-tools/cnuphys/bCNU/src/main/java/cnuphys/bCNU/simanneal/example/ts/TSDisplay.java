@@ -6,6 +6,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 
 import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 import cnuphys.bCNU.graphics.SymbolDraw;
 import cnuphys.bCNU.simanneal.IUpdateListener;
@@ -13,6 +14,11 @@ import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.Solution;
 import cnuphys.splot.plot.X11Colors;
 
+/**
+ * This is the map
+ * @author heddle
+ *
+ */
 public class TSDisplay extends JComponent implements IUpdateListener {
 	
 	//for converting to screen coordinates
@@ -76,6 +82,18 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 	@Override
 	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
 		repaint();
+
+//		if (!SwingUtilities.isEventDispatchThread()) {
+//			try {
+//				repaint();
+//				System.err.println("sleep");
+//				Thread.sleep(100);
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		} else {
+//			repaint();
+//		}
 	}
 
 }

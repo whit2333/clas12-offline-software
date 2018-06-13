@@ -25,7 +25,7 @@ public class TSPanel extends JPanel {
 	public TSPanel() {
 		//initial solution
 		
-		int numCity = 400;
+		int numCity = 200;
 		River river = River.NORIVER;
 		
 		_travPerson = TravelingSalesperson.getInstance();
@@ -47,7 +47,16 @@ public class TSPanel extends JPanel {
 		attributes.add(Simulation.THERMALCOUNT, 200);
 		attributes.add(Simulation.MAXSTEPS, 1000);
 		
-		_simulation = new Simulation(_travPerson, attributes);
+		_simulation = new Simulation(_travPerson, attributes) {
+
+			@Override
+			public void reset() {
+				_simulation.stop();
+				_travPerson.reset(numCity, river);
+				_simulation.resume();
+			}
+			
+		};
 		_tsDisplay = new TSDisplay(_travPerson);
 
 		_simulation.addUpdateListener(_tsDisplay);
