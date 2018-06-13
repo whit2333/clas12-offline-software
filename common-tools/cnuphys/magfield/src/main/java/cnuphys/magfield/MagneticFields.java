@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -86,7 +87,8 @@ public class MagneticFields {
 
 	// menu stuff
 
-	private JMenuItem _loadItem; // load different torus
+	private JMenuItem _loadNewTorusItem; // load different torus
+	private JMenuItem _loadNewSolenoidItem; // load different solenoid
 
 	private JRadioButtonMenuItem _torusItem;
 	private JRadioButtonMenuItem _solenoidItem;
@@ -206,6 +208,81 @@ public class MagneticFields {
 		}
 
 		// System.out.println(_torus);
+		notifyListeners();
+
+	}
+	
+
+	/**
+	 * Open a new solenoid map from the file selector
+	 */
+	public void openNewSolenoid() {
+
+		FileNameExtensionFilter filter = new FileNameExtensionFilter("Solenoid Maps", "dat", "solenoid", "map");
+
+		JFileChooser chooser = new JFileChooser(dataFilePath);
+		chooser.setSelectedFile(null);
+		chooser.setFileFilter(filter);
+		int returnVal = chooser.showOpenDialog(null);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = chooser.getSelectedFile();
+			try {
+				dataFilePath = file.getPath();
+				if (file.exists()) {
+					openNewSolenoid(file.getPath());
+				}
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+
+	/**
+	 * Open a new solenoid map from a full path
+	 * 
+	 * @param path
+	 *            the path to the solenoid map
+	 * @throws FileNotFoundException
+	 */
+	public void openNewSolenoid(String path) throws FileNotFoundException {
+		File file = new File(path);
+		if (!file.exists()) {
+			throw new FileNotFoundException("No solenoid at [" + path + "]");
+		}
+
+
+		Solenoid oldSolenoid = _solenoid;
+		boolean activeFieldWasSolenoid = (_activeField == oldSolenoid);
+
+		// load the solenoid
+		_solenoid = null;
+		_solenoid = readSolenoid(path);
+
+		if (activeFieldWasSolenoid) {
+			_activeField = _solenoid;
+		}
+
+		if (_solenoid != null) {
+			if (_compositeField != null) {
+				if (oldSolenoid != null) {
+					_compositeField.remove(oldSolenoid);
+				}
+				if (_solenoid != null) {
+					_compositeField.add(_solenoid);
+				}
+			}
+
+			if (_rotatedCompositeField != null) {
+				if (oldSolenoid != null) {
+					_rotatedCompositeField.remove(oldSolenoid);
+				}
+				if (_solenoid != null) {
+					_rotatedCompositeField.add(_solenoid);
+				}
+			}
+		}
+
 		notifyListeners();
 
 	}
@@ -858,7 +935,9 @@ public class MagneticFields {
 	private boolean initializeMagneticFields(File magdir) {
 		
 		String defaultMap = "Symm_torus_LOWRES_2008.dat";
-		String desiredMap = "Full_torus_r251_phi181_z251_08May2018.dat";
+		//Symm_torus_r2501_phi16_z251_24Apr2018
+//		String desiredMap = "Full_torus_r251_phi181_z251_08May2018.dat";
+		String desiredMap = "Symm_torus_r2501_phi16_z251_24Apr2018.dat";
 
 		File torusFile = new File(magdir, desiredMap);
 		if (!torusFile.exists() || !torusFile.canRead()) {
@@ -1093,9 +1172,12 @@ public class MagneticFields {
 		// _uniformItem.setEnabled(_uniform != null);
 
 		menu.addSeparator();
-		_loadItem = new JMenuItem("Load a Different Torus...");
-		_loadItem.addActionListener(al);
-		menu.add(_loadItem);
+		_loadNewTorusItem = new JMenuItem("Load a Different Torus...");
+		_loadNewTorusItem.addActionListener(al);
+		menu.add(_loadNewTorusItem);
+		_loadNewSolenoidItem = new JMenuItem("Load a Different Solenoid...");
+		_loadNewSolenoidItem.addActionListener(al);
+		menu.add(_loadNewSolenoidItem);
 
 		return menu;
 	}
@@ -1122,8 +1204,11 @@ public class MagneticFields {
 			MagneticField.setInterpolate(true);
 		} else if (source == _nearestNeighborItem) {
 			MagneticField.setInterpolate(false);
-		} else if (source == _loadItem) {
+		} else if (source == _loadNewTorusItem) {
 			openNewTorus();
+		}
+		else if (source == _loadNewSolenoidItem) {
+			openNewSolenoid();
 		}
 
 		System.err.println("Active Field: " + getActiveFieldDescription());
@@ -1200,7 +1285,7 @@ public class MagneticFields {
 		_listenerList.remove(MagneticFieldChangeListener.class, magChangeListener);
 		_listenerList.add(MagneticFieldChangeListener.class, magChangeListener);
 		
-		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
+//		System.err.println("Added MagField Change Listener [" + _listenerList.getListenerCount() + "]");
 //		(new Throwable()).printStackTrace();
 	}
 
@@ -1646,6 +1731,47 @@ public class MagneticFields {
 	 */
 	public static void main(String arg[]) {
 		MagTests.runTests();
+	}
+	
+	public String getCurrentConfiguration() {
+		String s = getActiveFieldType().name();
+				
+		//TORUS, SOLENOID, COMPOSITE, COMPOSITEROTATED, ZEROFIELD
+		switch (getActiveFieldType()) {
+		case TORUS:
+			if (!_torus.isZeroField()) {
+				s += " ";
+				s += _torus.getBaseFileName();
+			}
+			break;
+		case SOLENOID:
+			if (!_solenoid.isZeroField()) {
+				s += " ";
+				s += _solenoid.getBaseFileName();
+			}
+			break;
+		case COMPOSITE: case COMPOSITEROTATED:
+			if (!_solenoid.isZeroField()) {
+				s += " ";
+				s += _solenoid.getBaseFileName();
+			}
+			if (!_torus.isZeroField()) {
+				s += " ";
+				s += _torus.getBaseFileName();
+			}
+			break;
+		case ZEROFIELD:
+			s += " zero field";
+			break;
+		}
+		
+		return s;
+	}
+
+	
+	public void printCurrentConfiguration(PrintStream ps) {
+		ps.println("Current magfied configuration: ");
+		getActiveField().printConfiguration(ps);
 	}
 
 }

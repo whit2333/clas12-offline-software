@@ -25,7 +25,7 @@ public class StateVecs {
     private final double[] A = new double[2];
     private final double[] dA = new double[4];
     private final float[] bf = new float[3];
-    
+    private DCSwimmer dcSwim;
     private StateVec f(int i, int f, StateVec iVec) {
 
         dcSwim.SetSwimParameters((int)Math.signum(Z[f] - Z[i]), iVec.x, iVec.y, iVec.z, iVec.tx, iVec.ty, Math.abs(1. / iVec.Q), (int)Math.signum(iVec.Q));
@@ -522,7 +522,7 @@ public class StateVecs {
 
     }
 
-    DCSwimmer dcSwim = new DCSwimmer();
+    //DCSwimmer dcSwim = new DCSwimmer();
 
     
     private void A(double tx, double ty, double Bx, double By, double Bz, double[] a) {
@@ -602,8 +602,8 @@ public class StateVecs {
         }
     }
 
-    public void init(Track trkcand, KFitter kf) {
-
+    public void init(Track trkcand, KFitter kf, DCSwimmer swimmer) {
+        dcSwim = swimmer;
         if (trkcand != null) {
             
             StateVec initSV = new StateVec(0);

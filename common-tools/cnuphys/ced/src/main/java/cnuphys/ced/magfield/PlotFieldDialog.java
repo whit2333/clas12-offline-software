@@ -105,6 +105,7 @@ public class PlotFieldDialog extends APlotDialog implements ActionListener {
 			curve.getFit().setFitType(FitType.CONNECT);
 			curve.getStyle().setSymbolType(SymbolType.NOSYMBOL);
 			curve.getStyle().setLineColor(_curveColors[0]);
+			curve.getStyle().setLineWidth(2f);
 		}
 
 		return ds;
@@ -113,7 +114,7 @@ public class PlotFieldDialog extends APlotDialog implements ActionListener {
 	@Override
 	protected String[] getColumnNames() {
 		String labels[] = { "Component", "|B| (1) " + 
-				MagneticFields.getInstance().getTorusBaseName() };
+				MagneticFields.getInstance().getCurrentConfiguration() };
 		return labels;
 	}
 
@@ -315,10 +316,11 @@ public class PlotFieldDialog extends APlotDialog implements ActionListener {
 		if (hotIndex < 0) {
 			hotIndex = curveCount;
 			DataColumn newCurve = _canvas.getDataSet().addCurve("Component", "|B| (" + (hotIndex + 1) + ") " + 
-					MagneticFields.getInstance().getTorusBaseName());
+					MagneticFields.getInstance().getCurrentConfiguration());
 			newCurve.getFit().setFitType(FitType.CONNECT);
 			newCurve.getStyle().setSymbolType(SymbolType.NOSYMBOL);
 			newCurve.getStyle().setLineColor(_curveColors[hotIndex % _curveColors.length]);
+			newCurve.getStyle().setLineWidth(2f);
 		}
 
 		FieldProbe probe = FieldProbe.factory();

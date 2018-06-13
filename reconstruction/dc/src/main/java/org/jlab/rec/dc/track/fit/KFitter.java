@@ -27,6 +27,7 @@ public class KFitter {
     public int sector; 
     public KFitter(Track trk, DCGeant4Factory DcDetector, boolean TimeBasedUsingHBtrack, DCSwimmer dcSwim) { 
         sv = new StateVecs(dcSwim);
+        
         sector = trk.get_Sector();
         if(TimeBasedUsingHBtrack==true) {
             this.initFromHB(trk, DcDetector); 

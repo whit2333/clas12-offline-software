@@ -2,6 +2,7 @@ package cnuphys.magfield;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.PrintStream;
 
 /**
  * The Class Torus.
@@ -129,5 +130,13 @@ public class Torus extends MagneticField {
 		return q3Coordinate.getMin();
 	}
 
+	/**
+	 * Print the current configuration
+	 * @param ps the print stream
+	 */
+	@Override
+	public void printConfiguration(PrintStream ps) {
+		ps.println(String.format("TORUS scale: %6.3f file: %s", _scaleFactor, MagneticFields.getInstance().getTorusBaseName()));
+	}
 
 }

@@ -280,7 +280,7 @@ public class DCTBEngine extends ReconstructionEngine {
                 List<MeasVecs.MeasVec> matchDCTrack = match2FMT.matchDCTrack2FMTClusters(event, fMTTraj, 20);
                 if(matchDCTrack!=null && matchDCTrack.size()>2) {
                     org.jlab.rec.fvt.track.fit.KFitter FMTKF 
-                            = new org.jlab.rec.fvt.track.fit.KFitter(TrackArray[i], matchDCTrack);
+                            = new org.jlab.rec.fvt.track.fit.KFitter(TrackArray[i], matchDCTrack, swimmer);
                     FMTKF.runFitter(TrackArray[i]);
                 }
                 trkcands.add(TrackArray[i]);

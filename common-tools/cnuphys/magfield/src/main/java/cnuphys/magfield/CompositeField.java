@@ -1,5 +1,6 @@
 package cnuphys.magfield;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 /**
@@ -132,5 +133,19 @@ public class CompositeField extends ArrayList<IMagField> implements IMagField {
 	public double getScaleFactor() {
 		return 1;
 	}
+	
+	/**
+	 * Print the current configuration
+	 * @param ps the print stream
+	 */
+	@Override
+	public void printConfiguration(PrintStream ps) {
+		ps.println("COMPOSITE FIELD");
+		for (IMagField field : this) {
+			field.printConfiguration(ps);
+			
+		}
+	}
+
 
 }

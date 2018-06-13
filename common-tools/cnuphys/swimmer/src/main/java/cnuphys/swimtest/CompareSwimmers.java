@@ -163,7 +163,7 @@ public class CompareSwimmers {
 		}
 		time = System.currentTimeMillis() - time;
 		System.out.println("SwimZ time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (szTraj[num-1].size()));
-        SwimTest.printSummary("Last for swimZ", numStep, pTot[num-1], theta[num-1], szTraj[num-1].last(), hdata);
+        SwimTest.printSummary("Last for swimZ", szTraj[num-1].size(), pTot[num-1], theta[num-1], szTraj[num-1].last(), hdata);
 //		SwimTest.printSwimZ(szTraj[num-1].last(), "Last for swimZ");
 		
 		maxDiffIndex = -1;
