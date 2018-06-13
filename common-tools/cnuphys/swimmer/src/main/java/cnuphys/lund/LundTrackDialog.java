@@ -106,7 +106,6 @@ public class LundTrackDialog extends JDialog {
 	private double _oldMomentum = 2.0;
 
 	// only need one swimmer
-	private Swimmer _swimmer;
 
 	// unicode strings
 	public static final String SMALL_BETA = "\u03B2";
@@ -150,7 +149,6 @@ public class LundTrackDialog extends JDialog {
 		};
 		addWindowListener(wa);
 
-		_swimmer = new Swimmer();
 		addComponents();
 		pack();
 		centerComponent(this);
@@ -230,6 +228,10 @@ public class LundTrackDialog extends JDialog {
 	 * Swim the particle
 	 */
 	private void doCommonSwim() {
+		
+		Swimmer swimmer = new Swimmer();
+		
+		swimmer.getProbe().getField().printConfiguration(System.out);
 
 		try {
 			LundId lid = _lundComboBox.getSelectedId();
@@ -252,7 +254,7 @@ public class LundTrackDialog extends JDialog {
 
 			try {
 				if (_standardCutoff.isSelected()) {
-					SwimTrajectory traj = _swimmer.swim(lid.getCharge(), xo, yo, zo, momentum, theta, phi, stopper, 0,
+					SwimTrajectory traj = swimmer.swim(lid.getCharge(), xo, yo, zo, momentum, theta, phi, stopper, 0,
 							maxPathLen, stepSize, Swimmer.CLAS_Tolerance, hdata);
 					traj.setLundId(lid);
 
@@ -288,7 +290,7 @@ public class LundTrackDialog extends JDialog {
 						ztarget /= 100; // meters
 						// convert accuracy from microns to meters
 						double accuracy = Double.parseDouble(_accuracy.getText()) / 1.0e6;
-						traj = _swimmer.swim(lid.getCharge(), xo, yo, zo, momentum, theta, phi, ztarget, accuracy,
+						traj = swimmer.swim(lid.getCharge(), xo, yo, zo, momentum, theta, phi, ztarget, accuracy,
 								maxPathLen, stepSize, Swimmer.CLAS_Tolerance, hdata);
 						traj.setLundId(lid);
 						double lastY[] = traj.lastElement();

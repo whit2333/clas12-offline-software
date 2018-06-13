@@ -9,10 +9,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 
 import cnuphys.magfield.FloatVect;
-import cnuphys.magfield.converter.Converter.GridData;
 
 public class ConverterSolenoid {
 
@@ -63,35 +61,32 @@ public class ConverterSolenoid {
 		return files;
 	}
 
-	// get the number appended at the end of the file
-	// we have to sort by this
-	private static int getNValue(String name) {
-		String vname = name.replaceAll("[^\\d]", "");
-		// System.out.println("vname = [" + vname + "]");
-		return Integer.parseInt(vname);
-	}
 
 	// get the dir with all the tables
 	private static String getDataDir() {
 		return _homeDir + "/newMapsSolenoid";
 	}
 
-	private static GridData[] preProcessor(ArrayList<File> files) throws IOException {
+	private static GridData[] preProcessor(ArrayList<ZFile> zfiles) throws IOException {
 
-		if (!files.isEmpty()) {
-			System.out.println("Found " + files.size() + " files.");
+		if (!zfiles.isEmpty()) {
+			System.out.println("Found " + zfiles.size() + " files.");
 
 			GridData gdata[] = new GridData[3];
 			for (int i = 0; i < 3; i++) {
 				gdata[i] = (new ConverterSolenoid()).new GridData(i);
 			}
 
-			gdata[Z].n = files.size();
+			gdata[PHI].min = 0;
+			gdata[PHI].max = 360;
+			gdata[Z].n = zfiles.size();
 
 			int zIndex = 0;
-			for (File file : files) {
+			for (ZFile zfile : zfiles) {
+				
+				File file = zfile.file;
 
-				System.out.println(" PRE-PROCESSING FILE [" + file.getName() + "] zindex =  " + zIndex + "  ");
+	//			System.out.println(" PRE-PROCESSING FILE [" + file.getName() + "] zindex =  " + zIndex + "  ");
 				firstLine = true;
 				lineCount = 0;
 				try {
@@ -120,31 +115,13 @@ public class ConverterSolenoid {
 							} // firstLine
 
 							if ((tokens != null) && (tokens.length == 7)) {
-								int rhoIndex = lineCount % (gdata[RHO].n);
-								int phiIndex = lineCount % (gdata[RHO].n);
 
 								double newX = Double.parseDouble(tokens[0]) / 10;
 								double newY = Double.parseDouble(tokens[1]) / 10;
 								double newZ = Float.parseFloat(tokens[2]) / 10;
 								double newRho = Math.hypot(newX, newY);
-								double newPhi = Math.toDegrees(Math.atan2(newY, newX));
 
-								if (phiIndex == 0) {
-									newPhi = 0.;
-								} else {
-									if (newPhi < -.0001) {
-										newPhi += 360;
-									}
-								}
 
-								if (phiIndex == (gdata[PHI].n - 1)) {
-									if (zeroAngle(newPhi)) {
-										newPhi = 360.;
-									}
-								}
-
-								gdata[PHI].min = Math.max(0, Math.min(gdata[PHI].min, newPhi));
-								gdata[PHI].max = Math.min(360, Math.max(gdata[PHI].max, newPhi));
 								gdata[RHO].min = Math.min(gdata[RHO].min, newRho);
 								gdata[RHO].max = Math.max(gdata[RHO].max, newRho);
 								gdata[Z].min = Math.min(gdata[Z].min, newZ);
@@ -157,7 +134,7 @@ public class ConverterSolenoid {
 
 						@Override
 						public void done() {
-							System.out.println(" processed " + lineCount + " lines");
+//							System.out.println(" processed " + lineCount + " lines");
 						}
 
 					};
@@ -167,10 +144,6 @@ public class ConverterSolenoid {
 				}
 
 				zIndex++;
-			}
-
-			if ((gdata[PHI].max > 31) && (gdata[PHI].max > 31)) {
-				System.err.println("Correcting PhiMax to 360 from " + gdata[PHI].max);
 			}
 
 			return gdata;
@@ -188,10 +161,10 @@ public class ConverterSolenoid {
 	}
 
 	// process all the files
-	private static void processAllFiles(ArrayList<File> files, GridData gdata[]) throws IOException {
-		if (!files.isEmpty()) {
+	private static void processAllFiles(ArrayList<ZFile> zfiles, GridData gdata[]) throws IOException {
+		if (!zfiles.isEmpty()) {
 
-			File bfile = new File(getDataDir(), "torus.dat");
+			File bfile = new File(getDataDir(), "solenoid.dat");
 			DataOutputStream dos = new DataOutputStream(new FileOutputStream(bfile));
 
 			int nPhi = gdata[PHI].n;
@@ -207,7 +180,7 @@ public class ConverterSolenoid {
 
 			dos.writeInt(0xced);
 			dos.writeInt(0);
-			dos.writeInt(1);
+			dos.writeInt(0);
 			dos.writeInt(0);
 			dos.writeInt(0);
 			dos.writeInt(0);
@@ -238,36 +211,43 @@ public class ConverterSolenoid {
 
 			int zIndex = 0;
 
-			FloatVect[][][] bvals = new FloatVect[nPhi][nRho][nZ];
+			FloatVect[][] bvals = new FloatVect[nRho][nZ];
 
-			for (File file : files) {
+			for (ZFile zfile : zfiles) {
+				
+				File file = zfile.file;
 
 				System.out.print(" PROCESSING FILE [" + file.getName() + "] zindex =  " + zIndex + "  ");
 
 				try {
 
 					AsciiReader ar = new AsciiReader(file, zIndex) {
-						int count = 0;
+						int rhoIndex = 0;
 
 						@Override
 						protected void processLine(String line) {
 							String tokens[] = AsciiReadSupport.tokens(line);
 							if ((tokens != null) && (tokens.length == 7)) {
 
-								int rhoIndex = count % nRho;
-								int phiIndex = count / nRho;
 
 								// note t to kG
 								float Bx = Float.parseFloat(tokens[3]) * 10;
 								float By = Float.parseFloat(tokens[4]) * 10;
 								float Bz = Float.parseFloat(tokens[5]) * 10;
-
+								float Brho = Bx;
+								float Bphi = By;
+								
+								if (Math.abs(Bphi) > 0.1) {
+									System.err.println("Non zero Bphi.");
+									System.exit(1);
+								}
+								
 								try {
-									bvals[phiIndex][rhoIndex][iVal] = new FloatVect(Bx, By, Bz);
+									bvals[rhoIndex][iVal] = new FloatVect(Bphi, Brho, Bz);
 								} catch (ArrayIndexOutOfBoundsException e) {
 									e.printStackTrace();
 									System.err.println(
-											"PHIINDX: " + phiIndex + "  RHOINDX: " + rhoIndex + "  ZINDX:  " + iVal);
+											"RHOINDX: " + rhoIndex + "  ZINDX:  " + iVal);
 
 									double x = Double.parseDouble(tokens[0]) / 10;
 									double y = Double.parseDouble(tokens[1]);
@@ -279,13 +259,13 @@ public class ConverterSolenoid {
 									System.exit(1);
 								}
 
-								count++;
+								rhoIndex++;
 							}
 						}
 
 						@Override
 						public void done() {
-							System.out.println(" processed " + count + " lines");
+							System.out.println(" processed " + rhoIndex + " lines");
 						}
 
 					};
@@ -298,17 +278,15 @@ public class ConverterSolenoid {
 
 			} // end for loop
 
-			for (int iPHI = 0; iPHI < nPhi; iPHI++) {
-				System.out.println("iPHI = " + iPHI);
 				for (int iRHO = 0; iRHO < nRho; iRHO++) {
+					System.out.println("iRHO = " + iRHO);
 					for (int iZ = 0; iZ < nZ; iZ++) {
-						FloatVect fcv = bvals[iPHI][iRHO][iZ];
+						FloatVect fcv = bvals[iRHO][iZ];
 						dos.writeFloat(fcv.x);
 						dos.writeFloat(fcv.y);
 						dos.writeFloat(fcv.z);
 					}
 				}
-			}
 
 			dos.flush();
 			dos.close();
@@ -319,10 +297,11 @@ public class ConverterSolenoid {
 
 	}
 
-	public static void convertToBinary(ArrayList<File> files, GridData gdata[]) {
+	//convert ot binary
+	public static void convertToBinary(ArrayList<ZFile> zfiles, GridData gdata[]) {
 		if (gdata != null) {
 			try {
-				processAllFiles(files, gdata);
+				processAllFiles(zfiles, gdata);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -558,7 +537,7 @@ public class ConverterSolenoid {
 		}
 	}
 	
-	
+	// MAIN PROGRAM
 	public static void main(String arg[]) {
 		String dataDir = getDataDir();
 
@@ -567,10 +546,7 @@ public class ConverterSolenoid {
 		
 		//get z ordering
 		ArrayList<ZFile> zfiles = zOrderFiles(files);
-		
-		findPhiDiff(zfiles, 50., 50);
-		
-		System.exit(1);
+		System.out.println("Z ordered Files");
 
 		//USE THE ZFILE LIST!!!!!!
 		//TODO implement from here using the zfile list
@@ -578,7 +554,7 @@ public class ConverterSolenoid {
 		// preprocess to get the grid data
 		GridData gdata[] = null;
 		try {
-			gdata = preProcessor(files);
+			gdata = preProcessor(zfiles);
 
 			System.out.println("PHI: " + gdata[PHI]);
 			System.out.println("RHO: " + gdata[RHO]);
@@ -587,10 +563,12 @@ public class ConverterSolenoid {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+		System.out.println("Preprocessed Files");
+
+			
 
 
-		convertToBinary(files, gdata);
+		convertToBinary(zfiles, gdata);
 		// convertToGemc(files, gdata);
 
 		System.out.println("done");

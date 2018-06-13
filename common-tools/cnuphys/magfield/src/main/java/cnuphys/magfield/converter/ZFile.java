@@ -22,7 +22,7 @@ public class ZFile implements Comparable<ZFile> {
 				protected void processLine(String line) {
 					String tokens[] = AsciiReadSupport.tokens(line);
 					if (tokens.length == 7) {
-						z = Double.parseDouble(tokens[2]);
+						z = Double.parseDouble(tokens[2])/10; //convert mm to cm
 						stop();
 					}
 				}

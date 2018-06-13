@@ -14,20 +14,19 @@ import java.awt.Stroke;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionAdapter;
-import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D.Double;
 import java.util.Vector;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class MagneticFieldCanvas extends JComponent implements MouseListener, MouseMotionListener {
+public class MagneticFieldCanvas extends JComponent implements IComponentZoomable {
 
 	RenderingHints renderHints = new RenderingHints(RenderingHints.KEY_ANTIALIASING,
 			RenderingHints.VALUE_ANTIALIAS_OFF);
@@ -89,8 +88,6 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 		};
 
 		addComponentListener(componentAdapter);
-		addMouseListener(this);
-		addMouseMotionListener(this);
 
 		// listen for magnetic field changes
 		MagneticFieldChangeListener mflistener = new MagneticFieldChangeListener() {
@@ -106,7 +103,8 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 
 		};
 		MagneticFields.getInstance().addMagneticFieldChangeListener(mflistener);
-
+		
+		new ComponentZoomer(this);
 	}
 
 	public void setExtraText(String s) {
@@ -446,53 +444,6 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 		}
 	}
 
-	@Override
-	public void mouseClicked(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mouseEntered(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mouseExited(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mousePressed(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mouseReleased(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mouseDragged(MouseEvent arg0) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void mouseMoved(MouseEvent me) {
-		// localToWorld(me.getPoint(), _workPoint);
-		// MagneticFields.field((float)(_workPoint.y), 0f,
-		// (float)(_workPoint.x), _workResult);
-		// float vx = _workResult[0];
-		// float vy = _workResult[1];
-		// float vz = _workResult[2];
-		// double bmag = Math.sqrt(vx*vx + vy*vy + vz*vz);
-		// System.err.println("location: " + _workPoint + " Bmag: " + bmag);
-	}
 
 	/**
 	 * This converts a screen or pixel point to a world point.
@@ -502,6 +453,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 	 * @param wp
 	 *            will hold the resultant world point.
 	 */
+	@Override
 	public void localToWorld(Point pp, Point.Double wp) {
 		if (_localToWorld != null) {
 			_localToWorld.transform(pp, wp);
@@ -516,6 +468,7 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 	 * @param wp
 	 *            contains world point.
 	 */
+	@Override
 	public void worldToLocal(Point pp, Point.Double wp) {
 		if (_worldToLocal != null) {
 			_worldToLocal.transform(wp, pp);
@@ -684,6 +637,22 @@ public class MagneticFieldCanvas extends JComponent implements MouseListener, Mo
 			return (xx == null) ? 0 : xx.length;
 		}
 
+	}
+
+	@Override
+	public JComponent getComponent() {
+		return this;
+	}
+
+	@Override
+	public Double getWorldSystem() {
+		return _worldSystem;
+	}
+
+	@Override
+	public void setWorldSystem(Double wr) {
+		_worldSystem.setRect(wr.x, wr.y, wr.width, wr.height);
+		
 	}
 
 }
