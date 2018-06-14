@@ -7,6 +7,8 @@ import javax.swing.JPanel;
 import cnuphys.bCNU.attributes.Attributes;
 import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.SimulationPanel;
+import cnuphys.bCNU.simanneal.SimulationState;
+import cnuphys.bCNU.simanneal.Solution;
 
 public class TSPanel extends JPanel {
 	
@@ -14,7 +16,7 @@ public class TSPanel extends JPanel {
 	private TSDisplay _tsDisplay;
 	
 	//the solution
-	private TravelingSalesperson _travPerson;
+	private TSSolution _travPerson;
 	
 	//the simulation panel
 	private SimulationPanel _simPanel;
@@ -28,13 +30,13 @@ public class TSPanel extends JPanel {
 		int numCity = 200;
 		River river = River.NORIVER;
 		
-		_travPerson = TravelingSalesperson.getInstance();
+		_travPerson = TSSolution.getInstance();
 		_travPerson.reset(numCity, river);
 		
 		System.out.println("City count: " + _travPerson.count());
 		System.out.println("Initial distance: " + _travPerson.getDistance());
 		System.out.println("Initial energy: " + _travPerson.getEnergy());
-		TravelingSalesperson neighbor = (TravelingSalesperson) _travPerson.getNeighbor();
+		TSSolution neighbor = (TSSolution) _travPerson.getRearrangement();
 		System.out.println("Initial distance: " + _travPerson.getDistance());
 		System.out.println("Initial energy: " + _travPerson.getEnergy());
 		System.out.println("Neighbor distance: " + neighbor.getDistance());
@@ -47,13 +49,22 @@ public class TSPanel extends JPanel {
 		attributes.add(Simulation.THERMALCOUNT, 200);
 		attributes.add(Simulation.MAXSTEPS, 1000);
 		
-		_simulation = new Simulation(_travPerson, attributes) {
+		_simulation = new Simulation() {
 
 			@Override
 			public void reset() {
-				_simulation.stop();
+				_simulation.setSimulationState(SimulationState.STOPPED);
 				_travPerson.reset(numCity, river);
-				_simulation.resume();
+			}
+
+			@Override
+			public Solution setInitialSolution() {
+				return _travPerson;
+			}
+
+			@Override
+			protected Attributes setInitialAttributes() {
+				return attributes;
 			}
 			
 		};

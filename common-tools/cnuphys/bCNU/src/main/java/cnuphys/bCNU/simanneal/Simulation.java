@@ -1,16 +1,16 @@
 package cnuphys.bCNU.simanneal;
 
-import java.util.Properties;
 import java.util.Random;
 
 import javax.management.modelmbean.InvalidTargetObjectTypeException;
-import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 
-import cnuphys.bCNU.attributes.Attribute;
 import cnuphys.bCNU.attributes.Attributes;
 
 public abstract class Simulation extends Thread {
+	
+	//current state of the simulation
+	private SimulationState _simState = SimulationState.STOPPED;
 	
 	//common attribute keys
 	public static final String RANDSEED = "randseed";
@@ -21,58 +21,98 @@ public abstract class Simulation extends Thread {
 	public static final String MAXSTEPS  = "maxsteps";
 
 	//current solution
-	private Solution _currentSolution;
+	protected Solution _currentSolution;
 		
 	//current temperature
-	private double _temperature;
+	protected double _temperature;
 	
 	//the cooling rate used this way,
 	//tNext = (1-coolrate)*tCurrent
-	private double _coolRate = 0.1;
+	protected double _coolRate = 0.1;
 		
 	//number of successes before lowering temp
-	private int _successCount;
+	protected int _successCount;
 	
 	//number of tries before lowering temp (unless
 	//_successCount reached first
-	private int _thermalizationCount = 200;
+	protected int _thermalizationCount = 200;
 	
 	// Listener list for solution updates.
-	private EventListenerList _listenerList;
+	protected EventListenerList _listenerList;
 	
 	//random number generator
-	private Random _rand;
+	protected Random _rand;
 	
 	//simulation attributes
-	private Attributes _attributes;
+	protected Attributes _attributes;
 	
 	//the min or stopping temperature
-	private double _minTemp;
+	protected double _minTemp;
 	
 	//max steps (temp reductions) until stop (unless min temp is reached)
-	private int _maxSteps = 100;
+	protected int _maxSteps = 100;
 	
-	private Solution _initialSolution;
-
+	//the initial solution. Saved to be available for reset.
+	protected Solution _initialSolution;
 		
 	/**
 	 * Create a Simulation
-	 * @param initialSolution the initial solution
 	 * @param props key-value properties of the simulation. Used for initialization.
 	 */
-	public Simulation(Solution initialSolution, Attributes attributes) {
+	public Simulation() {
 		
-		_attributes = attributes;
+		_attributes = setInitialAttributes();
 		
 		createRandomGenerator();
 		setParametersFromAttributes();
 		
-		_initialSolution = initialSolution;
-		_currentSolution = initialSolution.copy();
+		//cache the initial solution and make a copy
+		_initialSolution = setInitialSolution();
+		_currentSolution = _initialSolution.copy();
 		setInitialTemperature();
 	}
 	
-	public abstract void reset();
+	/**
+	 * Get the simulation state
+	 * @return the simulation state
+	 */
+	public SimulationState getSimulationState() {
+		return _simState;
+	}
+	
+	/**
+	 * Set the simulation state
+	 * @param simState the new simulation state
+	 */
+	public void setSimulationState(SimulationState simState) {
+		_simState = simState;
+		System.out.println("  SIMSTATE IS NOW " + _simState);
+	}
+	
+	/**
+	 * Retrieve the initial solution
+	 * @return the initial solution
+	 */
+	public Solution getInitialSolution() {
+		return _initialSolution;
+	}
+	
+	/**
+	 * Get the initial attributes
+	 * @return the initial attributes
+	 */
+	protected abstract Attributes setInitialAttributes();
+	
+	/**
+	 * Create the initial solution
+	 * @return the initial solution
+	 */
+	protected abstract Solution setInitialSolution();
+	
+	/**
+	 * Every simulation must implement a thread safe way to reset itself.
+	 */
+	protected abstract void reset();
 	
 	/**
 	 * Accessor for the attributes
@@ -99,7 +139,7 @@ public abstract class Simulation extends Thread {
 		double sum = 0;
 		
 		for (int i  = 0; i < n; i++) {
-			double e1 = _currentSolution.getNeighbor().getEnergy();
+			double e1 = _currentSolution.getRearrangement().getEnergy();
 			sum += Math.pow(e1-e0, 2);
 		}
 		
@@ -241,41 +281,61 @@ public abstract class Simulation extends Thread {
 	}
 	
 	/**
+	 * Start the simulation
+	 */
+	@Override
+	public void start() {
+		_simState = SimulationState.RUNNING;
+		super.start();
+	}
+	
+	/**
 	 * run the simulation
 	 */
 	@Override
 	public void run() {
-		
+
 		double factor = 1. - _coolRate;
 		Solution oldSolution = _currentSolution.copy();
-		
+
 		int step = 0;
-		
-		while ((step < _maxSteps) && (_temperature > _minTemp)) {
-			
-			int succ = 0;
-			
-			double eCurrent = _currentSolution.getEnergy();
-			
-			for (int i = 0; i < getThermalizationCount(); i++) {
-				Solution neighbor = _currentSolution.getNeighbor();
-				double eTest = neighbor.getEnergy();
-				
-				if (metrop(eCurrent, eTest)) {
-					_currentSolution = neighbor;
-					eCurrent = eTest;
-					succ++;
-					if (succ > _successCount) {
-						break;
-					}
+
+		while ((_simState != SimulationState.STOPPED) && (step < _maxSteps) && (_temperature > _minTemp)) {
+
+			if (_simState == SimulationState.PAUSED) {
+				//sleep for a second
+				try {
+					sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-							
-			}
-			
-			_temperature *= factor;
-			step++;
-			notifyListeners(_currentSolution, oldSolution);
-		}
+
+			} else if (_simState == SimulationState.RUNNING) {  //running
+				int succ = 0;
+
+				double eCurrent = _currentSolution.getEnergy();
+
+				for (int i = 0; i < getThermalizationCount(); i++) {
+					Solution rearrangement = _currentSolution.getRearrangement();
+					double eTest = rearrangement.getEnergy();
+
+					if (metrop(eCurrent, eTest)) {
+						_currentSolution = rearrangement;
+						eCurrent = eTest;
+						succ++;
+						if (succ > _successCount) {
+							break;
+						}
+					}
+
+				}
+
+				// reduce the temperature
+				_temperature *= factor;
+				step++;
+				notifyListeners(_currentSolution, oldSolution);
+			} //running
+		} // while
 	}
 	
 		

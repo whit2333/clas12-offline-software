@@ -3,14 +3,14 @@ package cnuphys.bCNU.simanneal;
 public abstract class Solution implements IAnneal {
 
 	/**
-	 * Get a neighbor (candidate solution)
-	 * @return a neighbor
+	 * Get a rearrangement (candidate solution)
+	 * @return a rearrangement
 	 */
-	public abstract Solution getNeighbor();
+	public abstract Solution getRearrangement();
 	
 	/**
-	 * Copy the solution
-	 * @return a copy of the colution
+	 * Copy the solution (often in preparation for a rearrangement) for 
+	 * @return a copy of the solution
 	 */
 	public abstract Solution copy();
 }

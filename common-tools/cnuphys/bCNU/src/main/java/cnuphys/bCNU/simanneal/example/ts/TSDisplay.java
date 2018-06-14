@@ -27,9 +27,9 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 
 	
 	//the simulation
-	private TravelingSalesperson _travPerson;
+	private TSSolution _travPerson;
 	
-	public TSDisplay(TravelingSalesperson travPerson) {
+	public TSDisplay(TSSolution travPerson) {
 		_travPerson = travPerson;
 		setOpaque(false);
 	}
@@ -42,7 +42,7 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 		g.setColor(X11Colors.getX11Color("Dark Blue"));
 		g.drawRect(b.x, b.y, b.width-1, b.height-1);
 		
-		TravelingSalesperson ts = _travPerson.getCurrentSolution();
+		TSSolution ts = _travPerson.getCurrentSolution();
 		TSCity cities[] = ts.getCities();
 		int itinerary[] = ts.getItinerary();
 		int len = itinerary.length;

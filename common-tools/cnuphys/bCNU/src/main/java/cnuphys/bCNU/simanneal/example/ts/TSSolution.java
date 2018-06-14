@@ -30,10 +30,10 @@ import cnuphys.splot.plot.PlotParameters;
 import cnuphys.splot.plot.PlotTicks;
 import cnuphys.splot.style.SymbolType;
 
-public class TravelingSalesperson extends Solution implements IUpdateListener {
+public class TSSolution extends Solution implements IUpdateListener {
 	
 	//singleton
-	private static TravelingSalesperson _instance;
+	private static TSSolution _instance;
 	
 	//min and max cities
 	private static final int MIN_CITY = 10;
@@ -65,7 +65,7 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 	 * A Solution with randomly located cities
 	 * @param numCity the number of cities
 	 */
-	private TravelingSalesperson(int numCity, River river) {
+	private TSSolution(int numCity, River river) {
 		reset(numCity, river);
 	}
 	
@@ -73,9 +73,9 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 	 * Public access to the singleton
 	 * @return
 	 */
-	public static TravelingSalesperson getInstance() {
+	public static TSSolution getInstance() {
 		if (_instance == null) {
-			_instance = new TravelingSalesperson(200, River.NORIVER);
+			_instance = new TSSolution(200, River.NORIVER);
 		}
 		return _instance;
 	}
@@ -84,12 +84,12 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 	 * Convenience method to get the current solution
 	 * @return the current solution
 	 */
-	public TravelingSalesperson getCurrentSolution() {
+	public TSSolution getCurrentSolution() {
 		if (_simulation == null) {
 			return this;
 		}
 		else {
-			return (TravelingSalesperson)(_simulation.currentSolution());
+			return (TSSolution)(_simulation.currentSolution());
 		}
 	}
 	
@@ -154,7 +154,7 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 	 * Copy constructor
 	 * @param ts the solution to copy
 	 */
-	public TravelingSalesperson(TravelingSalesperson ts) {
+	public TSSolution(TSSolution ts) {
 		//cities are immutable and shared
 		_cities = ts._cities;
 		
@@ -191,9 +191,9 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 	}
 
 	@Override
-	public Solution getNeighbor() {
+	public Solution getRearrangement() {
 		
-		TravelingSalesperson neighbor = (TravelingSalesperson)copy();
+		TSSolution neighbor = (TSSolution)copy();
 
 		int seg[] = getSegment(count());
 		
@@ -312,7 +312,7 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 
 	@Override
 	public Solution copy() {
-		return new TravelingSalesperson(this);
+		return new TSSolution(this);
 	}
 	
 	
@@ -417,7 +417,7 @@ public class TravelingSalesperson extends Solution implements IUpdateListener {
 
 	@Override
 	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
-		TravelingSalesperson ts = (TravelingSalesperson)newSolution;
+		TSSolution ts = (TSSolution)newSolution;
 		double temperature = simulation.getTemperature();
 		System.out.println(String.format("T: %-12.8f   D: %-10.5f", temperature, ts.getDistance()));
 		temps.add(temperature);
