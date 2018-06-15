@@ -46,6 +46,7 @@ public abstract class AttributeEditor<T extends JComponent> {
 	 */
 	public static AttributeEditor AttributeEditorFactory(AttributeTable attributeTable, Attribute attribute, Object value) {
 
+		
 		AttributeEditor editor = null;
 
 		if (attribute != null) {
@@ -54,7 +55,7 @@ public abstract class AttributeEditor<T extends JComponent> {
 			if (valueObj instanceof JSlider) {
 				valueObj = "" + ((JSlider)valueObj).getValue();
 			}
-			System.out.println("DUDE " + attribute.getKey() + "  value " + valueObj);
+			System.err.println("DUDE " + attribute.getKey() + "  value " + valueObj);
 			AttributeType type = attribute.getType();
 			Class claz = type.getEditorClass();
 			try {

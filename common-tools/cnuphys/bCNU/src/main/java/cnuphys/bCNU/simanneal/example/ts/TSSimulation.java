@@ -41,32 +41,37 @@ public class TSSimulation extends Simulation {
 	}
 
 	@Override
-	protected Attributes setInitialAttributes() {
-		Attributes attributes = new Attributes();
-		attributes.add(Simulation.COOLRATE, 0.03);
-		attributes.add(Simulation.RANDSEED, -1L);
-		attributes.add(Simulation.THERMALCOUNT, 200);
-		attributes.add(Simulation.MAXSTEPS, 1000);
+	protected void setInitialAttributes(Attributes attributes) {
+		
+		//change some defaults
+		attributes.setValue(Simulation.PLOTTITLE, "Traveling Salesperson");
+		attributes.setValue(Simulation.YAXISLABEL, "Distance");
+		
+		//custom
 		attributes.add(NUMCITY, 200);
 		
-		JSlider slider = new JSlider(-10, 10, 0);
+		_riverSlider = new JSlider(-5, 5, 0);
 		
-		slider.setMajorTickSpacing((slider.getMaximum()-slider.getMinimum())/2);
-	//	slider.setPaintTicks(true);
-		slider.setPaintLabels(true);
-//		slider.setBorder(
+		_riverSlider.setMajorTickSpacing((_riverSlider.getMaximum()-_riverSlider.getMinimum())/2);
+	//	_riverSlider.setPaintTicks(true);
+		_riverSlider.setPaintLabels(true);
+//		_riverSlider.setBorder(
 //                BorderFactory.createEmptyBorder(2, 2, 2, 2));
-		slider.setFont(Fonts.tinyFont);
-		Dimension d = slider.getPreferredSize();
+		_riverSlider.setFont(Fonts.tinyFont);
+		Dimension d = _riverSlider.getPreferredSize();
 		d.width = 150;
-		slider.setPreferredSize(d);
-		attributes.add(new Attribute(RIVER, slider));
+		_riverSlider.setPreferredSize(d);
+		attributes.add(new Attribute(RIVER, _riverSlider));
 
-		
-		
-		return attributes;
 	}
 	
+	/**
+	 * Get the penalty (or bonus) for crossing the river
+	 * @return the penalty for crossing the river
+	 */
+	public double getRiverPenalty() {
+		return _riverSlider.getValue();
+	}
 
 	public int getNumCity() {
 		try {

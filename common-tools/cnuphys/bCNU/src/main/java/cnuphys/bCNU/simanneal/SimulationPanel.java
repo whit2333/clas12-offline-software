@@ -1,18 +1,23 @@
 package cnuphys.bCNU.simanneal;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.management.modelmbean.InvalidTargetObjectTypeException;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import cnuphys.bCNU.attributes.AttributePanel;
+import cnuphys.bCNU.attributes.Attributes;
 import cnuphys.bCNU.util.Fonts;
+import cnuphys.splot.plot.PlotCanvas;
+import cnuphys.splot.plot.PlotPanel;
 
 /**
  * This panel will display the attributes for the simulation, the
@@ -33,6 +38,12 @@ public class SimulationPanel extends JPanel implements ActionListener {
 	
 	private JLabel _stateLabel;
 	
+	//for the plot
+	// the owner canvas
+	protected PlotCanvas _plotCanvas;
+	private PlotPanel _plotPanel;
+
+	
 	//the buttons
 	private JButton runButton;
 	private JButton stopButton;
@@ -45,12 +56,13 @@ public class SimulationPanel extends JPanel implements ActionListener {
 		setLayout(new BorderLayout(4, 4));
 		_simulation = simulation;
 		_content = content;
-		add(_content, BorderLayout.CENTER);
+		add(_content, BorderLayout.WEST);
+		
 		addEast();
+		addCenter();
 	}
-
-	//add the panel
-	private void addEast() {
+	
+	private JPanel insetPanel() {
 		JPanel panel = new JPanel() {
 			@Override
 			public Insets getInsets() {
@@ -60,15 +72,54 @@ public class SimulationPanel extends JPanel implements ActionListener {
 			}
 			
 		};
+		panel.setLayout(new BorderLayout(4, 4));
+		return panel;
+	}
+	
+	private void addCenter() {
+		JPanel panel = insetPanel();
+		
+		Attributes attributes = _simulation.getAttributes();
+		String plotTitle = "?";
+		String xLabel = "?";
+		String yLabel = "?";
+		try {
+			plotTitle = attributes.getAttribute(Simulation.PLOTTITLE).getString();
+			xLabel = attributes.getAttribute(Simulation.XAXISLABEL).getString();
+			yLabel = attributes.getAttribute(Simulation.YAXISLABEL).getString();
+		} catch (InvalidTargetObjectTypeException e) {
+			e.printStackTrace();
+		}
+		
+		_plotCanvas = new PlotCanvas(null, plotTitle, xLabel, yLabel) {
+			@Override
+			public Dimension getPreferredSize() {
+				Dimension d = super.getPreferredSize();
+				d.width = 400;
+				return d;
+			}
+		};
+		_plotPanel = new PlotPanel(_plotCanvas);
+
 		
 		panel.setLayout(new BorderLayout(4, 4));
+		panel.add(_plotPanel, BorderLayout.CENTER);
+
+	    add(panel, BorderLayout.CENTER);
+		
+	}
+
+	//add the east panel
+	private void addEast() {
+		JPanel panel = insetPanel();
 		
 		//state label in north
 		_stateLabel = new JLabel("State:            ");
 	    panel.add(_stateLabel, BorderLayout.NORTH);
-		
+	    
 		//attributes in center of east panel
 		_attributePanel = new AttributePanel(_simulation.getAttributes());
+			
 	    panel.add(_attributePanel, BorderLayout.CENTER);
 		
 	    //buttons in south of east panel

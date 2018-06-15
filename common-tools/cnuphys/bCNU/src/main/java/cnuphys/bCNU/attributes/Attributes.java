@@ -63,6 +63,24 @@ import cnuphys.bCNU.graphics.style.SymbolType;
 		}
 		return null;
 	}
+	
+	/**
+	 * Tries to set the attribute with the given value
+	 * 
+	 * @param attributeKey match to the key
+	 * @param value the value to set
+	 * @return <code>true</code> if the operation was successful
+	 */
+	public boolean setValue(String attributeKey, Object value) {
+		
+		Attribute attribute = getAttribute(attributeKey);
+		if (attribute == null) {
+			return false;
+		}
+		attribute.setValue(value);
+		return true;
+	}
+	
 
 
 	@Override

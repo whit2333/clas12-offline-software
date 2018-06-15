@@ -19,6 +19,9 @@ public abstract class Simulation implements Runnable {
 	public static final String THERMALCOUNT  = "thermalcount";
 	public static final String SUCCESSCOUNT  = "successcount";
 	public static final String MAXSTEPS  = "maxsteps";
+	public static final String PLOTTITLE  = "plottitle";
+	public static final String XAXISLABEL  = "xaxislabel";
+	public static final String YAXISLABEL  = "yaxislabel";
 
 	//current solution
 	protected Solution _currentSolution;
@@ -65,7 +68,9 @@ public abstract class Simulation implements Runnable {
 	public Simulation() {
 
 		//call the subclass to set up attributes and create the initial solution
-		_attributes = setInitialAttributes();
+		
+		_attributes = defaultAttributes();
+		setInitialAttributes(_attributes);
 		
 		//create the random number generator
 		createRandomGenerator();
@@ -100,11 +105,26 @@ public abstract class Simulation implements Runnable {
 		return _initialSolution;
 	}
 	
+	private Attributes defaultAttributes() {
+		Attributes attributes = new Attributes();
+		attributes.add(Simulation.COOLRATE, 0.03);
+		attributes.add(Simulation.RANDSEED, -1L);
+		attributes.add(Simulation.THERMALCOUNT, 200);
+		attributes.add(Simulation.MAXSTEPS, 1000);
+
+		
+		attributes.add(Simulation.PLOTTITLE, "Simulated Annealing", false, false);
+		attributes.add(Simulation.XAXISLABEL, "Temperature", false, false);
+		attributes.add(Simulation.YAXISLABEL, "Energy", false, false);
+
+		return attributes;
+	}
+	
 	/**
 	 * Get the initial attributes
 	 * @return the initial attributes
 	 */
-	protected abstract Attributes setInitialAttributes();
+	protected abstract void setInitialAttributes(Attributes attributes);
 	
 	/**
 	 * Create the initial solution

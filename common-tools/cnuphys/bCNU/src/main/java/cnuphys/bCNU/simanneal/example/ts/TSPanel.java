@@ -7,8 +7,6 @@ import javax.swing.JPanel;
 import cnuphys.bCNU.attributes.Attributes;
 import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.SimulationPanel;
-import cnuphys.bCNU.simanneal.SimulationState;
-import cnuphys.bCNU.simanneal.Solution;
 
 public class TSPanel extends JPanel {
 	

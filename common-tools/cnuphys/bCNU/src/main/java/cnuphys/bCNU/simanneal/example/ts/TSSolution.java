@@ -46,9 +46,6 @@ public class TSSolution extends Solution implements IUpdateListener {
 	//the itinerary
 	private int[] _itinerary;
 		
-	//number of cities
-	private int _numCity;
-	
 	//record intermediate results for making a plot
 	protected final Vector<Double> temps = new Vector<>(1000);
 	protected Vector<Double> dists = new Vector<>(1000);
@@ -90,28 +87,20 @@ public class TSSolution extends Solution implements IUpdateListener {
 		temps.clear();
 		dists.clear();
 		
-		_numCity = Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
+		numCity = Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
 		
-		_cities = new TSCity[_numCity];
+		_cities = new TSCity[numCity];
 		
-		for (int i = 0; i < _numCity; i++) {
+		for (int i = 0; i < numCity; i++) {
 			_cities[i] = new TSCity();
 		}
 		
-		_itinerary = new int[_numCity];
-		for (int i = 0; i < _numCity; i++) {
+		_itinerary = new int[numCity];
+		for (int i = 0; i < numCity; i++) {
 			_itinerary[i] = i;
 		}
 	}
-	
-	/**
-	 * Get the number of cities
-	 * @return the number of cities
-	 */
-	public int getCityCount() {
-		return _numCity;
-	}
-	
+		
 	/**
 	 * Get the itinerary
 	 * @return the itinerary
@@ -141,6 +130,8 @@ public class TSSolution extends Solution implements IUpdateListener {
 	 * @param ts the solution to copy
 	 */
 	public TSSolution(TSSolution ts) {
+		_simulation = ts.getSimulation();
+		
 		//cities are immutable and shared
 		_cities = ts._cities;
 		
@@ -156,16 +147,17 @@ public class TSSolution extends Solution implements IUpdateListener {
 	@Override
 	public double getEnergy() {
 //		return 5*getDistance()/_cities.length;
-		return getDistance();
+		return getDistance() + riverPenalty();
 	}
 	
 	//get the "distance" which includes river penalties or bonuses
 	public double getDistance() {
 		int len = count();
+		
 		double distance = 0;
 		for (int i = 0; i < (len-1); i++) {
 			int j = _itinerary[i];
-			int k = _itinerary[i+1];
+			int k = _itinerary[i+1];			
 			distance += _cities[j].distance(_cities[k]);
 		}
 		
@@ -174,6 +166,33 @@ public class TSSolution extends Solution implements IUpdateListener {
 		int iN = _itinerary[len-1];
 		distance += _cities[i0].distance(_cities[iN]);
 		return distance;
+	}
+	
+	private double riverPenalty() {
+		double lambda = _simulation.getRiverPenalty();
+		if (Math.abs(lambda) < 0.01) {
+			return 0;
+		}
+		
+		int crossCount = 0;
+		int len = count();
+		
+		for (int i = 0; i < (len-1); i++) {
+			int j = _itinerary[i];
+			int k = _itinerary[i+1];			
+			if (_cities[j].acrossRiver(_cities[k])) {
+				crossCount++;
+			}
+		}
+		
+		//plus return
+		int i0 = _itinerary[0];
+		int iN = _itinerary[len-1];
+		if (_cities[i0].acrossRiver(_cities[iN])) {
+			crossCount++;
+		}
+
+		return lambda*crossCount;
 	}
 
 	@Override
