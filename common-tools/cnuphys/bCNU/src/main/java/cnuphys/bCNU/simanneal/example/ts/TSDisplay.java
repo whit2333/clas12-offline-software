@@ -49,6 +49,16 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 		Point p0 = new Point();
 		Point p1 = new Point();
 		
+		//draw the river
+		g.setColor(Color.blue);
+		worldToLocal(p0, 0.5, 2);
+		worldToLocal(p1, 0.5, -2);
+		
+		int top = Math.max(b.y,  p0.y);
+		g.drawLine(p0.x-1, top, p1.x-1, p1.y);
+		g.drawLine(p0.x, top, p1.x, p1.y);
+		g.drawLine(p0.x+1, top, p1.x+1, p1.y);
+		
 		//draw the connections
 		g.setColor(X11Colors.getX11Color("Dark Red"));
 		for (int i = 0; i < len; i++) {
@@ -60,6 +70,7 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 			g.drawLine(p0.x, p0.y, p1.x, p1.y);
 		}
 		
+		System.out.println("NUM CITY: " + cities.length);
 				
 		//now draw the cities
 		for (TSCity city : cities) {
@@ -71,29 +82,19 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 	
 	
 	private void cityToLocal(Point pp, TSCity city) {
+		worldToLocal(pp, city.x, city.y);
+	}
+	
+	private void worldToLocal(Point pp, double x, double y) {
 		Rectangle b = getBounds();
-		double x = city.x;
-		double y = city.y;
 		double del = vmax-vmin;
 		pp.x = (int) (b.x + (x-vmin)*b.width/del);
-		pp.y = (int) (b.y + (vmax-y)*b.height/del);
+		pp.y = (int) (b.y + (vmax-y)*b.height/del);		
 	}
 
 	@Override
 	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
 		repaint();
-
-//		if (!SwingUtilities.isEventDispatchThread()) {
-//			try {
-//				repaint();
-//				System.err.println("sleep");
-//				Thread.sleep(100);
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		} else {
-//			repaint();
-//		}
 	}
 
 }

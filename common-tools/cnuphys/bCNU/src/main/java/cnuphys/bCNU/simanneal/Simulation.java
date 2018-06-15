@@ -7,7 +7,7 @@ import javax.swing.event.EventListenerList;
 
 import cnuphys.bCNU.attributes.Attributes;
 
-public abstract class Simulation extends Thread {
+public abstract class Simulation implements Runnable {
 	
 	//current state of the simulation
 	private SimulationState _simState = SimulationState.STOPPED;
@@ -54,22 +54,25 @@ public abstract class Simulation extends Thread {
 	
 	//the initial solution. Saved to be available for reset.
 	protected Solution _initialSolution;
+	
+	//the thread that runs the simulation
+	protected Thread _thread;
 		
 	/**
 	 * Create a Simulation
 	 * @param props key-value properties of the simulation. Used for initialization.
 	 */
 	public Simulation() {
-		
+
+		//call the subclass to set up attributes and create the initial solution
 		_attributes = setInitialAttributes();
 		
+		//create the random number generator
 		createRandomGenerator();
-		setParametersFromAttributes();
-		
+
 		//cache the initial solution and make a copy
 		_initialSolution = setInitialSolution();
 		_currentSolution = _initialSolution.copy();
-		setInitialTemperature();
 	}
 	
 	/**
@@ -110,9 +113,13 @@ public abstract class Simulation extends Thread {
 	protected abstract Solution setInitialSolution();
 	
 	/**
-	 * Every simulation must implement a thread safe way to reset itself.
+	 * Reset the simulation
 	 */
-	protected abstract void reset();
+	protected void reset() {
+		_initialSolution = setInitialSolution();
+		_currentSolution = _initialSolution.copy();
+		notifyListeners(_initialSolution, _initialSolution);
+	}
 	
 	/**
 	 * Accessor for the attributes
@@ -283,10 +290,25 @@ public abstract class Simulation extends Thread {
 	/**
 	 * Start the simulation
 	 */
-	@Override
-	public void start() {
+	public void startSimulation() {
+		
+		if ((_thread != null) && _thread.isAlive()) {
+			_simState = SimulationState.STOPPED;
+			try {
+				System.out.print("Waiting for current thread to die");
+				_thread.join();
+				System.out.println("died.");
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		setParametersFromAttributes();
+		setInitialTemperature();
+
+		_thread = new Thread(this);
 		_simState = SimulationState.RUNNING;
-		super.start();
+		_thread.start();
 	}
 	
 	/**
@@ -305,7 +327,7 @@ public abstract class Simulation extends Thread {
 			if (_simState == SimulationState.PAUSED) {
 				//sleep for a second
 				try {
-					sleep(1000);
+					Thread.sleep(1000);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

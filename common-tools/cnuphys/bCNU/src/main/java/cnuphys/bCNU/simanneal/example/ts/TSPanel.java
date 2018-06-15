@@ -15,30 +15,26 @@ public class TSPanel extends JPanel {
 	//Simulation panel for display
 	private TSDisplay _tsDisplay;
 	
-	//the solution
-	private TSSolution _travPerson;
-	
 	//the simulation panel
 	private SimulationPanel _simPanel;
 
 	//the simulation
-	private Simulation _simulation;
+	private TSSimulation _simulation;
 	
-	public TSPanel() {
+	public TSPanel(TSSimulation simulation) {
+		
+		_simulation = simulation;
+		
 		//initial solution
+		TSSolution initSolution = (TSSolution)(_simulation.getInitialSolution());
 		
-		int numCity = 200;
-		River river = River.NORIVER;
 		
-		_travPerson = TSSolution.getInstance();
-		_travPerson.reset(numCity, river);
-		
-		System.out.println("City count: " + _travPerson.count());
-		System.out.println("Initial distance: " + _travPerson.getDistance());
-		System.out.println("Initial energy: " + _travPerson.getEnergy());
-		TSSolution neighbor = (TSSolution) _travPerson.getRearrangement();
-		System.out.println("Initial distance: " + _travPerson.getDistance());
-		System.out.println("Initial energy: " + _travPerson.getEnergy());
+		System.out.println("City count: " + initSolution.count());
+		System.out.println("Initial distance: " + initSolution.getDistance());
+		System.out.println("Initial energy: " + initSolution.getEnergy());
+		TSSolution neighbor = (TSSolution) initSolution.getRearrangement();
+		System.out.println("Initial distance: " + initSolution.getDistance());
+		System.out.println("Initial energy: " + initSolution.getEnergy());
 		System.out.println("Neighbor distance: " + neighbor.getDistance());
 		System.out.println("Neighbor energy: " + neighbor.getEnergy());
 		
@@ -49,35 +45,15 @@ public class TSPanel extends JPanel {
 		attributes.add(Simulation.THERMALCOUNT, 200);
 		attributes.add(Simulation.MAXSTEPS, 1000);
 		
-		_simulation = new Simulation() {
-
-			@Override
-			public void reset() {
-				_simulation.setSimulationState(SimulationState.STOPPED);
-				_travPerson.reset(numCity, river);
-			}
-
-			@Override
-			public Solution setInitialSolution() {
-				return _travPerson;
-			}
-
-			@Override
-			protected Attributes setInitialAttributes() {
-				return attributes;
-			}
-			
-		};
-		_tsDisplay = new TSDisplay(_travPerson);
+		_tsDisplay = new TSDisplay(initSolution);
 
 		_simulation.addUpdateListener(_tsDisplay);
 
 		
-		_travPerson.setSimulation(_simulation);
 		
 		//add initial values
-		_travPerson.temps.add(_simulation.getTemperature());
-		_travPerson.dists.add(_travPerson.getDistance());
+		initSolution.temps.add(_simulation.getTemperature());
+		initSolution.dists.add(initSolution.getDistance());
 		
 		_tsDisplay.setPreferredSize(new Dimension(600, 600));
 		

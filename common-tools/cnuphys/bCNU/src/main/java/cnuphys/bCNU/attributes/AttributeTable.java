@@ -13,7 +13,9 @@ import java.awt.event.WindowEvent;
 import java.util.List;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -89,7 +91,7 @@ public class AttributeTable extends JTable {
 		dim.width += 2;
 		setIntercellSpacing(dim);
 		setAutoCreateColumnsFromModel(false);
-		setModel(new AttributeTableModel());
+		setModel(new AttributeTableModel(this));
 		_nameRenderer.setHorizontalAlignment(SwingConstants.LEFT);
 
 		c1 = new TableColumn(0, _nameWidth, _nameRenderer, null);
@@ -216,11 +218,19 @@ public class AttributeTable extends JTable {
 		attributes.add(new Attribute("SHORT", (short)-32000));
 		attributes.add(new Attribute("LONG", 88L));
 		
+		
+		JSlider slider = new JSlider(-10, 10, 0);
+		
+		slider.setMajorTickSpacing((slider.getMaximum()-slider.getMinimum())/2);
+		slider.setPaintTicks(true);
+		slider.setPaintLabels(true);
+		attributes.add(new Attribute("SLIDER", slider));
+		
 		//make the table
 		
 		AttributeTable table = new AttributeTable();
 		
-		table.setData(attributes.clone());
+		table.setData(attributes);
 		AttributePanel panel = new AttributePanel(table);
 		
 		//now make the frame to display

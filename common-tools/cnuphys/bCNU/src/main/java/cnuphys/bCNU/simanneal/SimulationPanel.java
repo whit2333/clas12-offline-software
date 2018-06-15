@@ -12,6 +12,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import cnuphys.bCNU.attributes.AttributePanel;
+import cnuphys.bCNU.util.Fonts;
 
 /**
  * This panel will display the attributes for the simulation, the
@@ -95,16 +96,40 @@ public class SimulationPanel extends JPanel implements ActionListener {
 	private JButton makeButton(String label) {
 		JButton button = new JButton(label);
 		button.addActionListener(this);
+		button.setFont(Fonts.smallFont);
 		return button;
 	}
 	
+	//fix the states of the buttons
 	private void fixPanelState() {
 		SimulationState state = _simulation.getSimulationState();
 		_stateLabel.setText("State: " + state);
-	}
-	
-	private void reset() {
-//		_simulation.reset();
+		
+		switch (state) {
+		case RUNNING:
+			runButton.setEnabled(false);
+			pauseButton.setEnabled(true);
+			resumeButton.setEnabled(false);
+			resetButton.setEnabled(false);
+			stopButton.setEnabled(true);
+			break;
+			
+		case PAUSED:
+			runButton.setEnabled(false);
+			pauseButton.setEnabled(false);
+			resumeButton.setEnabled(true);
+			resetButton.setEnabled(false);
+			stopButton.setEnabled(true);
+			break;
+			
+		case STOPPED:
+			runButton.setEnabled(true);
+			pauseButton.setEnabled(false);
+			resumeButton.setEnabled(false);
+			resetButton.setEnabled(true);
+			stopButton.setEnabled(false);
+			break;
+		}
 	}
 	
 	@Override
@@ -120,7 +145,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
 		Object source = e.getSource();
 		
 		if (source == runButton) {
-			_simulation.start();
+			_simulation.startSimulation();
 		}
 		else if (source == pauseButton) {
 			_simulation.setSimulationState(SimulationState.PAUSED);
@@ -129,7 +154,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
 			_simulation.setSimulationState(SimulationState.RUNNING);
 		}
 		else if (source == resetButton) {
-			reset();
+			_simulation.reset();
 		}
 		else if (source == stopButton) {
 			_simulation.setSimulationState(SimulationState.STOPPED);

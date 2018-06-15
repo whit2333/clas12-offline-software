@@ -112,17 +112,4 @@ import cnuphys.bCNU.graphics.style.SymbolType;
 		return a1.compareTo(a2);
 	}
 
-	/**
-	 * Clone the attributes so that we can edit the clone
-	 * in case the user cancels
-	 */
-	public Attributes clone() {
-		Attributes clone = new Attributes();
-		for (Attribute attribute : this) {
-			clone.add(attribute.clone());
-		}
-		return clone;
-	}
-
-
 }

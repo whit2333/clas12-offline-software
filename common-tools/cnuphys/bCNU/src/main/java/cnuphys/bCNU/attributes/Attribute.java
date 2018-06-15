@@ -7,7 +7,7 @@ public class Attribute implements Comparable<Attribute> {
 	//is the Attribute editable
 	private boolean _editable;
 	
-	//is the attibute hidden from the table
+	//is the attribute hidden from the table
 	private boolean _hidden;
 	
 	//the object (the value)
@@ -123,15 +123,6 @@ public class Attribute implements Comparable<Attribute> {
 		return _key;
 	}
 
-	/**
-	 * Clone this attribute
-	 * @return the cloned value
-	 */
-	public Attribute clone() {
-		String newKey = new String(_key);
-		Object newVal = AttributeType.cloneValue(_value);
-		return new Attribute(newKey, newVal, _editable, _hidden);
-	}
 	
 	/**
 	 * Retrieve a String value

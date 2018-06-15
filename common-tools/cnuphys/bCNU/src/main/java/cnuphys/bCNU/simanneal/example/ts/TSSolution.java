@@ -32,8 +32,6 @@ import cnuphys.splot.style.SymbolType;
 
 public class TSSolution extends Solution implements IUpdateListener {
 	
-	//singleton
-	private static TSSolution _instance;
 	
 	//min and max cities
 	private static final int MIN_CITY = 10;
@@ -47,10 +45,7 @@ public class TSSolution extends Solution implements IUpdateListener {
 	
 	//the itinerary
 	private int[] _itinerary;
-	
-	//the river "penalty"
-	private River _river;
-	
+		
 	//number of cities
 	private int _numCity;
 	
@@ -59,26 +54,18 @@ public class TSSolution extends Solution implements IUpdateListener {
 	protected Vector<Double> dists = new Vector<>(1000);
 
 
-	private Simulation _simulation;
+	//the simulation owner
+	private TSSimulation _simulation;
 	
 	/**
 	 * A Solution with randomly located cities
 	 * @param numCity the number of cities
 	 */
-	private TSSolution(int numCity, River river) {
-		reset(numCity, river);
+	public TSSolution(TSSimulation simulation, int numCity) {
+		_simulation = simulation;
+		reset(numCity);
 	}
 	
-	/**
-	 * Public access to the singleton
-	 * @return
-	 */
-	public static TSSolution getInstance() {
-		if (_instance == null) {
-			_instance = new TSSolution(200, River.NORIVER);
-		}
-		return _instance;
-	}
 	
 	/**
 	 * Convenience method to get the current solution
@@ -96,17 +83,16 @@ public class TSSolution extends Solution implements IUpdateListener {
 	/**
 	 * Reset the simulation
 	 * @param numCity the number of cities
-	 * @param the river "penalty"
 	 */
-	public void reset(int numCity, River river) {
+	public void reset(int numCity) {
 		
+		System.out.println("Resetting the solution with num cities = " + numCity);
 		temps.clear();
 		dists.clear();
 		
 		_numCity = Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
 		
 		_cities = new TSCity[_numCity];
-		_river = river;
 		
 		for (int i = 0; i < _numCity; i++) {
 			_cities[i] = new TSCity();
@@ -424,62 +410,13 @@ public class TSSolution extends Solution implements IUpdateListener {
 		dists.add(ts.getDistance());
 	}
 	
-	
-	/**
-	 * Set the simulation
-	 * @param simulation the simulation
-	 */
-	public void setSimulation(Simulation simulation) {
-		_simulation = simulation;
-		_simulation.addUpdateListener(this);
-	}
-	
+		
 	/**
 	 * Accessor for the simulation
 	 * @return the simulation
 	 */
-	public Simulation getSimulation() {
+	public TSSimulation getSimulation() {
 		return _simulation;
-	}
-
-
-
-	//main program for testing
-	public static void main(String arg[]) {
-
-		final JFrame frame = new JFrame();
-
-		// set up what to do if the window is closed
-		WindowAdapter windowAdapter = new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent event) {
-				System.exit(1);
-			}
-		};
-
-		frame.addWindowListener(windowAdapter);
-
-		frame.setLayout(new BorderLayout());
-		
-
-		TSPanel tsPanel = new TSPanel();
-		
-		frame.add(tsPanel, BorderLayout.CENTER);
-
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				frame.pack();
-				frame.setVisible(true);
-				frame.setLocationRelativeTo(null);
-			}
-		});
-
-		
-		
-	//	tsPanel.getSimulation().run();
-		
-//		makePlot(temps, dists).setVisible(true);
 	}
 
 }

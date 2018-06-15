@@ -3,6 +3,7 @@
  */
 package cnuphys.bCNU.attributes;
 
+import java.awt.Dimension;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.JSlider;
 import javax.swing.table.AbstractTableModel;
 
 @SuppressWarnings("serial")
@@ -34,6 +36,13 @@ public class AttributeTableModel extends AbstractTableModel {
 	//the model data
 	private Attributes _data = new Attributes();
 	
+	//owner table
+	private AttributeTable _table;
+	
+	
+	public AttributeTableModel(AttributeTable table) {
+		_table = table;
+	}
 	
 	/**
 	 * Get the data
@@ -117,12 +126,25 @@ public class AttributeTableModel extends AbstractTableModel {
 			return attribute.getKey();
 
 		case VALUE:
-			return attribute.getValue();
+			Object value = attribute.getValue();
+
+			if (value instanceof JSlider) {
+				JSlider slider = (JSlider) value;
+				Dimension d = slider.getPreferredSize();
+				int ph = d.height + 2;
+
+				int ch = _table.getRowHeight(rowIndex);
+
+				if (ph != ch) {
+					_table.setRowHeight(rowIndex, ph);
+				}
+			}
+			return value;
 		}
 
 		return null;
 	}
-	
+
 	/**
 	 * Clear the table
 	 */
