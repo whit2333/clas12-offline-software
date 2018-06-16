@@ -1,31 +1,33 @@
-package cnuphys.bCNU.simanneal.example.ts;
+package cnuphys.bCNU.simanneal.example.ising2D;
 
 import java.awt.Dimension;
 import java.awt.Insets;
+
 import javax.swing.JPanel;
 
 import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.SimulationPanel;
 
-public class TSPanel extends JPanel {
-	
-	//Simulation panel for display
-	private TSDisplay _tsDisplay;
+public class Ising2DPanel extends JPanel {
 	
 	//the simulation panel
 	private SimulationPanel _simPanel;
 
 	//the simulation
-	private TSSimulation _simulation;
+	private Ising2DSimulation _simulation;
 	
-	public TSPanel(TSSimulation simulation) {
+	private Ising2DDisplay _i2dDisplay;
+
+	
+	public Ising2DPanel(Ising2DSimulation simulation) {
 		
 		_simulation = simulation;
 		
-		_tsDisplay = new TSDisplay(_simulation);
-		_tsDisplay.setPreferredSize(new Dimension(600, 600));
-		_simPanel = new SimulationPanel(_simulation, _tsDisplay);
+		_i2dDisplay = new Ising2DDisplay(_simulation);
+		_i2dDisplay.setPreferredSize(new Dimension(600, 600));
+		_simPanel = new SimulationPanel(_simulation, _i2dDisplay);
 		add(_simPanel);
+		
 	}
 	
 	/**

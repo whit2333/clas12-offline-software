@@ -30,7 +30,7 @@ import cnuphys.splot.plot.PlotParameters;
 import cnuphys.splot.plot.PlotTicks;
 import cnuphys.splot.style.SymbolType;
 
-public class TSSolution extends Solution implements IUpdateListener {
+public class TSSolution extends Solution {
 	
 	
 	//min and max cities
@@ -46,11 +46,6 @@ public class TSSolution extends Solution implements IUpdateListener {
 	//the itinerary
 	private int[] _itinerary;
 		
-	//record intermediate results for making a plot
-	protected final Vector<Double> temps = new Vector<>(1000);
-	protected Vector<Double> dists = new Vector<>(1000);
-
-
 	//the simulation owner
 	private TSSimulation _simulation;
 	
@@ -62,30 +57,14 @@ public class TSSolution extends Solution implements IUpdateListener {
 		_simulation = simulation;
 		reset(numCity);
 	}
-	
-	
-	/**
-	 * Convenience method to get the current solution
-	 * @return the current solution
-	 */
-	public TSSolution getCurrentSolution() {
-		if (_simulation == null) {
-			return this;
-		}
-		else {
-			return (TSSolution)(_simulation.currentSolution());
-		}
-	}
-	
+		
 	/**
 	 * Reset the simulation
 	 * @param numCity the number of cities
 	 */
 	public void reset(int numCity) {
 		
-		System.out.println("Resetting the solution with num cities = " + numCity);
-		temps.clear();
-		dists.clear();
+	//	System.out.println("Resetting the solution with num cities = " + numCity);
 		
 		numCity = Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
 		
@@ -168,6 +147,7 @@ public class TSSolution extends Solution implements IUpdateListener {
 		return distance;
 	}
 	
+	//compute the penalty (or bonus) for crossing the river
 	private double riverPenalty() {
 		double lambda = _simulation.getRiverPenalty();
 		if (Math.abs(lambda) < 0.01) {
@@ -319,116 +299,6 @@ public class TSSolution extends Solution implements IUpdateListener {
 	public Solution copy() {
 		return new TSSolution(this);
 	}
-	
-	
-	//create a temperature plot
-	private static APlotDialog XmakePlot(List<Double> temps, List<Double> dists) {
-		
-		int len = temps.size();
-		double tArry[] = new double[len];
-		double dArry[] = new double[len];
-		for (int i = 0; i < len; i++) {
-			tArry[i] = temps.get(i);
-			dArry[i] = dists.get(i);
-		}
-		
-	
-
-		
-		APlotDialog pdialog;
-		pdialog = new APlotDialog(null, "", false) {
-
-			@Override
-			protected DataSet createDataSet() throws DataSetException {
-				return new DataSet(DataSetType.XYY, getColumnNames());
-			}
-
-			@Override
-			protected String[] getColumnNames() {
-				String cn[] = {"Temp", "Distance"};
-				return cn;
-			}
-
-			@Override
-			protected String getXAxisLabel() {
-				return "Temperature";
-			}
-
-			@Override
-			protected String getYAxisLabel() {
-				return "Distance";
-			}
-
-			@Override
-			protected String getPlotTitle() {
-				return "Distance vs Temperature";
-			}
-
-			@Override
-			public void fillData() {
-				DataSet ds = _canvas.getDataSet();
-
-				for (int i = 0; i < len; i++) {
-
-					try {
-						ds.add(tArry[i], dArry[i]);
-					}
-					catch (DataSetException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-				}
-			}
-
-			@Override
-			public void setPreferences() {
-				DataSet ds = _canvas.getDataSet();
-				Vector<DataColumn> ycols = (Vector<DataColumn>)(ds.getAllColumnsByType(DataColumnType.Y));
-				for (DataColumn dc : ycols) {
-				    dc.getFit().setFitType(FitType.NOLINE);
-				    dc.getStyle().setSymbolType(SymbolType.CIRCLE);
-				    dc.getStyle().setLineWidth(1.5f);
-				}
-				ycols.get(0).getStyle().setLineColor(Color.red);
-				
-				PlotTicks ticks = _canvas.getPlotTicks();
-				ticks.setNumMajorTickY(5);
-				ticks.setNumMajorTickX(5);
-				
-				PlotParameters params = _canvas.getParameters();
-//				params.mustIncludeXZero(true);
-//				params.mustIncludeYZero(true);
-				params.setYRange(0, 1.2*dArry[0]);
-//				params.setXRange(0, 1.1*tArry[0]);
-				
-				double maxTemp = tArry[0];
-				double minTemp = tArry[(tArry.length-1)];
-				params.setXRange(1.05*maxTemp, 0.0);
-				
-				params.setNumDecimalY(3);
-				params.setMinExponentX(4);
-				params.setMinExponentY(4);
-
-				
-			}
-			
-		};
-		
-		pdialog.setSize(800, 800);
-		return pdialog;
-
-	}
-	
-
-	@Override
-	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
-		TSSolution ts = (TSSolution)newSolution;
-		double temperature = simulation.getTemperature();
-		System.out.println(String.format("T: %-12.8f   D: %-10.5f", temperature, ts.getDistance()));
-		temps.add(temperature);
-		dists.add(ts.getDistance());
-	}
-	
 		
 	/**
 	 * Accessor for the simulation

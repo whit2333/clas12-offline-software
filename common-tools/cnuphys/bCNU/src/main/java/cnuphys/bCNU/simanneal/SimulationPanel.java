@@ -1,23 +1,18 @@
 package cnuphys.bCNU.simanneal;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.management.modelmbean.InvalidTargetObjectTypeException;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import cnuphys.bCNU.attributes.AttributePanel;
-import cnuphys.bCNU.attributes.Attributes;
 import cnuphys.bCNU.util.Fonts;
-import cnuphys.splot.plot.PlotCanvas;
-import cnuphys.splot.plot.PlotPanel;
 
 /**
  * This panel will display the attributes for the simulation, the
@@ -25,7 +20,7 @@ import cnuphys.splot.plot.PlotPanel;
  * @author heddle
  *
  */
-public class SimulationPanel extends JPanel implements ActionListener {
+public class SimulationPanel extends JPanel implements ActionListener, IUpdateListener {
 	
 	//the underlying simulation
 	private Simulation _simulation;
@@ -38,10 +33,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
 	
 	private JLabel _stateLabel;
 	
-	//for the plot
-	// the owner canvas
-	protected PlotCanvas _plotCanvas;
-	private PlotPanel _plotPanel;
+	private SimulationPlot _simPlot;
 
 	
 	//the buttons
@@ -51,15 +43,21 @@ public class SimulationPanel extends JPanel implements ActionListener {
 	private JButton resumeButton;
 	private JButton resetButton;
 
-	
+	/**
+	 * Create a panel to hold all the optics for the simulation
+	 * @param simulation the simulation
+	 * @param content the custom content, e.g. a map for the traveling salesperson problem
+	 */
 	public SimulationPanel(Simulation simulation, JComponent content) {
 		setLayout(new BorderLayout(4, 4));
 		_simulation = simulation;
+		_simulation.addUpdateListener(this);
 		_content = content;
 		add(_content, BorderLayout.WEST);
 		
 		addEast();
 		addCenter();
+		
 	}
 	
 	private JPanel insetPanel() {
@@ -76,37 +74,17 @@ public class SimulationPanel extends JPanel implements ActionListener {
 		return panel;
 	}
 	
+	//put the sim plot in the center
 	private void addCenter() {
 		JPanel panel = insetPanel();
 		
-		Attributes attributes = _simulation.getAttributes();
-		String plotTitle = "?";
-		String xLabel = "?";
-		String yLabel = "?";
-		try {
-			plotTitle = attributes.getAttribute(Simulation.PLOTTITLE).getString();
-			xLabel = attributes.getAttribute(Simulation.XAXISLABEL).getString();
-			yLabel = attributes.getAttribute(Simulation.YAXISLABEL).getString();
-		} catch (InvalidTargetObjectTypeException e) {
-			e.printStackTrace();
-		}
-		
-		_plotCanvas = new PlotCanvas(null, plotTitle, xLabel, yLabel) {
-			@Override
-			public Dimension getPreferredSize() {
-				Dimension d = super.getPreferredSize();
-				d.width = 400;
-				return d;
-			}
-		};
-		_plotPanel = new PlotPanel(_plotCanvas);
+		_simPlot = new SimulationPlot(_simulation);
 
 		
 		panel.setLayout(new BorderLayout(4, 4));
-		panel.add(_plotPanel, BorderLayout.CENTER);
+		panel.add(_simPlot, BorderLayout.CENTER);
 
 	    add(panel, BorderLayout.CENTER);
-		
 	}
 
 	//add the east panel
@@ -196,6 +174,7 @@ public class SimulationPanel extends JPanel implements ActionListener {
 		Object source = e.getSource();
 		
 		if (source == runButton) {
+			_simulation.setSimulationState(SimulationState.RUNNING);
 			_simulation.startSimulation();
 		}
 		else if (source == pauseButton) {
@@ -210,8 +189,18 @@ public class SimulationPanel extends JPanel implements ActionListener {
 		else if (source == stopButton) {
 			_simulation.setSimulationState(SimulationState.STOPPED);
 		}
+	}
 
-		
+	@Override
+	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
+	}
+
+	@Override
+	public void reset(Simulation simulation) {
+	}
+
+	@Override
+	public void stateChange(Simulation simulation, SimulationState newState) {
 		fixPanelState();
 	}
 

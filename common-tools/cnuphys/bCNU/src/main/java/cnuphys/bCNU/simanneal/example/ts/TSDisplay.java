@@ -5,13 +5,8 @@ import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 
-import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
-
 import cnuphys.bCNU.graphics.SymbolDraw;
-import cnuphys.bCNU.simanneal.IUpdateListener;
-import cnuphys.bCNU.simanneal.Simulation;
-import cnuphys.bCNU.simanneal.Solution;
+import cnuphys.bCNU.simanneal.SimulationDisplay;
 import cnuphys.splot.plot.X11Colors;
 
 /**
@@ -19,19 +14,15 @@ import cnuphys.splot.plot.X11Colors;
  * @author heddle
  *
  */
-public class TSDisplay extends JComponent implements IUpdateListener {
+public class TSDisplay extends SimulationDisplay {
 	
 	//for converting to screen coordinates
 	private final double vmin = -0.05;
 	private final double vmax = 1.1;
 
-	
-	//the simulation
-	private TSSolution _travPerson;
-	
-	public TSDisplay(TSSolution travPerson) {
-		_travPerson = travPerson;
-		setOpaque(false);
+		
+	public TSDisplay(TSSimulation simulation) {
+		super(simulation);
 	}
 	
 	@Override
@@ -42,7 +33,7 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 		g.setColor(X11Colors.getX11Color("Dark Blue"));
 		g.drawRect(b.x, b.y, b.width-1, b.height-1);
 		
-		TSSolution ts = _travPerson.getCurrentSolution();
+		TSSolution ts = (TSSolution)(_simulation.currentSolution());
 		TSCity cities[] = ts.getCities();
 		int itinerary[] = ts.getItinerary();
 		int len = itinerary.length;
@@ -70,7 +61,7 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 			g.drawLine(p0.x, p0.y, p1.x, p1.y);
 		}
 		
-		System.out.println("NUM CITY: " + cities.length);
+//		System.out.println("NUM CITY: " + cities.length);
 				
 		//now draw the cities
 		for (TSCity city : cities) {
@@ -90,11 +81,6 @@ public class TSDisplay extends JComponent implements IUpdateListener {
 		double del = vmax-vmin;
 		pp.x = (int) (b.x + (x-vmin)*b.width/del);
 		pp.y = (int) (b.y + (vmax-y)*b.height/del);		
-	}
-
-	@Override
-	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
-		repaint();
 	}
 
 }

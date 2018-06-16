@@ -22,6 +22,7 @@ public abstract class Simulation implements Runnable {
 	public static final String PLOTTITLE  = "plottitle";
 	public static final String XAXISLABEL  = "xaxislabel";
 	public static final String YAXISLABEL  = "yaxislabel";
+	public static final String USELOGTEMP  = "uselogtemp";
 
 	//current solution
 	protected Solution _currentSolution;
@@ -93,8 +94,12 @@ public abstract class Simulation implements Runnable {
 	 * @param simState the new simulation state
 	 */
 	public void setSimulationState(SimulationState simState) {
+		if (_simState == simState) {
+			return;
+		}
 		_simState = simState;
-		System.out.println("  SIMSTATE IS NOW " + _simState);
+//		System.err.println("STATE IS NOW " + _simState);
+		notifyListeners(_simState);
 	}
 	
 	/**
@@ -113,6 +118,7 @@ public abstract class Simulation implements Runnable {
 		attributes.add(Simulation.MAXSTEPS, 1000);
 
 		
+		attributes.add(Simulation.USELOGTEMP, false, false, false);
 		attributes.add(Simulation.PLOTTITLE, "Simulated Annealing", false, false);
 		attributes.add(Simulation.XAXISLABEL, "Temperature", false, false);
 		attributes.add(Simulation.YAXISLABEL, "Energy", false, false);
@@ -138,7 +144,8 @@ public abstract class Simulation implements Runnable {
 	protected void reset() {
 		_initialSolution = setInitialSolution();
 		_currentSolution = _initialSolution.copy();
-		notifyListeners(_initialSolution, _initialSolution);
+		notifyListeners();
+//		notifyListeners(_initialSolution, _initialSolution);
 	}
 	
 	/**
@@ -172,7 +179,7 @@ public abstract class Simulation implements Runnable {
 		
 		_temperature = 10*Math.sqrt(sum/n);
 		
-		System.out.println("Initial temperature: " + _temperature);
+//		System.out.println("Initial temperature: " + _temperature);
 	}
 	
 	// create the random generator using a seed if provided
@@ -378,6 +385,8 @@ public abstract class Simulation implements Runnable {
 				notifyListeners(_currentSolution, oldSolution);
 			} //running
 		} // while
+		
+		setSimulationState(SimulationState.STOPPED);
 	}
 	
 		
@@ -412,6 +421,50 @@ public abstract class Simulation implements Runnable {
 		}
 		
 	}
+	
+	/**
+	 * Notify listeners that the simulation was reset
+	 */
+	protected void notifyListeners() {
+		if (_listenerList == null) {
+			return;
+		}
+
+		// Guaranteed to return a non-null array
+		Object[] listeners = _listenerList.getListenerList();
+
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for (int i = listeners.length - 2; i >= 0; i -= 2) {
+			if (listeners[i] == IUpdateListener.class) {
+				((IUpdateListener) listeners[i + 1]).reset(this);
+			}
+		}
+		
+	}
+	
+	/**
+	 * Notify listeners that the state changed
+	 */
+	protected void notifyListeners(SimulationState simState) {
+		if (_listenerList == null) {
+			return;
+		}
+
+		// Guaranteed to return a non-null array
+		Object[] listeners = _listenerList.getListenerList();
+
+		// Process the listeners last to first, notifying
+		// those that are interested in this event
+		for (int i = listeners.length - 2; i >= 0; i -= 2) {
+			if (listeners[i] == IUpdateListener.class) {
+				((IUpdateListener) listeners[i + 1]).stateChange(this, _simState);
+			}
+		}
+		
+	}
+
+
 	
 
 	/**

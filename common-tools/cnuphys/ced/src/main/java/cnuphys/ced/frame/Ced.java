@@ -92,6 +92,7 @@ import cnuphys.bCNU.graphics.ImageManager;
 import cnuphys.bCNU.log.Log;
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.menu.MenuManager;
+import cnuphys.bCNU.simanneal.example.ts.TSDialog;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.FileUtilities;
 import cnuphys.bCNU.util.PropertySupport;
@@ -110,7 +111,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	// the singleton
 	private static Ced _instance;
 	
-	private static final String _release = "build 1.004c";
+	private static final String _release = "build 1.004d";
 
 	// used for one time inits
 	private int _firstTime = 0;
@@ -195,7 +196,9 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	//use old BST geometry
 	private JCheckBoxMenuItem _oldBSTGeometry;
 	
-	
+	//for the traveling salesperson dialog
+	private TSDialog _tsDialog;
+
 
 	/**
 	 * Constructor (private--used to create singleton)
@@ -628,6 +631,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	}
 
 	// add some fun stuff
+	
 	private void addWeirdMenu(JMenu menu) {
 		String weirdTitle = "w" + "\u018e" + "i" + "\u1d19" + "d";
 		_weirdMenu = new JMenu(weirdTitle);
@@ -635,6 +639,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 		// eliza!
 		final JMenuItem elizaItem = new JMenuItem("Eliza...");
 		final JMenuItem fortuneItem = new JMenuItem("Fortune...");
+		final JMenuItem tsItem = new JMenuItem("Traveling Salesperson ...");
 
 		ActionListener al1 = new ActionListener() {
 			@Override
@@ -647,13 +652,21 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 				else if (source == fortuneItem) {
 					FortuneManager.getInstance().showDialog();
 				}
+				else if (source == tsItem) {
+					if (_tsDialog == null) {
+						_tsDialog = new TSDialog();
+					}
+					_tsDialog.setVisible(true);
+				}
 			}
 		};
 
 		elizaItem.addActionListener(al1);
 		fortuneItem.addActionListener(al1);
+		tsItem.addActionListener(al1);
 		_weirdMenu.add(elizaItem);
 		_weirdMenu.add(fortuneItem);
+		_weirdMenu.add(tsItem);
 		
 		menu.add(_weirdMenu, 0);
 

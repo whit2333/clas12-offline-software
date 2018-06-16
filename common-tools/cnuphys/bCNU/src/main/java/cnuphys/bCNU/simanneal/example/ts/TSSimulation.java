@@ -46,6 +46,8 @@ public class TSSimulation extends Simulation {
 		//change some defaults
 		attributes.setValue(Simulation.PLOTTITLE, "Traveling Salesperson");
 		attributes.setValue(Simulation.YAXISLABEL, "Distance");
+		attributes.setValue(Simulation.XAXISLABEL, "Log(Temp)");
+		attributes.setValue(Simulation.USELOGTEMP, true);
 		
 		//custom
 		attributes.add(NUMCITY, 200);
@@ -113,12 +115,6 @@ public class TSSimulation extends Simulation {
 				frame.setLocationRelativeTo(null);
 			}
 		});
-
-		
-		
-	//	tsPanel.getSimulation().run();
-		
-//		makePlot(temps, dists).setVisible(true);
 	}
 
 }

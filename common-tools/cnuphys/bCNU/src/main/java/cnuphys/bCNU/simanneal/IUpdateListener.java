@@ -12,4 +12,18 @@ public interface IUpdateListener extends EventListener {
 	 * @param oldSolution the old solution
 	 */
 	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution);
+	
+	
+	/**
+	 * Simulation was reset
+	 * @param simulation the simulation
+	 */
+	public void reset(Simulation simulation);
+	
+	/**
+	 * The state changed
+	 * @param simulation
+	 * @param newState the new state
+	 */
+	public void stateChange(Simulation simulation, SimulationState newState);
 }
