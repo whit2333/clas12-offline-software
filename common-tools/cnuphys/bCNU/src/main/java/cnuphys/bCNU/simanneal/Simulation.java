@@ -97,9 +97,10 @@ public abstract class Simulation implements Runnable {
 		if (_simState == simState) {
 			return;
 		}
+		SimulationState oldState = _simState; 
 		_simState = simState;
 //		System.err.println("STATE IS NOW " + _simState);
-		notifyListeners(_simState);
+		notifyListeners(oldState, _simState);
 	}
 	
 	/**
@@ -178,7 +179,7 @@ public abstract class Simulation implements Runnable {
 		}
 		
 //		_temperature = 10*Math.sqrt(sum/n);
-		_temperature = 2.5*Math.sqrt(sum/n);
+		_temperature = 1.2*Math.sqrt(sum/n);
 		
 //		System.out.println("Initial temperature: " + _temperature);
 	}
@@ -449,7 +450,7 @@ public abstract class Simulation implements Runnable {
 	/**
 	 * Notify listeners that the state changed
 	 */
-	protected void notifyListeners(SimulationState simState) {
+	protected void notifyListeners(SimulationState oldState, SimulationState simState) {
 		if (_listenerList == null) {
 			return;
 		}
@@ -461,7 +462,7 @@ public abstract class Simulation implements Runnable {
 		// those that are interested in this event
 		for (int i = listeners.length - 2; i >= 0; i -= 2) {
 			if (listeners[i] == IUpdateListener.class) {
-				((IUpdateListener) listeners[i + 1]).stateChange(this, _simState);
+				((IUpdateListener) listeners[i + 1]).stateChange(this, oldState, _simState);
 			}
 		}
 		

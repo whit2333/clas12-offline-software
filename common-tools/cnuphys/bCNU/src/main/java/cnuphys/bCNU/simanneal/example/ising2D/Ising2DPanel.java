@@ -25,6 +25,9 @@ public class Ising2DPanel extends JPanel {
 		_i2dDisplay = new Ising2DDisplay(_simulation);
 		_i2dDisplay.setPreferredSize(new Dimension(600, 600));
 		_simPanel = new SimulationPanel(_simulation, _i2dDisplay);
+		
+		_simPanel.getSimulationPlot().getParameters().mustIncludeXZero(true);
+		
 		add(_simPanel);
 		
 	}

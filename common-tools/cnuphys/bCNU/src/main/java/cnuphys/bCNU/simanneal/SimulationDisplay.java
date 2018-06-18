@@ -27,7 +27,7 @@ public abstract class SimulationDisplay extends JComponent implements IUpdateLis
 	}
 
 	@Override
-	public void stateChange(Simulation simulation, SimulationState newState) {
+	public void stateChange(Simulation simulation, SimulationState oldState, SimulationState newState) {
 	}
 
 }

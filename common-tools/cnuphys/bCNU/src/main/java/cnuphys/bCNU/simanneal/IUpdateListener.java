@@ -23,7 +23,8 @@ public interface IUpdateListener extends EventListener {
 	/**
 	 * The state changed
 	 * @param simulation
+	 * @param oldState the old state
 	 * @param newState the new state
 	 */
-	public void stateChange(Simulation simulation, SimulationState newState);
+	public void stateChange(Simulation simulation, SimulationState oldState, SimulationState newState);
 }

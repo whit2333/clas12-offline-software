@@ -46,7 +46,25 @@ public class SimulationPlot extends PlotPanel implements IUpdateListener {
 		setPreferences();
 		_simulation.addUpdateListener(this);
 	}
+	
+	/**
+	 * Get the plot parameters
+	 * @return the plot parameters
+	 */
+	public PlotParameters getPlotParameters() {
+		return _plotParameters;
+	}
+	
+	/**
+	 * Get the plot canvas
+	 * @return the plot canvas
+	 */
+	public PlotCanvas getPlotCanvas() {
+		return _plotCanvas;
+	}
 
+
+	//set preferences
 	private void setPreferences() {
 		try {
 			_useLogT = _simulation.getAttributes().getAttribute(Simulation.USELOGTEMP).getBoolean();
@@ -127,6 +145,9 @@ public class SimulationPlot extends PlotPanel implements IUpdateListener {
 	}
 
 	@Override
-	public void stateChange(Simulation simulation, SimulationState newState) {
+	public void stateChange(Simulation simulation, SimulationState oldState, SimulationState newState) {
+		if ((oldState == SimulationState.STOPPED) && (newState == SimulationState.RUNNING)) {
+			_dataSet.clear();
+		}
 	}
 }

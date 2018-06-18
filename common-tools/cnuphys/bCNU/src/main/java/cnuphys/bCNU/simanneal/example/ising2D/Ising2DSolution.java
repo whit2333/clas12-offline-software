@@ -163,6 +163,40 @@ public class Ising2DSolution extends Solution {
 	}
 
 
+//	@Override
+//	public Solution getRearrangement() {
+//		int neighbors[] = new int[4];
+//		Ising2DSolution neighbor = (Ising2DSolution) copy();
+//
+//		int row = _rand.nextInt(_numRow);
+//		int col = _rand.nextInt(_numColumn);
+//
+//		getNeighborsWrap(row, col, neighbors);
+//		int nsum = 0;
+//		for (int i = 0; i < 4; i++) {
+//			nsum += neighbors[i];
+//		}
+//		
+//		if (((nsum > 0) && (_spins[row][col] < 0))  || ((nsum < 0) && (_spins[row][col] > 0))) {
+//			if (_rand.nextDouble() < 0.5) {
+//				if (_rand.nextDouble() < 0.75) {
+//					neighbor.flipSpin(row, col);
+//				} else {
+//					neighbor.flipNeighbors(row, col);
+//				}
+//			}
+//		} 
+//		else {
+//			if (_rand.nextDouble() < 0.5) {
+//				neighbor.flipSpin(row, col);
+//			} else {
+//				neighbor.flipNeighbors(row, col);
+//			}
+//
+//		}
+//		return neighbor;
+//	}
+	
 	@Override
 	public Solution getRearrangement() {
 		Ising2DSolution neighbor = (Ising2DSolution)copy();
@@ -182,6 +216,7 @@ public class Ising2DSolution extends Solution {
 		
 		return neighbor;
 	}
+
 	
 	private void flipSpin(int row, int col) {
 		if (_spins[row][col] == 1) {

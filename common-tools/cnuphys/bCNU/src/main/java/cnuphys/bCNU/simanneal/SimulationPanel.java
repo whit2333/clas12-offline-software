@@ -60,6 +60,14 @@ public class SimulationPanel extends JPanel implements ActionListener, IUpdateLi
 		
 	}
 	
+	/**
+	 * Get the simulation plot
+	 * @return the simulation plot
+	 */
+	public SimulationPlot getSimulationPlot() {
+		return _simPlot;
+	}
+	
 	private JPanel insetPanel() {
 		JPanel panel = new JPanel() {
 			@Override
@@ -200,7 +208,7 @@ public class SimulationPanel extends JPanel implements ActionListener, IUpdateLi
 	}
 
 	@Override
-	public void stateChange(Simulation simulation, SimulationState newState) {
+	public void stateChange(Simulation simulation, SimulationState oldState, SimulationState newState) {
 		fixPanelState();
 	}
 
