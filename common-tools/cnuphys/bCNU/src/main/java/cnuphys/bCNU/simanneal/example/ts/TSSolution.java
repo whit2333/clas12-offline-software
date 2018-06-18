@@ -1,34 +1,12 @@
 package cnuphys.bCNU.simanneal.example.ts;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
 import java.util.Random;
-import java.util.Vector;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.management.modelmbean.InvalidTargetObjectTypeException;
 
 import cnuphys.bCNU.attributes.Attributes;
-import cnuphys.bCNU.simanneal.IUpdateListener;
-import cnuphys.bCNU.simanneal.Simulation;
-import cnuphys.bCNU.simanneal.SimulationPanel;
 import cnuphys.bCNU.simanneal.Solution;
-import cnuphys.splot.example.APlotDialog;
-import cnuphys.splot.fit.FitType;
-import cnuphys.splot.pdata.DataColumn;
-import cnuphys.splot.pdata.DataColumnType;
-import cnuphys.splot.pdata.DataSet;
-import cnuphys.splot.pdata.DataSetException;
-import cnuphys.splot.pdata.DataSetType;
-import cnuphys.splot.plot.PlotParameters;
-import cnuphys.splot.plot.PlotTicks;
-import cnuphys.splot.style.SymbolType;
 
 public class TSSolution extends Solution {
 	
@@ -53,20 +31,33 @@ public class TSSolution extends Solution {
 	 * A Solution with randomly located cities
 	 * @param numCity the number of cities
 	 */
-	public TSSolution(TSSimulation simulation, int numCity) {
+	public TSSolution(TSSimulation simulation) {
 		_simulation = simulation;
-		reset(numCity);
+		init();
 	}
+	
+	/**
+	 * Copy constructor
+	 * @param ts the solution to copy
+	 */
+	public TSSolution(TSSolution ts) {
+		_simulation = ts.getSimulation();
+		
+		//cities are immutable and shared
+		_cities = ts._cities;
+		
+		//_itinerary is mutable
+		_itinerary = new int[ts.count()];
+		System.arraycopy(ts._itinerary, 0, _itinerary, 0, ts.count());
+	}
+	
 		
 	/**
-	 * Reset the simulation
-	 * @param numCity the number of cities
+	 * Initialize the colution
 	 */
-	public void reset(int numCity) {
+	public void init() {
 		
-	//	System.out.println("Resetting the solution with num cities = " + numCity);
-		
-		numCity = Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
+		int numCity = getNumCityFromAttributes();
 		
 		_cities = new TSCity[numCity];
 		
@@ -103,22 +94,7 @@ public class TSSolution extends Solution {
 	public int count() {
 		return _cities.length;
 	}
-	
-	/**
-	 * Copy constructor
-	 * @param ts the solution to copy
-	 */
-	public TSSolution(TSSolution ts) {
-		_simulation = ts.getSimulation();
 		
-		//cities are immutable and shared
-		_cities = ts._cities;
-		
-		//_itinerary is mutable
-		_itinerary = new int[ts.count()];
-		System.arraycopy(ts._itinerary, 0, _itinerary, 0, ts.count());
-	}
-	
 	public int getThermalizationCount() {
 		return 10*count();
 	}
@@ -128,6 +104,15 @@ public class TSSolution extends Solution {
 //		return 5*getDistance()/_cities.length;
 		return getDistance() + riverPenalty();
 	}
+	
+	/**
+	 * Get the y value for the plot.
+	 * @return the y value for the plot
+	 */
+	public double getPlotY() {
+		return getEnergy();
+	}
+
 	
 	//get the "distance" which includes river penalties or bonuses
 	public double getDistance() {
@@ -307,5 +292,22 @@ public class TSSolution extends Solution {
 	public TSSimulation getSimulation() {
 		return _simulation;
 	}
+	
+	/**
+	 * Get the number of cities from the attributes
+	 * @return the number of cities
+	 */
+	private int getNumCityFromAttributes() {
+		
+		Attributes attributes = _simulation.getAttributes();
+		try {
+			int numCity = attributes.getAttribute(TSSimulation.NUMCITY).getInt();
+			return Math.max(MIN_CITY, Math.min(MAX_CITY, numCity));
+		} catch (InvalidTargetObjectTypeException e) {
+			e.printStackTrace();
+		}	
+		return -1;
+	}
+
 
 }

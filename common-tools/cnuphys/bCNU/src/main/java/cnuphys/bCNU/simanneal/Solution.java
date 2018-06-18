@@ -13,4 +13,10 @@ public abstract class Solution implements IAnneal {
 	 * @return a copy of the solution
 	 */
 	public abstract Solution copy();
+	
+	/**
+	 * Get the y value for the plot. E.g., energy.
+	 * @return the y value for the plot
+	 */
+	public abstract double getPlotY();
 }

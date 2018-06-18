@@ -1,15 +1,12 @@
 package cnuphys.bCNU.simanneal.example.ts;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.management.modelmbean.InvalidTargetObjectTypeException;
-import javax.swing.BorderFactory;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 
@@ -32,7 +29,7 @@ public class TSSimulation extends Simulation {
 	
 	@Override
 	public Solution setInitialSolution() {
-		_tsSolution = new TSSolution(this, getNumCity());
+		_tsSolution = new TSSolution(this);
 		return _tsSolution;
 	}
 
@@ -68,21 +65,9 @@ public class TSSimulation extends Simulation {
 	 * @return the penalty for crossing the river
 	 */
 	public double getRiverPenalty() {
-		return _riverSlider.getValue();
+		return (0.5)*_riverSlider.getValue();
 	}
 
-	/**
-	 * Get the number of cities in the current simulation
-	 * @return the number of cities
-	 */
-	public int getNumCity() {
-		try {
-			return _attributes.getAttribute(NUMCITY).getInt();
-		} catch (InvalidTargetObjectTypeException e) {
-			e.printStackTrace();
-		}	
-		return -1;
-	}
 
 	//main program for testing
 	public static void main(String arg[]) {

@@ -5,7 +5,6 @@ import java.awt.Insets;
 
 import javax.swing.JPanel;
 
-import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.SimulationPanel;
 
 public class Ising2DPanel extends JPanel {

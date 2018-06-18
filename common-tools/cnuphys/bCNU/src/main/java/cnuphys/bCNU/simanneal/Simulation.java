@@ -177,7 +177,8 @@ public abstract class Simulation implements Runnable {
 			sum += Math.pow(e1-e0, 2);
 		}
 		
-		_temperature = 10*Math.sqrt(sum/n);
+//		_temperature = 10*Math.sqrt(sum/n);
+		_temperature = 2.5*Math.sqrt(sum/n);
 		
 //		System.out.println("Initial temperature: " + _temperature);
 	}
@@ -381,6 +382,8 @@ public abstract class Simulation implements Runnable {
 
 				// reduce the temperature
 				_temperature *= factor;
+				
+	//			System.err.println("Current temp: " + _temperature);
 				step++;
 				notifyListeners(_currentSolution, oldSolution);
 			} //running

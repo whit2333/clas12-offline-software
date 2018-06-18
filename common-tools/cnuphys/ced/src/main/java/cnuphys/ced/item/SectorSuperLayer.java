@@ -66,6 +66,10 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 		_superlayerDrawer = new SuperLayerDrawing(_view, this);
 	}
 	
+	public SuperLayerDrawing getSuperLayerDrawer() {
+		return _superlayerDrawer;
+	}
+	
 	/**
 	 * Draw a single reconstructed dc hit
 	 * @param g graphics context

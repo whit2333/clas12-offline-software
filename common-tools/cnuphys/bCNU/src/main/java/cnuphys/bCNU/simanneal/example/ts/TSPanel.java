@@ -4,7 +4,6 @@ import java.awt.Dimension;
 import java.awt.Insets;
 import javax.swing.JPanel;
 
-import cnuphys.bCNU.simanneal.Simulation;
 import cnuphys.bCNU.simanneal.SimulationPanel;
 
 public class TSPanel extends JPanel {

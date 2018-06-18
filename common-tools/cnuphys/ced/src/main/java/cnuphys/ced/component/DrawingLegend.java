@@ -114,7 +114,7 @@ public class DrawingLegend extends JComponent {
 		x = drawCross(g, x, yc, DataDrawSupport.HB_CROSS);
 		x = drawCross(g, x, yc, DataDrawSupport.TB_CROSS);
 		x = drawCross(g, x, yc, DataDrawSupport.FMT_CROSS);
-		x = drawCircle(g, x, yc, CedColors.docaLine, "TB Doca");
+		x = drawCircle(g, x, yc, CedColors.docaTruthLine, "TB Doca");
 		yc += 18;
 		
 		
@@ -126,7 +126,7 @@ public class DrawingLegend extends JComponent {
 	}
 	
 	private int drawSegLine(Graphics2D g2, int x, int yc, Color lineColor, Color endColor, String str) {
-		g2.setColor(CedColors.docaFill);
+		g2.setColor(CedColors.docaTruthFill);
 		g2.setStroke(GraphicsUtilities.getStroke(6f, LineStyle.SOLID));
 		g2.drawLine(x, yc, x+30, yc);
 		g2.setColor(lineColor);

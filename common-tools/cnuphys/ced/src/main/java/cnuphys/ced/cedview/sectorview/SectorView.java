@@ -28,6 +28,7 @@ import cnuphys.ced.cedview.CedView;
 import cnuphys.ced.cedview.central.CentralSupport;
 import cnuphys.ced.common.CrossDrawer;
 import cnuphys.ced.common.FMTCrossDrawer;
+import cnuphys.ced.common.SuperLayerDrawing;
 import cnuphys.ced.component.ControlPanel;
 import cnuphys.ced.component.DisplayBits;
 import cnuphys.ced.event.data.DC;
@@ -469,6 +470,17 @@ public class SectorView extends CedView implements ChangeListener {
 		} // end switch
 
 	}
+	
+	/**
+	 * Get the super layer drawer
+	 * @param upperLower 0 for upper sector, 1 for lower sector
+	 * @param superLayer super layer 1..6
+	 * @return the drawer
+	 */
+	public SuperLayerDrawing getSuperLayerDrawer(int upperLower, int superLayer) {
+		return _superLayers[upperLower][superLayer-1].getSuperLayerDrawer();
+	}
+
 
 	/**
 	 * Set the views before draw

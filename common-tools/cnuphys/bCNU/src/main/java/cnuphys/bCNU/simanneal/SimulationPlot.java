@@ -70,7 +70,7 @@ public class SimulationPlot extends PlotPanel implements IUpdateListener {
 		_plotParameters.setNumDecimalY(2);
 		_plotParameters.setMinExponentX(4);
 		_plotParameters.setMinExponentY(4);
-
+	
 	}
 	
 	private static PlotCanvas makePlotCanvas(Attributes attributes) {
@@ -108,7 +108,7 @@ public class SimulationPlot extends PlotPanel implements IUpdateListener {
 	public void updateSolution(Simulation simulation, Solution newSolution, Solution oldSolution) {
 
 		double t = _simulation.getTemperature();
-		double e = newSolution.getEnergy();
+		double e = newSolution.getPlotY();
 //		System.out.println("T = " + t + "  logT = " + Math.log10(t) + "  E = " + e);
 		
 		try {

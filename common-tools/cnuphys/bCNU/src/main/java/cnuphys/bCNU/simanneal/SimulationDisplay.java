@@ -1,8 +1,6 @@
 package cnuphys.bCNU.simanneal;
 
 import java.awt.Graphics;
-import java.awt.Rectangle;
-
 import javax.swing.JComponent;
 
 public abstract class SimulationDisplay extends JComponent implements IUpdateListener {

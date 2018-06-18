@@ -6,8 +6,8 @@ import cnuphys.bCNU.util.X11Colors;
 public class CedColors {
 
 	// doca's
-	public static final Color docaLine = Color.gray;
-	public static final Color docaFill = new Color(0, 0, 0, 40);
+	public static final Color docaTruthLine = Color.blue;
+	public static final Color docaTruthFill = new Color(0, 0, 0, 40);
 
 
 //	// track fit docas
