@@ -9,7 +9,7 @@ import cnuphys.bCNU.dialog.SimpleDialog;
 public class Ising2DDialog extends SimpleDialog {
 
 	public Ising2DDialog() {
-		super("2D Ising Model", false, "Close");
+		super("2D Ising Model (Simulated Annealing)", false, "Close");
 		DialogUtilities.centerDialog(this);
 	}
 

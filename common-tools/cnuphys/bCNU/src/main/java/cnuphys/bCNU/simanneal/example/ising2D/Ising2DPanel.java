@@ -29,16 +29,7 @@ public class Ising2DPanel extends JPanel {
 		add(_simPanel);
 		
 	}
-	
-	/**
-	 * Get the underlying simulation
-	 * @return the underlying simulation
-	 */
-	public Simulation getSimulation() {
-		return _simulation;
-	}
-
-	
+		
 	@Override
 	public Insets getInsets() {
 		Insets def = super.getInsets();

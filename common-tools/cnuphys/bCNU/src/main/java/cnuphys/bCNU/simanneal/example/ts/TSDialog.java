@@ -9,7 +9,7 @@ import cnuphys.bCNU.dialog.SimpleDialog;
 public class TSDialog extends SimpleDialog {
 
 	public TSDialog() {
-		super("Traveling Salesperson", false, "Close");
+		super("Traveling Salesperson (Simulated Annealing)", false, "Close");
 		DialogUtilities.centerDialog(this);
 	}
 

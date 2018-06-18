@@ -3,7 +3,6 @@ package cnuphys.bCNU.simanneal.example.ising2D;
 import java.util.Random;
 
 import cnuphys.bCNU.simanneal.Solution;
-import cnuphys.bCNU.simanneal.example.ts.TSSimulation;
 
 public class Ising2DSolution extends Solution {
 	
@@ -22,9 +21,9 @@ public class Ising2DSolution extends Solution {
 	private static Random _rand = new Random();
 
 	//the simulation owner
-	private TSSimulation _simulation;
+	private Ising2DSimulation _simulation;
 
-	public Ising2DSolution(TSSimulation simulation, int numRow, int numColumn) {
+	public Ising2DSolution(Ising2DSimulation simulation, int numRow, int numColumn) {
 		
 	}
 	

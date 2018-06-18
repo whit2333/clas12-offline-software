@@ -17,8 +17,8 @@ import cnuphys.splot.plot.X11Colors;
 public class TSDisplay extends SimulationDisplay {
 	
 	//for converting to screen coordinates
-	private final double vmin = -0.05;
-	private final double vmax = 1.1;
+	private final double vmin = -0.01;
+	private final double vmax = 1.02;
 
 		
 	public TSDisplay(TSSimulation simulation) {

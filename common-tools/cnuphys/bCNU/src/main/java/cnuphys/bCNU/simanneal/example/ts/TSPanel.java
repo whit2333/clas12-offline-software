@@ -23,20 +23,11 @@ public class TSPanel extends JPanel {
 		_simulation = simulation;
 		
 		_tsDisplay = new TSDisplay(_simulation);
-		_tsDisplay.setPreferredSize(new Dimension(600, 600));
+		_tsDisplay.setPreferredSize(new Dimension(550, 550));
 		_simPanel = new SimulationPanel(_simulation, _tsDisplay);
 		add(_simPanel);
 	}
-	
-	/**
-	 * Get the underlying simulation
-	 * @return the underlying simulation
-	 */
-	public Simulation getSimulation() {
-		return _simulation;
-	}
-
-	
+		
 	@Override
 	public Insets getInsets() {
 		Insets def = super.getInsets();

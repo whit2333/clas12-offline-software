@@ -30,10 +30,6 @@ public class TSSimulation extends Simulation {
 	//for river penalty
 	private JSlider _riverSlider;
 	
-	public TSSimulation() {
-		
-	}
-
 	@Override
 	public Solution setInitialSolution() {
 		_tsSolution = new TSSolution(this, getNumCity());
@@ -75,6 +71,10 @@ public class TSSimulation extends Simulation {
 		return _riverSlider.getValue();
 	}
 
+	/**
+	 * Get the number of cities in the current simulation
+	 * @return the number of cities
+	 */
 	public int getNumCity() {
 		try {
 			return _attributes.getAttribute(NUMCITY).getInt();

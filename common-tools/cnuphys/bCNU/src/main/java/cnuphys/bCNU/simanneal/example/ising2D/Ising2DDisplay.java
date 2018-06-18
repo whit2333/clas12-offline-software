@@ -1,5 +1,6 @@
 package cnuphys.bCNU.simanneal.example.ising2D;
 
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -14,6 +15,9 @@ public class Ising2DDisplay extends SimulationDisplay {
 	@Override
 	public void paintComponent(Graphics g) {
 		Rectangle b = getBounds();
+		
+		g.setColor(Color.green);
+		g.fillRect(b.x, b.y, b.width, b.height);
 	}
 	
 
