@@ -2,8 +2,7 @@ package cnuphys.bCNU.simanneal.example.ts;
 
 import java.awt.Component;
 
-import org.jlab.io.ui.DialogUtilities;
-
+import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.bCNU.dialog.SimpleDialog;
 
 public class TSDialog extends SimpleDialog {
