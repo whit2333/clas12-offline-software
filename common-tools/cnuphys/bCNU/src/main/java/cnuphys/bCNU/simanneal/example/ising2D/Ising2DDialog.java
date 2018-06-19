@@ -2,8 +2,7 @@ package cnuphys.bCNU.simanneal.example.ising2D;
 
 import java.awt.Component;
 
-import org.jlab.io.ui.DialogUtilities;
-
+import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.bCNU.dialog.SimpleDialog;
 
 public class Ising2DDialog extends SimpleDialog {
