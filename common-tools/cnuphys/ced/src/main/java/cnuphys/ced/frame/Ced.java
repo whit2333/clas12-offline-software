@@ -79,7 +79,6 @@ import cnuphys.ced.trigger.TriggerManager;
 import cnuphys.ced.trigger.TriggerMenuPanel;
 import cnuphys.lund.X11Colors;
 import cnuphys.magfield.FastMath;
-import cnuphys.magfield.MagTests;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.splot.example.MemoryUsageDialog;
@@ -112,7 +111,7 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	// the singleton
 	private static Ced _instance;
 	
-	private static final String _release = "build 1.004d";
+	private static final String _release = "build 1.004e";
 
 	// used for one time inits
 	private int _firstTime = 0;
@@ -597,8 +596,8 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 	private void addToMagneticFieldMenu() {
 		JMenu magMenu = MagneticFields.getInstance().getMagneticFieldMenu();
 		final JMenuItem plotItem = new JMenuItem("Plot the Field...");
-		final JMenuItem reconfigItem = new JMenuItem("Remove Solenoid and Torus Overlap");
-		final JMenuItem samenessItem = new JMenuItem("Sameness Test with/without Overlap Removal");
+//		final JMenuItem reconfigItem = new JMenuItem("Remove Solenoid and Torus Overlap");
+//		final JMenuItem samenessItem = new JMenuItem("Sameness Test with/without Overlap Removal");
 		magMenu.addSeparator();
 
 		ActionListener al = new ActionListener() {
@@ -614,20 +613,20 @@ public class Ced extends BaseMDIApplication implements PropertyChangeListener,
 					_plotFieldDialog.setVisible(true);
 
 				} 
-				else if (e.getSource() == reconfigItem) {
-					MagneticFields.getInstance().removeMapOverlap();
-				}
-				else if (e.getSource() == samenessItem) {
-					MagTests.samenessTest();
-				}
+//				else if (e.getSource() == reconfigItem) {
+//					MagneticFields.getInstance().removeMapOverlap();
+//				}
+//				else if (e.getSource() == samenessItem) {
+//					MagTests.samenessTest();
+//				}
 			}
 		};
 
-		reconfigItem.addActionListener(al);
-		samenessItem.addActionListener(al);
+//		reconfigItem.addActionListener(al);
+//		samenessItem.addActionListener(al);
 		plotItem.addActionListener(al);
-		magMenu.add(reconfigItem);
-		magMenu.add(samenessItem);
+//		magMenu.add(reconfigItem);
+//		magMenu.add(samenessItem);
 		magMenu.add(plotItem);
 
 		MenuManager.getInstance().addMenu(magMenu);

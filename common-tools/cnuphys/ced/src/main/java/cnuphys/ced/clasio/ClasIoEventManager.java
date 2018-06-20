@@ -1130,7 +1130,10 @@ public class ClasIoEventManager {
 	 */
 	protected void notifyEventListeners() {
 
+		Swimming.setNotifyOn(false); //prevent refreshes
 		Swimming.clearAllTrajectories();
+		Swimming.setNotifyOn(true); //prevent refreshes
+		
 		_uniqueLundIds = null;
 
 		Ced.getCed().setEventFilteringLabel(isFilteringOn());

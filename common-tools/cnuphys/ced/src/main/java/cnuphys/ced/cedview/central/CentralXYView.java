@@ -235,13 +235,13 @@ public class CentralXYView extends CedXYView {
 
 				if (!_eventManager.isAccumulating()) {
 					
+					_hitDrawer.draw(g, container);
+					
 					_swimTrajectoryDrawer.draw(g, container);
 					if (showCosmics()) {
 						drawCosmicTracks(g, container);
 					}
 					
-					_hitDrawer.draw(g, container);
-
 					if (showCrosses()) {
 						_crossDrawer.draw(g, container);
 					}

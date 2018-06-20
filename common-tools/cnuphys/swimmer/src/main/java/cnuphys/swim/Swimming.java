@@ -124,7 +124,7 @@ public class Swimming {
 
 
 	// notify listeners that the collection of trajectories has changed
-	protected static void notifyListeners() {
+	public static void notifyListeners() {
 
 		if (!_notifyOn || (_listenerList == null)) {
 			return;

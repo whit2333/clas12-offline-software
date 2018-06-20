@@ -58,14 +58,14 @@ public class DC extends DetectorData {
 		_tdcHits =  new DCTdcHitList();
 		try {
 			_hbHits = new DCHitList("HitBasedTrkg::HBHits");
-			System.err.println("HB HIT COUNT = " + ((_hbHits == null) ? 0 : _hbHits.size()));
+//			System.err.println("HB HIT COUNT = " + ((_hbHits == null) ? 0 : _hbHits.size()));
 		} catch (EventDataException e) {
 			_hbHits = null;
 			e.printStackTrace();
 		}
 		try {
 			_tbHits = new DCHitList("TimeBasedTrkg::TBHits");
-			System.err.println("TB HIT COUNT = " + ((_tbHits == null) ? 0 : _tbHits.size()));
+//			System.err.println("TB HIT COUNT = " + ((_tbHits == null) ? 0 : _tbHits.size()));
 		} catch (EventDataException e) {
 			_tbHits = null;
 			e.printStackTrace();

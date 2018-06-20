@@ -17,7 +17,7 @@ public class ForwardPanel3D extends CedPanel3D {
 	private static final String _cbaLabels[] = { SHOW_VOLUMES, SHOW_TRUTH,
 			SHOW_SECTOR_1, SHOW_SECTOR_2, SHOW_SECTOR_3, SHOW_SECTOR_4,
 			SHOW_SECTOR_5, SHOW_SECTOR_6, SHOW_DC, SHOW_ECAL, SHOW_PCAL,
-			SHOW_FTOF, SHOW_HB_CROSS, SHOW_TB_CROSS , SHOW_HB_TRACK, SHOW_TB_TRACK };
+			SHOW_FTOF, SHOW_HB_CROSS, SHOW_TB_CROSS , SHOW_HB_TRACK, SHOW_TB_TRACK, SHOW_CVT_TRACK };
 	
 
 	public ForwardPanel3D(CedView3D view, float angleX, float angleY, float angleZ,

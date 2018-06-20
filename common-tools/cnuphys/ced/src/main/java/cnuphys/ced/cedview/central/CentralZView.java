@@ -197,7 +197,6 @@ public class CentralZView extends CedView implements ChangeListener {
 					drawCosmicTracks(g, container);
 				}
 
-				_swimTrajectoryDrawer.draw(g, container);
 				drawGEMCHits(g, container);
 				drawBSTPanels(g, container);
 
@@ -205,6 +204,8 @@ public class CentralZView extends CedView implements ChangeListener {
 				denoteBMT(g, container);
 
 				_hitDrawer.draw(g, container);
+
+				_swimTrajectoryDrawer.draw(g, container);
 
 				if (showCrosses()) {
 					_crossDrawer.draw(g, container);
