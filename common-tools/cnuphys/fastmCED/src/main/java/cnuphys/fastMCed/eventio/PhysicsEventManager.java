@@ -21,6 +21,7 @@ import cnuphys.fastMCed.fastmc.AcceptanceManager;
 import cnuphys.fastMCed.fastmc.NoiseData;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.frame.FastMCed;
+import cnuphys.lund.LundFileSupport;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundSupport;
 import cnuphys.swim.SwimTrajectory;
@@ -36,6 +37,9 @@ public class PhysicsEventManager {
 	
 	// the event number
 	private int _eventNum = 0;
+	
+	// event count
+	private int _eventCount;
 
 	// current generated event
 	private PhysicsEvent _currentEvent;
@@ -244,6 +248,16 @@ public class PhysicsEventManager {
 	public int getEventNumber() {
 		return _eventNum;
 	}
+	
+	/**
+	 * Get the event count
+	 * 
+	 * @return the current event count
+	 */
+	public int getEventCount() {
+		return _eventCount;
+	}
+
 
 	/**
 	 * Set the default directory in which to look for event files.
@@ -335,6 +349,10 @@ public class PhysicsEventManager {
 		_currentFile = file;
 		_lundReader = new LundReader();
 		dataFilePath = _currentFile.getParent();
+		
+		_eventCount = LundFileSupport.getInstance().countEvents(file);
+		System.err.println("Event count: " + _eventCount);
+
 
 		_lundReader.addFile(_currentFile.getPath());
 		_lundReader.open();
