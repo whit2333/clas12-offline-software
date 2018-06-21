@@ -19,7 +19,7 @@ public class HeadsUpDisplay extends GlassPane {
 	private static Font _hudFont = Fonts.commonFont(Font.BOLD, 12);
 
 	// color behind text
-	private Color _backgroundColor = new Color(0, 0, 64, 160);
+	private Color _backgroundColor = new Color(48, 48, 48, 196);
 
 	// the parent application
 	private BaseMDIApplication _application;

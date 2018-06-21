@@ -660,19 +660,6 @@ public abstract class AItem implements IDrawable, IFeedbackProvider {
 	@Override
 	public void getFeedbackStrings(IContainer container, Point pp,
 			Point2D.Double wp, List<String> feedbackStrings) {
-		if (getName() != null) {
-			if (contains(container, pp)) {
-				feedbackStrings.add(getName());
-				if (_focus != null) {
-					feedbackStrings.add("focus "
-							+ container.getLocationString(_focus));
-				}
-				feedbackStrings.add("azimuth "
-						+ DoubleFormat.doubleFormat(_azimuth, 2)
-						+ UnicodeSupport.DEGREE);
-			}
-		}
-
 	}
 
 	/**

@@ -29,6 +29,7 @@ import cnuphys.bCNU.menu.MenuManager;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.FileUtilities;
 import cnuphys.bCNU.util.PropertySupport;
+import cnuphys.bCNU.util.X11Colors;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.bCNU.view.VirtualView;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
@@ -296,7 +297,9 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 	private static FastMCed getInstance() {
 		if (_instance == null) {
 			_instance = new FastMCed(PropertySupport.TITLE, "fastmCED " + versionString(),
-					PropertySupport.BACKGROUNDIMAGE, "images/cnuinv.png", PropertySupport.FRACTION, 0.9);
+//					PropertySupport.BACKGROUNDIMAGE, "images/cnuinv.png", 
+					PropertySupport.BACKGROUND, new Color(48, 48, 48),
+					PropertySupport.FRACTION, 0.9);
 
 			_instance.addInitialViews();
 			_instance.createMenus();
