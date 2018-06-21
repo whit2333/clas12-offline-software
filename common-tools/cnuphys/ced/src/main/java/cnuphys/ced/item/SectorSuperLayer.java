@@ -110,7 +110,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 
 
 	/**
-	 * Add any appropriate feedback strings for the headsup display or feedback
+	 * Add any appropriate feedback strings
 	 * panel.
 	 * 
 	 * @param container

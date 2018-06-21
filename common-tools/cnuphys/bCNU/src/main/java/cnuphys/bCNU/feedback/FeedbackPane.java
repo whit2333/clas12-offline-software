@@ -11,8 +11,7 @@ import cnuphys.bCNU.graphics.component.TextPaneScrollPane;
 import cnuphys.bCNU.util.X11Colors;
 
 /**
- * A FeedbackPane is an alternative to the HeadsUp display, for views where the
- * headsup display is too intrusive such as the AllDC views
+ * A FeedbackPane for displaying mouse over feedback
  * 
  * @author heddle
  */

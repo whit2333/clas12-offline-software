@@ -141,7 +141,7 @@ public class CentralZView extends CedView implements ChangeListener {
 				TMARGIN, PropertySupport.RIGHTMARGIN, RMARGIN,
 				PropertySupport.BOTTOMMARGIN, BMARGIN, PropertySupport.TOOLBAR,
 				true, PropertySupport.TOOLBARBITS, CedView.TOOLBARBITS,
-				PropertySupport.VISIBLE, true, PropertySupport.HEADSUP, false,
+				PropertySupport.VISIBLE, true,
 				PropertySupport.TITLE, title,
 				PropertySupport.STANDARDVIEWDECORATIONS, true);
 

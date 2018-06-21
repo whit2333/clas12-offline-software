@@ -43,7 +43,7 @@ public class LundFileSupport {
 		protected void processLine(String line) {
 			String tokens[] = AsciiReadSupport.tokens(line);
 			
-			System.err.println("[" + count() + "]  [" + line + "]");
+	//		System.err.println("[" + count() + "]  [" + line + "]");
 
 			if (skipCount == 0) {
 				int numPart = Integer.parseInt(tokens[0]);

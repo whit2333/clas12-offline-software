@@ -16,7 +16,6 @@ import org.jlab.geom.prim.Point3D;
 //import cnuphys.ced.dcnoise.test.TestParameters;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundStyle;
-import cnuphys.lund.LundSupport;
 import geometry.DCGeometry;
 import cnuphys.bCNU.format.DoubleFormat;
 import cnuphys.bCNU.graphics.container.IContainer;
@@ -167,7 +166,7 @@ public class AllDCSuperLayer extends RectangleItem {
 				+ _superLayer, -9, -5);
 
 		// now the data
-		drawData(g, container);
+		drawHitData(g, container);
 		// shade the layers
 		for (int i = 0; i < NUM_LAYER; i += 2) {
 			WorldGraphicsUtilities.drawWorldRectangle(g, container,
@@ -196,54 +195,37 @@ public class AllDCSuperLayer extends RectangleItem {
 	 * @param container
 	 *            the rendering container
 	 */
-	private void drawData(Graphics g, IContainer container) {
-				
+	private void drawHitData(Graphics g, IContainer container) {
+
 		Rectangle2D.Double wr = new Rectangle2D.Double(); // used over and over
-		
+
 		List<ParticleHits> hits = _eventManager.getParticleHits();
-		
+
 		if (hits != null) {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
-				if (particleHits.DCHitCount() > 0) {
-					List<DetectorHit> dchits = particleHits.getDCHits();
-					if (dchits != null) {
-						for (DetectorHit hit : dchits) {
-							
-							//NUMBERS COMING OUT OF DETECTOR HIT ARE 0-BASED
-							
-							System.err.println("ID: " + particleHits.lundId() + " name: " + lid.getName() +
-									"   Sect: " + hit.getSectorId() + "  SUPL: " + hit.getSuperlayerId() + 
-									"   LAY: " + hit.getLayerId() + "  WIRE: " + hit.getComponentId()) ;
-							
-							
-							// get 1-based
-							int sect = hit.getSectorId() + 1;
-							int superlayer = hit.getSuperlayerId() + 1;
-							int layer = hit.getLayerId() + 1;
-							int wire = hit.getComponentId() + 1;
 
-							if ((sect == _sector) && (superlayer == _superLayer)) {
-								drawDCHit(g, container, layer, wire, false, lid, wr);
-							}
-							
-						}
+				List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, 0);
+
+				if (!filteredHits.isEmpty()) {
+					for (DetectorHit hit : filteredHits) {
+
+						// NUMBERS COMING OUT OF DETECTOR HIT ARE 0-BASED
+
+//						System.err.println("ID: " + particleHits.lundId() + " name: " + lid.getName() + "   Sect: "
+//								+ hit.getSectorId() + "  SUPL: " + hit.getSuperlayerId() + "   LAY: " + hit.getLayerId()
+//								+ "  WIRE: " + hit.getComponentId());
+
+						// get 1-based
+						int layer = hit.getLayerId() + 1;
+						int wire = hit.getComponentId() + 1;
+
+						drawDCHit(g, container, layer, wire, false, lid, wr);
+
 					}
 				}
 			}
 		}
-
-
-//		DCTdcHitList hits = DC.getInstance().getTDCHits();
-//		if ((hits != null) && !hits.isEmpty()) {
-//			for (DCTdcHit hit : hits) {
-//				if ((hit.sector == _sector) && (hit.superlayer == _superLayer)) {
-//					drawDCHit(g, container, hit.layer6, hit.wire, hit.noise, -1, wr);
-//				}
-//			}
-//		}
-
-		
 	}
 
 	/**
@@ -297,7 +279,7 @@ public class AllDCSuperLayer extends RectangleItem {
 
 
 	/**
-	 * Add any appropriate feedback strings for the headsup display or feedback
+	 * Add any appropriate feedback strings
 	 * panel.
 	 * 
 	 * @param container
@@ -317,6 +299,10 @@ public class AllDCSuperLayer extends RectangleItem {
 			int layer = getLayer(worldPoint); // 1-based
 
 			int wire = getWire(worldPoint); // 1-based
+			
+			feedbackStrings.add("Superlayer " + _superLayer + "  Layer "
+					+ layer + "  Wire " + wire);
+
 
 			// report approximate position
 			// for now nearest wire--could interpolate
@@ -347,7 +333,8 @@ public class AllDCSuperLayer extends RectangleItem {
 
 			}
 
-			singleEventFeedbackStrings(wire, layer, feedbackStrings);
+
+			singleEventFeedbackStrings(layer, wire, feedbackStrings);
 
 		} // end contains
 	}
@@ -355,15 +342,35 @@ public class AllDCSuperLayer extends RectangleItem {
 	/**
 	 * Get the feedback strings for single event mode
 	 * 
-	 * @param wire
-	 *            [1..6]
 	 * @param layer
 	 *            [1..6]
+	 * @param wire
+	 *            [1..112]
 	 * @param feedbackStrings
 	 */
-	private void singleEventFeedbackStrings(int wire, int layer,
+	private void singleEventFeedbackStrings(int layer, int wire,
 			List<String> feedbackStrings) {
+		
+		
+		List<ParticleHits> hits = _eventManager.getParticleHits();
+		int wire0 = wire -1;
 
+		if (hits != null) {
+			for (ParticleHits particleHits : hits) {
+				LundId lid = particleHits.getLundId();
+
+				List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, layer);
+				
+				for (DetectorHit hit : filteredHits) {
+					if (hit.getComponentId() == wire0) {
+						ParticleHits.addHitFeedback(hit, lid, feedbackStrings);
+					}
+				}
+			}
+			
+		}
+		
+		
 		// some occupancy numbers
 
 //		feedbackStrings.add(DataSupport.prelimColor
@@ -385,8 +392,7 @@ public class AllDCSuperLayer extends RectangleItem {
 //		}
 //		
 //		if (hit == null) {
-//			feedbackStrings.add("superlayer " + _superLayer + "  layer "
-//					+ layer + "  wire " + wire);
+//			
 //		}
 //		else {
 //			hit.tdcAdcFeedback(_view.showNoiseAnalysis(), _view.showMcTruth(), feedbackStrings);

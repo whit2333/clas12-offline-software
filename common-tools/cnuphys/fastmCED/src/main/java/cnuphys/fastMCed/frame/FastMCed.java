@@ -74,9 +74,6 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 	// Environment display
 	private TextDisplayDialog _envDisplay;
 
-	// Glass pane
-	private FastMCGlassPane _glassPane;
-
 	// the views
 	private VirtualView _virtualView;
 	private TrajectoryInfoView _trajInfoView;
@@ -121,16 +118,10 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 
 		addComponentListener(cl);
 		
-		_glassPane = new FastMCGlassPane();
-		setGlassPane(_glassPane);
-		getGlassPane().setVisible(true);
-
+		addHeadsUp();
+		
 	}
 	
-	public FastMCGlassPane getFastMCGlassPane() {
-		return (FastMCGlassPane)getGlassPane();
-	}
-
 	// arrange the views on the virtual desktop
 	private void placeViewsOnVirtualDesktop() {
 		if (_firstTime == 1) {
@@ -298,9 +289,9 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 	}
 
 	/**
-	 * private access to the Ced singleton.
+	 * private access to the FastMCed singleton.
 	 * 
-	 * @return the singleton Ced (the main application frame.)
+	 * @return the singleton FastMCed (the main application frame.)
 	 */
 	private static FastMCed getInstance() {
 		if (_instance == null) {

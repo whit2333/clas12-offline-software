@@ -250,8 +250,6 @@ public class SectorView extends CedView implements ChangeListener {
 				PropertySupport.WIDTH, width, PropertySupport.HEIGHT, height,
 				PropertySupport.TOOLBAR, true, PropertySupport.TOOLBARBITS,
 				CedView.TOOLBARBITS, PropertySupport.VISIBLE, true,
-				PropertySupport.HEADSUP, false,
-
 				PropertySupport.BACKGROUND,
 				X11Colors.getX11Color("Alice Blue").darker(),
 				// PropertySupport.BACKGROUND,

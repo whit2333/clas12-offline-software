@@ -126,7 +126,8 @@ public final class Desktop extends JDesktopPane {
 	}
 
 	/**
-	 * The paint method for the desktop.
+	 * The paint method for the desktop. This is where the background
+	 * image gets tiled
 	 * 
 	 * @param g
 	 *            the graphics context.

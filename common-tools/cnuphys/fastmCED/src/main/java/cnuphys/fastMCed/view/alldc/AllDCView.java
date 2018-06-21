@@ -13,7 +13,6 @@ import java.util.List;
 
 import cnuphys.bCNU.drawable.DrawableAdapter;
 import cnuphys.bCNU.drawable.IDrawable;
-import cnuphys.bCNU.format.DoubleFormat;
 import cnuphys.bCNU.graphics.GraphicsUtilities;
 import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.style.Styled;
@@ -59,7 +58,6 @@ public class AllDCView extends AView {
 	// The optional "before" drawer for this view
 	private IDrawable _beforeDraw;
 	
-	private static final int NUM_LAYER = 6;
 	private static final int NUM_SUPERLAYER = 6;
 	private static final int NUM_WIRE = 112;
 	private static final int NUM_SECTOR = 6;
@@ -123,7 +121,7 @@ public class AllDCView extends AView {
 				d.height, // container height, not total view width
 				PropertySupport.TOOLBAR, true, 
 				PropertySupport.TOOLBARBITS, AView.TOOLBARBITS,
-				PropertySupport.VISIBLE, true, PropertySupport.HEADSUP, false,
+				PropertySupport.VISIBLE, true, 
 				PropertySupport.TITLE, _baseTitle + ((CLONE_COUNT == 0) ? "" : ("_(" + CLONE_COUNT + ")")),
 				PropertySupport.STANDARDVIEWDECORATIONS, true);
 

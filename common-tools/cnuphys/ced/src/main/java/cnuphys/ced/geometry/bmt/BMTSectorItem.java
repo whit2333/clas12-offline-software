@@ -291,7 +291,7 @@ public class BMTSectorItem extends DonutItem {
 
 
 	/**
-	 * Add any appropriate feedback strings for the headsup display or feedback
+	 * Add any appropriate feedback strings
 	 * panel.
 	 * 
 	 * @param container the Base container.
