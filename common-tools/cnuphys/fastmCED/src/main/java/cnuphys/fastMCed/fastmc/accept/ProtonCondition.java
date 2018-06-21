@@ -1,4 +1,4 @@
-package cnuphys.fastMCed.fastmc;
+package cnuphys.fastMCed.fastmc.accept;
 
 
 public class ProtonCondition extends ACondition {

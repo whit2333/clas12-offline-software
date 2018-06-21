@@ -390,18 +390,21 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 	@Override
 	public void getFeedbackStrings(IContainer container, Point pp, Point2D.Double wp, List<String> feedbackStrings) {
 
-		boolean haveEvent = false;
+		PhysicsEvent event = PhysicsEventManager.getInstance().getCurrentEvent();
 
 
 		// add some information about the current event
-		if (!haveEvent) {
+		if (event == null) {
 			feedbackStrings.add("$orange red$No event");
 		} else {
-			feedbackStrings.add("$orange red$" + "event " + _eventManager.getEventNumber());
+			int evNum = PhysicsEventManager.getInstance().getEventNumber();
+			int evCount = PhysicsEventManager.getInstance().getEventCount();
 			
-			File file = _eventManager.getCurrentFile();
-			String fstr = "lund file: " + ((file == null) ? "none" : file.getName());
-			feedbackStrings.add("$orange red$" + fstr);
+			String evStr = "event #" + evNum + " of " + evCount;
+
+			feedbackStrings.add("$orange red$" +evStr);
+			
+			feedbackStrings.add("$orange red$" + _eventManager.getCurrentSourceDescription());
 		}
 
 		// get the sector

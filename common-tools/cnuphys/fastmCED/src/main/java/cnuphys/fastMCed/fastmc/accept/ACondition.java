@@ -1,4 +1,4 @@
-package cnuphys.fastMCed.fastmc;
+package cnuphys.fastMCed.fastmc.accept;
 
 
 import java.util.List;
@@ -7,6 +7,7 @@ import org.jlab.geom.DetectorHit;
 
 import cnuphys.bCNU.util.Bits;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 
 public abstract class ACondition {
 	

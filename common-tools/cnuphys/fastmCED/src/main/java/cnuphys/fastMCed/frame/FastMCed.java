@@ -3,12 +3,13 @@ package cnuphys.fastMCed.frame;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.BorderFactory;
@@ -24,6 +25,8 @@ import cnuphys.bCNU.application.BaseMDIApplication;
 import cnuphys.bCNU.application.Desktop;
 import cnuphys.bCNU.component.MagnifyWindow;
 import cnuphys.bCNU.dialog.TextDisplayDialog;
+import cnuphys.bCNU.drawable.DrawableAdapter;
+import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.log.Log;
 import cnuphys.bCNU.menu.MenuManager;
 import cnuphys.bCNU.util.Environment;
@@ -36,6 +39,10 @@ import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.FastMCMenuAddition;
 import cnuphys.fastMCed.properties.PropertiesManager;
+import cnuphys.fastMCed.streaming.IStreamProcessor;
+import cnuphys.fastMCed.streaming.StreamManager;
+import cnuphys.fastMCed.streaming.StreamProcessStatus;
+import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.view.alldc.AllDCView;
 import cnuphys.fastMCed.view.data.DataTableModel;
 import cnuphys.fastMCed.view.data.DataView;
@@ -55,7 +62,8 @@ import geometry.GeometryManager;
  * @author heddle
  *
  */
-public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeListener, IPhysicsEventListener {
+public class FastMCed extends BaseMDIApplication
+		implements MagneticFieldChangeListener, IPhysicsEventListener, IStreamProcessor {
 
 	// the singleton
 	private static FastMCed _instance;
@@ -65,6 +73,9 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 
 	// used for one time inits
 	private int _firstTime = 0;
+	
+	//stream "state" label;
+	private static JLabel _streamLabel;
 
 	// event number label on menu bar
 	private static JLabel _eventNumberLabel;
@@ -74,6 +85,14 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 
 	// Environment display
 	private TextDisplayDialog _envDisplay;
+	
+	//background string and related
+	private static final String backgroundStr = "FastMCed from CNU";
+	private int bstrW = -1;
+	private int bstrH = -1;
+	private static Font bstrFont = new Font("SansSerif", Font.ITALIC + Font.BOLD, 44);
+	private static final Color bstrColor = X11Colors.getX11Color("Navy", 100);
+
 
 	// the views
 	private VirtualView _virtualView;
@@ -120,6 +139,43 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		addComponentListener(cl);
 		
 		addHeadsUp();
+		
+		DrawableAdapter drawable = new DrawableAdapter() {
+			@Override
+			public void draw(Graphics g, IContainer container) {
+				if (bstrW < 0) {
+					FontMetrics fm = FastMCed.getInstance().getFontMetrics(bstrFont);
+					bstrW = fm.stringWidth(backgroundStr);
+					bstrH = fm.getHeight();
+					System.err.println("BSTR W = " + bstrW + "  H = " + bstrH);
+				}
+				
+				int hgap = 200;
+				int vgap = 200;
+				
+				int tileW = bstrW + hgap;
+				int tileH = bstrH + vgap;
+				
+				Rectangle b = Desktop.getInstance().getBounds();
+				
+				int numCol = 1 + b.width/tileW;
+				int numRow = 1 + b.height/tileH;
+				
+				
+				g.setFont(bstrFont);
+				g.setColor(bstrColor);
+				
+				for (int col = 0; col < numCol; col++) {
+					int x = 20 + col*tileW;
+					for (int row = 0; row < numRow; row++) {
+						int y = 80 + row*tileH;
+						g.drawString(backgroundStr, x, y);
+					}
+				}
+			}
+		};
+		
+		Desktop.getInstance().setAfterDraw(drawable);
 		
 	}
 	
@@ -305,7 +361,8 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 			_instance.createMenus();
 			_instance.placeViewsOnVirtualDesktop();
 
-			_instance.createEventNumberLabel();
+			_instance._streamLabel= _instance.createLabel(" STREAM "  + StreamReason.STOPPED);
+			_instance._eventNumberLabel= _instance.createLabel("  Event #                 ");
 			MagneticFields.getInstance().addMagneticFieldChangeListener(_instance);
 
 		}
@@ -353,20 +410,21 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		ViewManager.getInstance().refreshAllViews();
 	}
 
-	/**
-	 * Set the event number label
-	 * 
-	 * @param num
-	 *            the event number
-	 */
-	public static void setEventNumberLabel(int num) {
-
-		if (num < 0) {
-			_eventNumberLabel.setText("  Event Num:      ");
-		} else {
-			_eventNumberLabel.setText("  Event Num: " + num);
-		}
+	//fix the event number label
+	private void fixEventNumberLabel() {
+		
+		int evNum = PhysicsEventManager.getInstance().getEventNumber();
+		int evCount = PhysicsEventManager.getInstance().getEventCount();
+		
+		_eventNumberLabel.setText("  Event #" + evNum + " of " + evCount);
 	}
+	
+	
+	//fix the stream state
+	private void fixStreamLabel(StreamReason reason) {
+		_streamLabel.setText(" STREAM "  + reason);
+	}
+	
 
 	/**
 	 * public access to the singleton
@@ -386,19 +444,19 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		return _release;
 	}
 
-	// create the event number label
-	private void createEventNumberLabel() {
-		_eventNumberLabel = new JLabel("  Event Num:      is GEMC: false");
-		_eventNumberLabel.setOpaque(true);
-		_eventNumberLabel.setBackground(Color.black);
-		_eventNumberLabel.setForeground(Color.yellow);
-		_eventNumberLabel.setFont(new Font("Dialog", Font.BOLD, 12));
-		_eventNumberLabel.setBorder(BorderFactory.createLineBorder(Color.cyan, 1));
-		setEventNumberLabel(-1);
+	//create a label for the menu =bar
+	private JLabel createLabel(String defStr) {
+		JLabel label = new JLabel(defStr);
+		label.setOpaque(true);
+		label.setBackground(Color.black);
+		label.setForeground(Color.yellow);
+		label.setFont(new Font("Dialog", Font.BOLD, 12));
+		label.setBorder(BorderFactory.createLineBorder(Color.cyan, 1));
 
 		getJMenuBar().add(Box.createHorizontalGlue());
-		getJMenuBar().add(_eventNumberLabel);
+		getJMenuBar().add(label);
 		getJMenuBar().add(Box.createHorizontalStrut(5));
+		return label;
 	}
 
 	@Override
@@ -421,9 +479,7 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		title += "   [Magnetic Field: " + MagneticFields.getInstance().getActiveFieldDescription();
 		title += "]";
 
-		File currentFile = PhysicsEventManager.getInstance().getCurrentFile();
-		String fstr = (currentFile == null) ? "none" : currentFile.getName();
-		title += " [lund file: " + fstr + "]";
+		title += " [lund file: " + PhysicsEventManager.getInstance().getCurrentSourceDescription() + "]";
 
 		setTitle(title);
 	}
@@ -484,8 +540,19 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event) {
-		System.err.println("Obtained new FastMC event");
+		fixEventNumberLabel();
 	}
+	
+	@Override
+	public void streamingChange(StreamReason reason) {
+		fixStreamLabel(reason);
+	}
+
+	@Override
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+		return null;
+	}
+
 
 	/**
 	 * Main program launches the ced gui.
@@ -503,9 +570,6 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		PropertiesManager.getInstance();
 
 		FileUtilities.setDefaultDir("data");
-
-		// create a console log listener
-		// Log.getInstance().addLogListener(new ConsoleLogListener());
 
 		// splash frame
 		final SplashWindowFastMCed splashWindow = new SplashWindowFastMCed("fastmCED", null, 920, _release);
@@ -548,8 +612,9 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		// initialize magnetic fields
 		MagneticFields.getInstance().initializeMagneticFields();
 
-		// initialize geometry
+		// initialize some managers
 		GeometryManager.getInstance();
+		StreamManager.getInstance();
 
 		// now make the frame visible, in the AWT thread
 		EventQueue.invokeLater(new Runnable() {
@@ -558,6 +623,7 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 			public void run() {
 				FastMCed app = getInstance();
 				PhysicsEventManager.getInstance().addPhysicsListener(app, 2);
+				StreamManager.getInstance().addStreamListener(app);
 				splashWindow.setVisible(false);
 				getFastMCed().setVisible(true);
 				getFastMCed().fixTitle();
@@ -571,5 +637,6 @@ public class FastMCed extends BaseMDIApplication implements MagneticFieldChangeL
 		Log.getInstance().info("fastmCED is ready.");
 
 	} // end main
+
 
 }

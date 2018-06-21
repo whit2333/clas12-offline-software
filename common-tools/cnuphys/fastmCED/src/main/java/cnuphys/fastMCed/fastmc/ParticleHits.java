@@ -48,9 +48,6 @@ public class ParticleHits {
 			_dcHits = DCGeometry.getHits(path);
 			_ftofHits = FTOFGeometry.getHits(path);
 			
-			System.err.println("DC HIT COUNT: " + DCHitCount());
-			System.err.println("FTOF HIT COUNT: " + FTOFHitCount());
-		
 			for (int sect0 = 0; sect0 < 6; sect0++) {
 				for (int ptype = 0; ptype < 3; ptype++) {
 					_ftofLayerHits[sect0][ptype] = FTOFGeometry.getHits(sect0, ptype, path);
@@ -192,6 +189,12 @@ public class ParticleHits {
 		return filteredHits;
 	}
 	
+	/**
+	 * Add hit feedback data to the feedback strings
+	 * @param hit the hit that the mouse is over
+	 * @param lid the Lund Id
+	 * @param feedbackStrings the list of feedbackstrings being added to
+	 */
 	public static void addHitFeedback(DetectorHit hit, LundId lid, List<String> feedbackStrings) {
 		if (hit != null) {
 			

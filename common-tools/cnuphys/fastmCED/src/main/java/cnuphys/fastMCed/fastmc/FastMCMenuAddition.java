@@ -18,6 +18,8 @@ import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.accept.AcceptanceManager;
+import cnuphys.fastMCed.streaming.StreamDialog;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 
 public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysicsEventListener {
@@ -38,6 +40,8 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 	// the next menu item
 	private JMenuItem _nextItem;
 
+	//the stream menu item
+	private JMenuItem _streamItem;
 
 	// the parent menu
 	private JMenu _menu;
@@ -66,6 +70,7 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 		// add things in reverse order because of the items already in the file
 		// menu
 		_menu.insertSeparator(0);
+		_streamItem = addItem("Stream Events...", KeyEvent.VK_S);
 		_nextItem = addItem("Next Event", KeyEvent.VK_N);
 		_menu.insertSeparator(0);
 		_menu.add(_acceptanceMenu, 0);
@@ -230,14 +235,19 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 			_physicsEventManager.openFile();
 		} else if (o == _nextItem) {
 			_physicsEventManager.nextEvent();
+		} else if (o == _streamItem) {
+			StreamDialog dialog = new StreamDialog();
+			dialog.setVisible(true);
 		} 
 	}
 
 	// fix the menus state
 	private void fixMenuState() {
 		boolean goodFile = (_physicsEventManager.getCurrentFile() != null);
+		boolean streaming = _physicsEventManager.isStreaming();
 
-		_nextItem.setEnabled(goodFile);
+		_nextItem.setEnabled(goodFile && !streaming);
+		_streamItem.setEnabled(goodFile && !streaming);
 	}
 
 	@Override
@@ -249,7 +259,7 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 		} else if (o == _pItem) {
 			AcceptanceManager.getInstance().getProtonCondition().setActive(_pItem.isSelected());
 		}
-		AcceptanceManager.getInstance().retestCurrentEvent();
+		AcceptanceManager.getInstance().testEvent(PhysicsEventManager.getInstance().getCurrentEvent());
 	}
 
 

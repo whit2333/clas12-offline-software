@@ -1,4 +1,4 @@
-package cnuphys.fastMCed.fastmc;
+package cnuphys.fastMCed.fastmc.accept;
 
 /**
  * A simple condition that we have certain number of unique layers hit (in the same sector) for 

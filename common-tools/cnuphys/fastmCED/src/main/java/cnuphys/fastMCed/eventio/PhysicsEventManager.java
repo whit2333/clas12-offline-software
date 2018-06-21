@@ -17,10 +17,13 @@ import org.jlab.physics.io.LundReader;
 
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.util.Environment;
-import cnuphys.fastMCed.fastmc.AcceptanceManager;
 import cnuphys.fastMCed.fastmc.NoiseData;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.fastmc.accept.AcceptanceManager;
+import cnuphys.fastMCed.fastmc.accept.AcceptanceResult;
+import cnuphys.fastMCed.fastmc.accept.AcceptanceStatus;
 import cnuphys.fastMCed.frame.FastMCed;
+import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.lund.LundFileSupport;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundSupport;
@@ -48,6 +51,9 @@ public class PhysicsEventManager {
 
 	// Lund reader
 	private LundReader _lundReader;
+	
+	// streaming?
+	private boolean _streaming;
 
 	// current lund file
 	private File _currentFile;
@@ -71,7 +77,7 @@ public class PhysicsEventManager {
 	// are we training?
 	private boolean _training = false;
 	
-	// list of view listeners. There are three lists. Those in index 0 are
+	// list of listeners. There are three lists. Those in index 0 are
 	// notified first. Then those in index 1. Finally those in index 2. The
 	private EventListenerList _listeners[] = new EventListenerList[3];
 
@@ -92,6 +98,22 @@ public class PhysicsEventManager {
 			instance = new PhysicsEventManager();
 		}
 		return instance;
+	}
+	
+	/**
+	 * Are we streaming?
+	 * @return <code>true</code>if we are in streaming mode 
+	 */
+	public boolean isStreaming() {
+		return _streaming;
+	}
+	
+	/**
+	 * Set whether we are streaming
+	 * @param streaming the value of the flag
+	 */
+	public void setStreaming(boolean streaming) {
+		_streaming = streaming;
 	}
 	
 	/**
@@ -197,15 +219,13 @@ public class PhysicsEventManager {
 			return;
 		}
 
+		//the event has to be swum to get the hits
 		_allSwimmer.swimAll();
 
 		// how many trajectories?
 		List<SwimTrajectory> trajectories = Swimming.getMCTrajectories();
 		
 		
-		int trajCount = (trajectories == null) ? 0 : trajectories.size();
-		 System.err.println("NUMBER of FASTMC TRAJ: " + trajCount);
-
 		// get DC hits for charged particles
 
 		if (trajectories != null) {
@@ -218,8 +238,16 @@ public class PhysicsEventManager {
 		}
 
 		// notify all listeners of the event
-		AcceptanceManager.getInstance().testAccepted(event);
-		notifyPhysicsListeners(event);
+		AcceptanceResult accResult = AcceptanceManager.getInstance().testEvent(event);
+		if (accResult.status == AcceptanceStatus.NOTACCEPTED) {
+			System.err.println("Not Accepted " + accResult.condition.getDescription());
+		}
+
+		if (_streaming) {
+			StreamManager.getInstance().notifyStreamListeners(event);
+		} else {
+			notifyPhysicsListeners(event);
+		}
 	}
 
 	/**
@@ -257,8 +285,27 @@ public class PhysicsEventManager {
 	public int getEventCount() {
 		return _eventCount;
 	}
+	
+	/**
+	 * Are there any more events?
+	 * @return <code>if we have not reaced the end of the file
+	 */
+	public boolean hasEvent() {
+		return (_eventNum < _eventCount);
+	}
 
-
+	/**
+	 * Get the number of remaining events
+	 * @return the number of remaining events
+	 */
+    public int getNumRemainingEvents() {
+    	return _eventCount - _eventNum;
+    }
+    
+    public String getCurrentSourceDescription() {
+    	return "lund file: " + ((_currentFile == null) ? "none" : _currentFile.getName());
+    }
+	
 	/**
 	 * Set the default directory in which to look for event files.
 	 * 
@@ -275,6 +322,9 @@ public class PhysicsEventManager {
 	 * @return the current generated event
 	 */
 	public PhysicsEvent getCurrentEvent() {
+		if (_streaming) {
+			return null;
+		}
 		return _currentEvent;
 	}
 
@@ -342,11 +392,24 @@ public class PhysicsEventManager {
 	}
 	
 	/**
+	 * Reset to the no data state
+	 */
+	public void reset() {
+		_eventNum = 0;
+		_currentEvent = null;
+		_currentFile = null;
+		_particleHits.clear();
+	}
+	
+	/**
 	 * Open a lund file
 	 * @param path the full path
 	 */
 	public void openFile(File file) {
+		
+		reset();
 		_currentFile = file;
+
 		_lundReader = new LundReader();
 		dataFilePath = _currentFile.getParent();
 		
@@ -358,6 +421,7 @@ public class PhysicsEventManager {
 		_lundReader.open();
 		
 		PhysicsEventManager.getInstance().notifyEventListeners(_currentFile);
+		
 	}
 	
 	/**
