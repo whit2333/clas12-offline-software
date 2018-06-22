@@ -1,8 +1,15 @@
 package cnuphys.fastMCed.streaming;
 
+import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 
 import org.jlab.clas.physics.PhysicsEvent;
+
+import cnuphys.bCNU.graphics.ImageManager;
+import cnuphys.bCNU.view.ViewManager;
 
 public class StreamManager {
 	
@@ -10,6 +17,9 @@ public class StreamManager {
 	
 	// list of listeners. 
 	private EventListenerList _listeners = new EventListenerList();
+
+	//the stream state
+	private StreamReason _streamState = StreamReason.STOPPED;
 
 
 	//private singleton constructor
@@ -39,6 +49,30 @@ public class StreamManager {
 	}
 	
 	/**
+	 * Are we streaming
+	 * @return <code>true</code> if we are streaming
+	 */
+	public boolean isStarted() {
+		return _streamState == StreamReason.STARTED;
+	}
+	
+	/**
+	 * Are we paused
+	 * @return <code>true</code> if we are paused
+	 */
+	public boolean isPaused() {
+		return _streamState == StreamReason.PAUSED;
+	}
+
+	/**
+	 * Are we stopped
+	 * @return <code>true</code> if we are stopped
+	 */
+	public boolean isStopped() {
+		return _streamState == StreamReason.STOPPED;
+	}
+	
+	/**
 	 * Notify the stream listeners of a physics event
 	 * @param event the event
 	 */
@@ -52,12 +86,24 @@ public class StreamManager {
 		// listeners.
 		for (int i = listeners.length - 2; i >= 0; i -= 2) {
 			IStreamProcessor listener = (IStreamProcessor) listeners[i + 1];
-			if (listener.isActive()) {
-				StreamProcessStatus status = listener.streamingPhysicsEvent(event);
+			StreamProcessStatus status = listener.streamingPhysicsEvent(event);
+			
+			if (status == StreamProcessStatus.FLAG) {
+				System.err.println("DUDE " + Thread.currentThread().getName());
+				StreamManager.getInstance().setStreamState(StreamReason.PAUSED);
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						JOptionPane.showMessageDialog(null, listener.flagExplanation(), 
+								"A consumer has flagged this event",
+								JOptionPane.INFORMATION_MESSAGE, ImageManager.cnuIcon);
+						
+						ViewManager.getInstance().refreshAllViews();
+					}
+				});
 				
-				if (status != StreamProcessStatus.CONTINUE) {
-					//TODO handle this!
-				}
+				return;
+
 			}
 		}
 	}
@@ -102,6 +148,26 @@ public class StreamManager {
 		}
 
 		_listeners.add(IStreamProcessor.class, listener);
+		System.err.println("num stream listeners " + _listeners.getListenerCount());
 	}
+	
+	/**
+	 * Set the stream state
+	 * @param state the stream state
+	 */
+	public void setStreamState(StreamReason state) {
+		_streamState = state;
+		notifyStreamListeners(state);
+		notifyStreamListeners(state);
+	}
+	
+	/**
+	 * Get the current state of streaming
+	 * @return the current state
+	 */
+	public StreamReason getStreamState() {
+		return _streamState;
+	}
+
 
 }

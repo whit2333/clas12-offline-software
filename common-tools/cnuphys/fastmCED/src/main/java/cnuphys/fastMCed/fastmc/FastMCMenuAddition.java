@@ -19,10 +19,14 @@ import org.jlab.clas.physics.PhysicsEvent;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.accept.AcceptanceManager;
+import cnuphys.fastMCed.streaming.IStreamProcessor;
 import cnuphys.fastMCed.streaming.StreamDialog;
+import cnuphys.fastMCed.streaming.StreamManager;
+import cnuphys.fastMCed.streaming.StreamProcessStatus;
+import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 
-public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysicsEventListener {
+public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysicsEventListener, IStreamProcessor {
 
 	//the physics event manager
 	private PhysicsEventManager _physicsEventManager = PhysicsEventManager.getInstance();
@@ -32,6 +36,8 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 
 	// define acceptance
 	private JMenu _acceptanceMenu;
+	
+	private StreamDialog _streamDialog;
 
 	// hard coded acceptance definitions
 	private JCheckBoxMenuItem _eItem;
@@ -81,6 +87,7 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 		_openItem = addItem("Open Lund File...");
 
 		_physicsEventManager.addPhysicsListener(this, 2);
+		StreamManager.getInstance().addStreamListener(this);
 
 		fixMenuState();
 		// setEnabled(false);
@@ -236,15 +243,25 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 		} else if (o == _nextItem) {
 			_physicsEventManager.nextEvent();
 		} else if (o == _streamItem) {
-			StreamDialog dialog = new StreamDialog();
-			dialog.setVisible(true);
+			if ((_streamDialog == null) || (StreamManager.getInstance().getStreamState() == StreamReason.STOPPED)) {
+				_streamDialog = new StreamDialog();
+			}
+			_streamDialog.setVisible(true);
+			_streamDialog.toFront();
+			fixMenuState();
 		} 
 	}
 
 	// fix the menus state
 	private void fixMenuState() {
 		boolean goodFile = (_physicsEventManager.getCurrentFile() != null);
-		boolean streaming = _physicsEventManager.isStreaming();
+		boolean streaming = StreamManager.getInstance().isStarted();
+	//	boolean paused = StreamManager.getInstance().isPaused();
+		boolean stopped = StreamManager.getInstance().isStopped();
+		boolean dialogVis = (_streamDialog != null) && _streamDialog.isVisible();
+		
+		_recentMenu.setEnabled(!dialogVis && stopped);
+		_openItem.setEnabled(!dialogVis && stopped);
 
 		_nextItem.setEnabled(goodFile && !streaming);
 		_streamItem.setEnabled(goodFile && !streaming);
@@ -260,6 +277,21 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 			AcceptanceManager.getInstance().getProtonCondition().setActive(_pItem.isSelected());
 		}
 		AcceptanceManager.getInstance().testEvent(PhysicsEventManager.getInstance().getCurrentEvent());
+	}
+
+	@Override
+	public void streamingChange(StreamReason reason) {
+		fixMenuState();
+	}
+
+	@Override
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String flagExplanation() {
+		return "No way";
 	}
 
 

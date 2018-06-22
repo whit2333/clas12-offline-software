@@ -13,16 +13,17 @@ import org.jlab.clas.physics.PhysicsEvent;
 public interface IPhysicsEventListener extends EventListener {
 	
 	/**
-	 * Opened a new lund formatted file
-	 * 
-	 * @param path
-	 *            the path to the new file
+	 * A new Lund file has been opened
+	 * @param path the full path to the file
 	 */
 	public void openedNewLundFile(final String path);
 		
 	/**
-	 * New fast mc event
+	 * New event has arrived from the FastMC engine via the "next event" mechanism.
+	 * Note that in streaming mode, do not get broadcast this way, they
+	 * are broadcasted via streamingPhysicsEvent
 	 * @param event the generated physics event
+	 * @see cnuphys.fastMCed.streaming.IStreamProcessor
 	 */
 	public void newPhysicsEvent(PhysicsEvent event);
 

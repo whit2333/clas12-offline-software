@@ -81,6 +81,7 @@ public class SwimAll implements ISwimAll {
 	
 	//units GeV/c and meters
 	private void swim(LundId lid, double px, double py, double pz, double x, double y, double z) {
+		
 		double p = Math.sqrt(px * px + py * py + pz * pz);
 		double theta = Math.toDegrees(Math.acos(pz / p));
 		double phi = Math.toDegrees(Math.atan2(py, px));
@@ -98,6 +99,7 @@ public class SwimAll implements ISwimAll {
 					Swimmer.CLAS_Tolerance, null);
 			traj.setLundId(lid);
 			Swimming.addMCTrajectory(traj);
+			
 		} catch (RungeKuttaException e) {
 			Log.getInstance().error("Exception while swimming all MC particles");
 			Log.getInstance().exception(e);

@@ -16,7 +16,6 @@ import org.jlab.geom.prim.Point3D;
 //import cnuphys.ced.dcnoise.test.TestParameters;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundStyle;
-import geometry.DCGeometry;
 import cnuphys.bCNU.format.DoubleFormat;
 import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.world.WorldGraphicsUtilities;
@@ -30,11 +29,12 @@ import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.alldc.AllDCView;
+import cnuphys.fastmc.geometry.DCGeometry;
 
 public class AllDCSuperLayer extends RectangleItem {
 	
 	// convenient access to the event manager
-	PhysicsEventManager _eventManager = PhysicsEventManager.getInstance();
+	private PhysicsEventManager _eventManager = PhysicsEventManager.getInstance();
 
 
 	// font for label text

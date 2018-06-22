@@ -24,23 +24,24 @@ import cnuphys.fastMCed.fastmc.accept.AcceptanceResult;
 import cnuphys.fastMCed.fastmc.accept.AcceptanceStatus;
 import cnuphys.fastMCed.frame.FastMCed;
 import cnuphys.fastMCed.streaming.StreamManager;
+import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.lund.LundFileSupport;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundSupport;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimming;
-import geometry.GeometryManager;
 
 /**
  * Manager class for the PhysicsEvent data provided by the FastMC engine
+ * 
  * @author heddle
  *
  */
 public class PhysicsEventManager {
-	
+
 	// the event number
 	private int _eventNum = 0;
-	
+
 	// event count
 	private int _eventCount;
 
@@ -51,9 +52,9 @@ public class PhysicsEventManager {
 
 	// Lund reader
 	private LundReader _lundReader;
-	
+
 	// streaming?
-	private boolean _streaming;
+	// private boolean _streaming;
 
 	// current lund file
 	private File _currentFile;
@@ -71,26 +72,27 @@ public class PhysicsEventManager {
 	// Unique lund ids in the event (if any)
 	private Vector<LundId> _uniqueLundIds = new Vector<LundId>();
 
-	//manager singleton
+	// manager singleton
 	private static PhysicsEventManager instance;
-	
+
 	// are we training?
 	private boolean _training = false;
-	
+
 	// list of listeners. There are three lists. Those in index 0 are
 	// notified first. Then those in index 1. Finally those in index 2. The
 	private EventListenerList _listeners[] = new EventListenerList[3];
 
 	// someone who can swim all particles in the current event
 	private ISwimAll _allSwimmer;
-	
-	//private constructor for manager
+
+	// private constructor for manager
 	private PhysicsEventManager() {
 		_allSwimmer = new SwimAll();
 	}
-	
+
 	/**
 	 * Public access to the singleton
+	 * 
 	 * @return
 	 */
 	public static PhysicsEventManager getInstance() {
@@ -99,40 +101,40 @@ public class PhysicsEventManager {
 		}
 		return instance;
 	}
-	
-	/**
-	 * Are we streaming?
-	 * @return <code>true</code>if we are in streaming mode 
-	 */
-	public boolean isStreaming() {
-		return _streaming;
-	}
-	
-	/**
-	 * Set whether we are streaming
-	 * @param streaming the value of the flag
-	 */
-	public void setStreaming(boolean streaming) {
-		_streaming = streaming;
-	}
-	
+
+	// /**
+	// * Are we streaming?
+	// * @return <code>true</code>if we are in streaming mode
+	// */
+	// public boolean isStreaming() {
+	// return _streaming;
+	// }
+	//
+	// /**
+	// * Set whether we are streaming
+	// * @param streaming the value of the flag
+	// */
+	// public void setStreaming(boolean streaming) {
+	// _streaming = streaming;
+	// }
+
 	/**
 	 * Accessor for the all swimmer
+	 * 
 	 * @return the all swimmer
 	 */
 	public ISwimAll getAllSwimmer() {
 		return _allSwimmer;
 	}
-	
+
 	/**
 	 * Get a collection of unique LundIds in the current event
 	 * 
 	 * @return a collection of unique LundIds
 	 */
 	public Vector<LundId> uniqueLundIds() {
-		
+
 		_uniqueLundIds.clear();
-		
 
 		if ((_currentEvent != null) && (_currentEvent.count() > 0)) {
 			for (int index = 0; index < _currentEvent.count(); index++) {
@@ -146,7 +148,7 @@ public class PhysicsEventManager {
 
 		return _uniqueLundIds;
 	}
-	
+
 	/**
 	 * Check whether we are training
 	 * 
@@ -165,7 +167,6 @@ public class PhysicsEventManager {
 	public void setTraining(boolean training) {
 		_training = training;
 	}
-	
 
 	/**
 	 * Reload the current event
@@ -175,9 +176,10 @@ public class PhysicsEventManager {
 			parseEvent(_currentEvent);
 		}
 	}
-	
+
 	/**
 	 * Get the next event
+	 * 
 	 * @return <code>true</code> upon success
 	 */
 	public boolean nextEvent() {
@@ -209,41 +211,45 @@ public class PhysicsEventManager {
 		}
 		return 0;
 	}
-	
 
 	// parse the event
-	//this gets the event first.
+	// this gets the event first.
 	private void parseEvent(PhysicsEvent event) {
 		_particleHits.clear();
+		Swimming.setNotifyOn(false); // prevent refreshes
+		Swimming.clearAllTrajectories();
+		Swimming.setNotifyOn(true); // prevent refreshes
+
 		if ((event == null) || (event.count() < 1)) {
 			return;
 		}
 
-		//the event has to be swum to get the hits
+		// the event has to be swum to get the hits
 		_allSwimmer.swimAll();
 
 		// how many trajectories?
 		List<SwimTrajectory> trajectories = Swimming.getMCTrajectories();
-		
-		
+
 		// get DC hits for charged particles
 
 		if (trajectories != null) {
 			for (SwimTrajectory traj : trajectories) {
 				if (traj.getLundId() != null) {
-					Path3D path3D = GeometryManager.fromSwimTrajectory(traj);					
+					Path3D path3D = GeometryManager.fromSwimTrajectory(traj);
 					_particleHits.add(new ParticleHits(traj.getLundId(), path3D));
 				}
 			}
 		}
 
-		// notify all listeners of the event
+		// TODO figure out what to do with the acceptance mechansim.
 		AcceptanceResult accResult = AcceptanceManager.getInstance().testEvent(event);
 		if (accResult.status == AcceptanceStatus.NOTACCEPTED) {
 			System.err.println("Not Accepted " + accResult.condition.getDescription());
 		}
 
-		if (_streaming) {
+		// notify all listeners of the event
+
+		if (StreamManager.getInstance().isStarted()) {
 			StreamManager.getInstance().notifyStreamListeners(event);
 		} else {
 			notifyPhysicsListeners(event);
@@ -276,7 +282,7 @@ public class PhysicsEventManager {
 	public int getEventNumber() {
 		return _eventNum;
 	}
-	
+
 	/**
 	 * Get the event count
 	 * 
@@ -285,9 +291,10 @@ public class PhysicsEventManager {
 	public int getEventCount() {
 		return _eventCount;
 	}
-	
+
 	/**
 	 * Are there any more events?
+	 * 
 	 * @return <code>if we have not reaced the end of the file
 	 */
 	public boolean hasEvent() {
@@ -296,16 +303,17 @@ public class PhysicsEventManager {
 
 	/**
 	 * Get the number of remaining events
+	 * 
 	 * @return the number of remaining events
 	 */
-    public int getNumRemainingEvents() {
-    	return _eventCount - _eventNum;
-    }
-    
-    public String getCurrentSourceDescription() {
-    	return "lund file: " + ((_currentFile == null) ? "none" : _currentFile.getName());
-    }
-	
+	public int getNumRemainingEvents() {
+		return _eventCount - _eventNum;
+	}
+
+	public String getCurrentSourceDescription() {
+		return "lund file: " + ((_currentFile == null) ? "none" : _currentFile.getName());
+	}
+
 	/**
 	 * Set the default directory in which to look for event files.
 	 * 
@@ -322,9 +330,6 @@ public class PhysicsEventManager {
 	 * @return the current generated event
 	 */
 	public PhysicsEvent getCurrentEvent() {
-		if (_streaming) {
-			return null;
-		}
 		return _currentEvent;
 	}
 
@@ -371,7 +376,7 @@ public class PhysicsEventManager {
 
 		return nd;
 	}
-	
+
 	/**
 	 * Open a Lund File
 	 * 
@@ -390,7 +395,7 @@ public class PhysicsEventManager {
 
 		return _currentFile;
 	}
-	
+
 	/**
 	 * Reset to the no data state
 	 */
@@ -400,30 +405,31 @@ public class PhysicsEventManager {
 		_currentFile = null;
 		_particleHits.clear();
 	}
-	
+
 	/**
 	 * Open a lund file
-	 * @param path the full path
+	 * 
+	 * @param path
+	 *            the full path
 	 */
 	public void openFile(File file) {
-		
+
 		reset();
 		_currentFile = file;
 
 		_lundReader = new LundReader();
 		dataFilePath = _currentFile.getParent();
-		
+
 		_eventCount = LundFileSupport.getInstance().countEvents(file);
 		System.err.println("Event count: " + _eventCount);
 
-
 		_lundReader.addFile(_currentFile.getPath());
 		_lundReader.open();
-		
+
 		PhysicsEventManager.getInstance().notifyEventListeners(_currentFile);
-		
+
 	}
-	
+
 	/**
 	 * Determines whether any next event control should be enabled.
 	 * 
@@ -432,9 +438,8 @@ public class PhysicsEventManager {
 	public boolean isNextOK() {
 		return (_currentFile != null);
 	}
-	
-		
-	//notify listeners that we have opened a file
+
+	// notify listeners that we have opened a file
 	public void notifyEventListeners(File file) {
 
 		Swimming.clearAllTrajectories();
@@ -448,7 +453,6 @@ public class PhysicsEventManager {
 				// listeners.
 				for (int i = listeners.length - 2; i >= 0; i -= 2) {
 					if (listeners[i] == IPhysicsEventListener.class) {
-						System.err.println("NOTIFYING [" +  listeners[i + 1].getClass().getName() + "]" );
 						((IPhysicsEventListener) listeners[i + 1]).openedNewLundFile(file.getAbsolutePath());
 					}
 				}
@@ -456,21 +460,16 @@ public class PhysicsEventManager {
 		}
 		FastMCed.getFastMCed().fixTitle();
 	}
-	
-	//notify the listeners
+
+	// notify the listeners
 	private void notifyPhysicsListeners(PhysicsEvent event) {
 
-		Swimming.setNotifyOn(false); //prevent refreshes
-		Swimming.clearAllTrajectories();
-		Swimming.setNotifyOn(true); //prevent refreshes
-			
 		_uniqueLundIds.clear();
 
 		for (int index = 0; index < 3; index++) {
 			if (_listeners[index] != null) {
 				// Guaranteed to return a non-null array
 				Object[] listeners = _listeners[index].getListenerList();
-
 
 				// This weird loop is the bullet proof way of notifying all
 				// listeners.
@@ -483,10 +482,10 @@ public class PhysicsEventManager {
 			}
 		} // index loop
 	}
-	
+
 	/**
-	 * Remove a IPhysicsEventListener. IPhysicsEventListener listeners listen for
-	 * new physics events.
+	 * Remove a IPhysicsEventListener. IPhysicsEventListener listeners listen
+	 * for new physics events.
 	 * 
 	 * @param listener
 	 *            the IPhysicsEventListener listener to remove.
@@ -505,8 +504,8 @@ public class PhysicsEventManager {
 	}
 
 	/**
-	 * Add a IPhysicsEventListener. IPhysicsEventListener listeners listen for new
-	 * events.
+	 * Add a IPhysicsEventListener. IPhysicsEventListener listeners listen for
+	 * new events.
 	 * 
 	 * @param listener
 	 *            the IPhysicsEventListener listener to add.
@@ -528,7 +527,13 @@ public class PhysicsEventManager {
 		}
 
 		_listeners[index].add(IPhysicsEventListener.class, listener);
-	}
+		
+		int c0 = (_listeners[0] == null) ? 0 :_listeners[0].getListenerCount() ;
+		int c1 = (_listeners[1] == null) ? 0 :_listeners[1].getListenerCount() ;
+		int c2 = (_listeners[2] == null) ? 0 :_listeners[2].getListenerCount() ;
 
+		System.err.println("num event listeners " + (c0+c1+c2));
+
+	}
 
 }

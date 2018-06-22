@@ -33,12 +33,12 @@ import cnuphys.bCNU.view.BaseView;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.lund.SwimTrajectoryListener;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.swim.Swimming;
-import geometry.GeometryManager;
 
 import org.jlab.clas.physics.PhysicsEvent;
 import org.jlab.geom.prim.Line3D;
@@ -187,6 +187,18 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 		}
 	}
 
+	/**
+	 * Convenience method to get the magnetic field display option.
+	 * 
+	 * @return the magnetic field display option.
+	 */
+	public int getMagFieldDisplayOption() {
+		if ((_controlPanel == null) || (_controlPanel.getMagFieldDisplayArray() == null)) {
+			return MagFieldDisplayArray.NOMAGDISPLAY;
+		}
+		return _controlPanel.getMagFieldDisplayArray().getMagFieldDisplayOption();
+	}
+
 	// called when heartbeat goes off.
 	protected void ping() {
 		// check for over
@@ -307,19 +319,6 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 	public boolean showScale() {
 		return true;
 	}
-
-	/**
-	 * Convenience method to get the magnetic field display option.
-	 * 
-	 * @return the magnetic field display option.
-	 */
-	public int getMagFieldDisplayOption() {
-		if ((_controlPanel == null) || (_controlPanel.getMagFieldDisplayArray() == null)) {
-			return MagFieldDisplayArray.NOMAGDISPLAY;
-		}
-		return _controlPanel.getMagFieldDisplayArray().getMagFieldDisplayOption();
-	}
-
 
 
 	/**

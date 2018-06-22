@@ -36,24 +36,28 @@ import cnuphys.bCNU.util.X11Colors;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.bCNU.view.VirtualView;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.consumers.ConsumerManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.FastMCMenuAddition;
 import cnuphys.fastMCed.properties.PropertiesManager;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
+import cnuphys.fastMCed.streaming.StreamDialog;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.view.alldc.AllDCView;
 import cnuphys.fastMCed.view.data.DataTableModel;
 import cnuphys.fastMCed.view.data.DataView;
+import cnuphys.fastMCed.view.sector.DisplaySectors;
+import cnuphys.fastMCed.view.sector.SectorView;
 import cnuphys.fastMCed.view.trajinfo.TrajectoryInfoView;
+import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.magfield.FastMath;
 import cnuphys.magfield.MagneticFieldChangeListener;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.splot.example.MemoryUsageDialog;
 import cnuphys.swim.SwimMenu;
 import cnuphys.swim.Swimming;
-import geometry.GeometryManager;
 
 /**
  * This is a brother to ced that works with the fastMC system rather than evio
@@ -70,7 +74,7 @@ public class FastMCed extends BaseMDIApplication
 
 	// release (version) string
 	private static final String _release = "build 0.50";
-
+	
 	// used for one time inits
 	private int _firstTime = 0;
 	
@@ -85,7 +89,7 @@ public class FastMCed extends BaseMDIApplication
 
 	// Environment display
 	private TextDisplayDialog _envDisplay;
-	
+		
 	//background string and related
 	private static final String backgroundStr = "FastMCed from CNU";
 	private int bstrW = -1;
@@ -100,6 +104,10 @@ public class FastMCed extends BaseMDIApplication
 	private AllDCView _allDCView;
 	private DataView _dcDataView;
 	private DataView _ftofDataView;
+	private SectorView _sectorView14;
+	private SectorView _sectorView25;
+	private SectorView _sectorView36;
+
 
 	/**
 	 * Constructor (private--used to create singleton)
@@ -138,7 +146,7 @@ public class FastMCed extends BaseMDIApplication
 
 		addComponentListener(cl);
 		
-		addHeadsUp();
+	//	addHeadsUp();
 		
 		DrawableAdapter drawable = new DrawableAdapter() {
 			@Override
@@ -198,6 +206,11 @@ public class FastMCed extends BaseMDIApplication
 	 * unaffected.
 	 */
 	private void restoreDefaultViewLocations() {
+		
+		_virtualView.moveToStart(_sectorView14, 0, VirtualView.UPPERLEFT);
+		_virtualView.moveToStart(_sectorView25, 0, VirtualView.UPPERLEFT);
+		_virtualView.moveToStart(_sectorView36, 0, VirtualView.UPPERLEFT);
+
 
 		_virtualView.moveTo(_allDCView, 1);
 		_virtualView.moveTo(_trajInfoView, 0, VirtualView.UPPERRIGHT);
@@ -257,6 +270,12 @@ public class FastMCed extends BaseMDIApplication
 		// add a virtual view
 		_virtualView = VirtualView.createVirtualView(8);
 		ViewManager.getInstance().getViewMenu().addSeparator();
+		
+		_sectorView36=SectorView.createSectorView(DisplaySectors.SECTORS36);
+		_sectorView25=SectorView.createSectorView(DisplaySectors.SECTORS25);
+		_sectorView14=SectorView.createSectorView(DisplaySectors.SECTORS14);
+		ViewManager.getInstance().getViewMenu().addSeparator();
+
 
 		// add an alldc view
 		_allDCView = AllDCView.createAllDCView();
@@ -383,9 +402,6 @@ public class FastMCed extends BaseMDIApplication
 		// the swimmer menu
 		mmgr.addMenu(SwimMenu.getInstance());
 
-		// remove the option menu until I need it
-		// mmgr.removeMenu(mmgr.getOptionMenu());
-
 		// add to the file menu
 		addToFileMenu();
 
@@ -394,6 +410,9 @@ public class FastMCed extends BaseMDIApplication
 
 		// the options menu
 		addToOptionMenu(mmgr.getOptionMenu());
+		
+		//consumer menu
+		mmgr.addMenu(ConsumerManager.getInstance().getMenu());
 
 	}
 
@@ -493,11 +512,12 @@ public class FastMCed extends BaseMDIApplication
 		return _instance;
 	}
 
+	
 	// create the options menu
 	private void addToOptionMenu(JMenu omenu) {
 		omenu.add(MagnifyWindow.magificationMenu());
 		omenu.addSeparator();
-
+		
 		final JMenuItem memPlot = new JMenuItem("Memory Usage...");
 		final JMenuItem environ = new JMenuItem("Environment...");
 		ActionListener al = new ActionListener() {
@@ -532,6 +552,7 @@ public class FastMCed extends BaseMDIApplication
 		omenu.add(memPlot);
 
 	}
+	
 
 	@Override
 	public void openedNewLundFile(String path) {
@@ -550,9 +571,13 @@ public class FastMCed extends BaseMDIApplication
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
-		return null;
+		return StreamProcessStatus.CONTINUE;
 	}
 
+	@Override
+	public String flagExplanation() {
+		return "This should not have happened (A).";
+	}
 
 	/**
 	 * Main program launches the ced gui.
@@ -615,6 +640,7 @@ public class FastMCed extends BaseMDIApplication
 		// initialize some managers
 		GeometryManager.getInstance();
 		StreamManager.getInstance();
+		ConsumerManager.getInstance();
 
 		// now make the frame visible, in the AWT thread
 		EventQueue.invokeLater(new Runnable() {
@@ -637,6 +663,7 @@ public class FastMCed extends BaseMDIApplication
 		Log.getInstance().info("fastmCED is ready.");
 
 	} // end main
+
 
 
 }

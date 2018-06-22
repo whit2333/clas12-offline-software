@@ -1,21 +1,17 @@
-package cnuphys.ced.cedview.sectorview;
+package cnuphys.fastMCed.view.sector;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.swing.JMenuItem;
@@ -24,47 +20,18 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jlab.geom.prim.Plane3D;
-import cnuphys.ced.cedview.CedView;
-import cnuphys.ced.cedview.central.CentralSupport;
-import cnuphys.ced.common.CrossDrawer;
-import cnuphys.ced.common.FMTCrossDrawer;
-import cnuphys.ced.common.SuperLayerDrawing;
-import cnuphys.ced.component.ControlPanel;
-import cnuphys.ced.component.DisplayBits;
-import cnuphys.ced.event.data.DC;
-import cnuphys.ced.frame.Ced;
-import cnuphys.ced.geometry.BSTxyPanel;
-import cnuphys.ced.geometry.FTOFGeometry;
-import cnuphys.ced.geometry.FTOFPanel;
-import cnuphys.ced.geometry.GeometryManager;
-import cnuphys.ced.item.BeamLineItem;
-import cnuphys.ced.item.FTOFPanelItem;
-import cnuphys.ced.item.MagFieldItem;
-import cnuphys.ced.item.SectorECItem;
-import cnuphys.ced.item.SectorHTCCItem;
-import cnuphys.ced.item.SectorLTCCItem;
-import cnuphys.ced.item.SectorPCALItem;
-import cnuphys.ced.item.SectorSuperLayer;
-import cnuphys.magfield.FieldProbe;
+
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
-import cnuphys.splot.fit.FitType;
-import cnuphys.splot.pdata.DataSet;
-import cnuphys.splot.pdata.DataSetException;
-import cnuphys.splot.pdata.DataSetType;
-import cnuphys.splot.plot.PlotCanvas;
-import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.SwimTrajectory2D;
 import cnuphys.bCNU.drawable.DrawableAdapter;
 import cnuphys.bCNU.drawable.IDrawable;
 import cnuphys.bCNU.format.DoubleFormat;
 import cnuphys.bCNU.graphics.GraphicsUtilities;
-import cnuphys.bCNU.graphics.SymbolDraw;
 import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.container.ScaleDrawer;
 import cnuphys.bCNU.graphics.style.LineStyle;
 import cnuphys.bCNU.graphics.world.WorldGraphicsUtilities;
-import cnuphys.bCNU.graphics.world.WorldPolygon;
 import cnuphys.bCNU.item.YouAreHereItem;
 import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.bCNU.util.PropertySupport;
@@ -72,8 +39,16 @@ import cnuphys.bCNU.util.UnicodeSupport;
 import cnuphys.bCNU.util.VectorSupport;
 import cnuphys.bCNU.util.X11Colors;
 import cnuphys.bCNU.view.BaseView;
-import cnuphys.bCNU.view.PlotView;
-import cnuphys.bCNU.view.ViewManager;
+import cnuphys.fastMCed.item.BeamLineItem;
+import cnuphys.fastMCed.item.FTOFPanelItem;
+import cnuphys.fastMCed.item.MagFieldItem;
+import cnuphys.fastMCed.item.SectorSuperLayer;
+import cnuphys.fastMCed.view.AView;
+import cnuphys.fastMCed.view.ControlPanel;
+import cnuphys.fastMCed.view.DisplayBits;
+import cnuphys.fastmc.geometry.FTOFGeometry;
+import cnuphys.fastmc.geometry.FTOFPanel;
+import cnuphys.fastmc.geometry.GeometryManager;
 
 /**
  * This is the classic sector view.
@@ -82,7 +57,7 @@ import cnuphys.bCNU.view.ViewManager;
  * 
  */
 @SuppressWarnings("serial")
-public class SectorView extends CedView implements ChangeListener {
+public class SectorView extends AView implements ChangeListener {
 
 	// each sector view has an upper and lower sector: 1-4, 2-5, 3-6
 	public static final int UPPER_SECTOR = 0;
@@ -102,22 +77,10 @@ public class SectorView extends CedView implements ChangeListener {
 	private static Stroke stroke = GraphicsUtilities.getStroke(1.5f,
 			LineStyle.SOLID);
 
-	// fill color
-	private static final Color BSTHITFILL = new Color(255, 128, 0, 64);
-	// private static final Color TRANS = new Color(192, 192, 192, 128);
-
-	// HTCC Items, 8 per sector, not geometrically realistic
-	private SectorHTCCItem _htcc[][] = new SectorHTCCItem[4][2];
-	
-	// LTCC Items, 36 per sector, not geometrically realistic
-	private SectorLTCCItem _ltcc[][] = new SectorLTCCItem[18][2];
 	
 	//for naming clones
 	private static int CLONE_COUNT[] = {0, 0, 0};
-	
-	//for special debug points
-	private static ArrayList<DebugPoint> _debugPoints = new ArrayList<DebugPoint>(10);
-	
+		
 	// superlayer (graphical) items. The first index [0..1] is for upper and
 	// lower sectors.
 	// the second is for for super layer 0..5debug
@@ -139,12 +102,6 @@ public class SectorView extends CedView implements ChangeListener {
 	// used to draw swum trajectories (if any) in the after drawer
 	private SwimTrajectoryDrawer _swimTrajectoryDrawer;
 
-	// for drawing MC hits
-	private McHitDrawer _mcHitDrawer;
-
-	// drawing reconstructed data
-	private ReconDrawer _reconDrawer;
-
 	// the value of phi in degrees (-30 to 30) relative to midplane.
 	// Also some cached trig
 	// private double _phiRelMidPlane = 0.0;
@@ -153,16 +110,6 @@ public class SectorView extends CedView implements ChangeListener {
 	private ScaleDrawer _scaleDrawer = new ScaleDrawer("cm",
 			ScaleDrawer.BOTTOMLEFT);
 
-	// reconstructed cross drawer for DC (and feedback handler)
-	private CrossDrawer _dcCrossDrawer;
-	
-	//for fmt
-	private FMTCrossDrawer _fmtCrossDrawer;
-
-	private static Color plotColors[] = { X11Colors.getX11Color("Dark Red"),
-			X11Colors.getX11Color("Dark Blue"),
-			X11Colors.getX11Color("Dark Green"), Color.black, Color.gray,
-			X11Colors.getX11Color("wheat") };
 
 	/**
 	 * Create a sector view
@@ -183,24 +130,6 @@ public class SectorView extends CedView implements ChangeListener {
 
 		// draws any swum trajectories (in the after draw)
 		_swimTrajectoryDrawer = new SwimTrajectoryDrawer(this);
-
-		// dc cross drawer
-		_dcCrossDrawer = new CrossDrawer(this);
-		
-		// fmt cross drawer
-		_fmtCrossDrawer = new FMTCrossDrawer(this);
-
-
-		// MC hit drawer
-		_mcHitDrawer = new McHitDrawer(this);
-
-		// Recon drawer
-		_reconDrawer = new ReconDrawer(this);
-
-		// debug points
-//		if (_debugPoints.isEmpty()) {
-//			_debugPoints.add(new DebugPoint(0, 4.257, 300.4));
-//		}
 	}
 
 	/**
@@ -249,7 +178,7 @@ public class SectorView extends CedView implements ChangeListener {
 				PropertySupport.LEFT, LEFT, PropertySupport.TOP, TOP,
 				PropertySupport.WIDTH, width, PropertySupport.HEIGHT, height,
 				PropertySupport.TOOLBAR, true, PropertySupport.TOOLBARBITS,
-				CedView.TOOLBARBITS, PropertySupport.VISIBLE, true,
+				AView.TOOLBARBITS, PropertySupport.VISIBLE, true,
 				PropertySupport.BACKGROUND,
 				X11Colors.getX11Color("Alice Blue").darker(),
 				// PropertySupport.BACKGROUND,
@@ -259,17 +188,11 @@ public class SectorView extends CedView implements ChangeListener {
 				PropertySupport.STANDARDVIEWDECORATIONS, true);
 
 		view._controlPanel = new ControlPanel(view, ControlPanel.NOISECONTROL
-				+ ControlPanel.DISPLAYARRAY + ControlPanel.PHISLIDER
-				+ ControlPanel.DRAWLEGEND + ControlPanel.FEEDBACK
+				+ ControlPanel.PHISLIDER
+				+ ControlPanel.FEEDBACK
 				+ ControlPanel.FIELDLEGEND + ControlPanel.TARGETSLIDER
-				+ ControlPanel.ACCUMULATIONLEGEND, DisplayBits.MAGFIELD
-				+ DisplayBits.CROSSES
-				+ DisplayBits.RECONHITS 
-				+ DisplayBits.CLUSTERS + DisplayBits.FMTCROSSES
-				+ DisplayBits.DC_HITS + DisplayBits.SEGMENTS 
-				+ DisplayBits.GLOBAL_HB + DisplayBits.GLOBAL_TB
-				+ DisplayBits.ACCUMULATION //+ DisplayBits.SCALE
-				+ DisplayBits.MCTRUTH, 3, 5);
+				+ ControlPanel.ACCUMULATIONLEGEND, 
+				  DisplayBits.MAGFIELD, 3, 5);
 
 		view.add(view._controlPanel, BorderLayout.EAST);
 
@@ -298,66 +221,6 @@ public class SectorView extends CedView implements ChangeListener {
 				_detectorLayerName);
 		new BeamLineItem(detectorLayer);
 		
-		//add the ltcc items
-		for (int ring = 1; ring <= 18; ring++) {
-			for (int half = 1; half <= 2; half++) {
-				
-				switch (_displaySectors) {
-				case SECTORS14:
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-							this, 1, ring, half);
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-									this, 4, ring, half);
-					break;
-
-				case SECTORS25:
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-							this, 2, ring, half);
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-									this, 5, ring, half);
-					break;
-
-				case SECTORS36:
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-							this, 3, ring, half);
-					_ltcc[ring-1][half-1] = new SectorLTCCItem(detectorLayer, 
-									this, 6, ring, half);
-					break;
-				}
-				
-			}
-		}
-
-		
-		//add the htcc items
-		for (int ring = 1; ring <= 4; ring++) {
-			for (int half = 1; half <= 2; half++) {
-				
-				switch (_displaySectors) {
-				case SECTORS14:
-					_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-							this, 1, ring, half);
-							_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-									this, 4, ring, half);
-					break;
-
-				case SECTORS25:
-					_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-							this, 2, ring, half);
-							_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-									this, 5, ring, half);
-					break;
-
-				case SECTORS36:
-					_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-							this, 3, ring, half);
-							_htcc[ring-1][half-1] = new SectorHTCCItem(detectorLayer, 
-									this, 6, ring, half);
-					break;
-				}
-				
-			}
-		}
 
 		// add the superlayer items
 		for (int superLayer = 0; superLayer < 6; superLayer++) {
@@ -413,59 +276,6 @@ public class SectorView extends CedView implements ChangeListener {
 			}
 		}
 
-		// add EC items
-		switch (_displaySectors) {
-		case SECTORS14:
-			for (int planeIndex = 0; planeIndex < 2; planeIndex++) {
-				for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 1);
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 4);
-				}
-			}
-			break;
-
-		case SECTORS25:
-			for (int planeIndex = 0; planeIndex < 2; planeIndex++) {
-				for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 2);
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 5);
-				}
-			}
-			break;
-
-		case SECTORS36:
-			for (int planeIndex = 0; planeIndex < 2; planeIndex++) {
-				for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 3);
-					new SectorECItem(detectorLayer, planeIndex, stripIndex, 6);
-				}
-			}
-			break;
-		} // end switch
-
-		// add PCAL items
-		switch (_displaySectors) {
-		case SECTORS14:
-			for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-				new SectorPCALItem(detectorLayer, stripIndex, 1);
-				new SectorPCALItem(detectorLayer, stripIndex, 4);
-			}
-			break;
-
-		case SECTORS25:
-			for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-				new SectorPCALItem(detectorLayer, stripIndex, 2);
-				new SectorPCALItem(detectorLayer, stripIndex, 5);
-			}
-			break;
-
-		case SECTORS36:
-			for (int stripIndex = 0; stripIndex < 3; stripIndex++) {
-				new SectorPCALItem(detectorLayer, stripIndex, 3);
-				new SectorPCALItem(detectorLayer, stripIndex, 6);
-			}
-			break;
-		} // end switch
 
 	}
 	
@@ -568,39 +378,11 @@ public class SectorView extends CedView implements ChangeListener {
 				// draw trajectories
 				_swimTrajectoryDrawer.draw(g, container);
 
-				// draw MC Hits
-				_mcHitDrawer.draw(g, container);
-
-				// draw reconstructed data
-				_reconDrawer.draw(g, container);
-
-				// draw bst panels
-				drawBSTPanels(g, container);
-
-				// draw reconstructed dc crosses
-				
-				if (showDCHBCrosses()) {
-					_dcCrossDrawer.setMode(CrossDrawer.HB);
-					_dcCrossDrawer.draw(g, container);
-				}
-				if (showDCTBCrosses()) {
-					_dcCrossDrawer.setMode(CrossDrawer.TB);
-					_dcCrossDrawer.draw(g, container);
-				}
-				
-				//Other (not DC) Crosses
-				if (showCrosses()) {
-					_fmtCrossDrawer.draw(g, container);
-				}
-
 				// scale
 				if ((_scaleDrawer != null) && showScale()) {
 					_scaleDrawer.draw(g, container);
 				}
 				
-				//secial debug points
-				drawDebugPoints(g, container);
-
 				// a clean rectangle
 				Rectangle bounds = container.getComponent().getBounds();
 				GraphicsUtilities.drawSimple3DRect(g, 0, 0, bounds.width - 1,
@@ -611,34 +393,6 @@ public class SectorView extends CedView implements ChangeListener {
 		getContainer().setAfterDraw(afterDraw);
 	}
 	
-	//points used for debugging
-	private void drawDebugPoints(Graphics g, IContainer container) {
-		for (DebugPoint dp : _debugPoints) {
-			int sector = dp.sector();
-			switch (_displaySectors) {
-			case SECTORS14:
-				if ((sector == 1) || (sector == 4)) {
-					Point pp = dp.toLocal(container);
-	//				System.err.println("DRAW DP AT " + pp);
-					SymbolDraw.drawCross(g, pp.x, pp.y, 8, Color.BLACK);
-				}
-				break;
-				
-			case SECTORS25:
-				if ((sector == 2) || (sector == 5)) {
-					
-				}
-				break;
-				
-			case SECTORS36:
-				if ((sector == 3) || (sector == 6)) {
-					
-				}
-				break;
-			}
-
-		}
-	}
 
 	/**
 	 * Get the display sectors which tell us which pair of sectors are being
@@ -833,13 +587,13 @@ public class SectorView extends CedView implements ChangeListener {
 		// get absolute phi
 		double absphi = getAbsolutePhi(container, pp, wp);
 
-		String rtp = CedView.rThetaPhi + " (" + valStr(r, 2) + "cm, "
+		String rtp = AView.rThetaPhi + " (" + valStr(r, 2) + "cm, "
 				+ valStr(theta, 2) + UnicodeSupport.DEGREE + ", "
 				+ valStr(absphi, 2) + UnicodeSupport.DEGREE + ")";
 		feedbackStrings.add(rtp);
 
 		// cylindrical coordinates which are just the world coordinates!
-		String rzp = CedView.rhoZPhi + " (" + valStr(rho, 2) + "cm, "
+		String rzp = AView.rhoZPhi + " (" + valStr(rho, 2) + "cm, "
 				+ valStr(z, 2) + "cm , " + valStr(absphi, 2)
 				+ UnicodeSupport.DEGREE + ")";
 		feedbackStrings.add(rzp);
@@ -848,12 +602,6 @@ public class SectorView extends CedView implements ChangeListener {
 		worldToSector(wp, result);
 		String sectxyz = "$yellow$Sector xyz " + vecStr(result) + " cm";
 		feedbackStrings.add(sectxyz);
-
-		// tilted sector
-		sectorToTilted(result, result);
-		String tiltsectxyz = "$yellow$Tilted sect xyz " + vecStr(result)
-				+ " cm";
-		feedbackStrings.add(tiltsectxyz);
 				
 		if (_activeProbe != null) {
 			float field[] = new float[3];
@@ -943,34 +691,15 @@ public class SectorView extends CedView implements ChangeListener {
 		}
 		
 		//DC Occupancy
-		int sector = getSector(container, pp, wp);
+//		int sector = getSector(container, pp, wp);
+//
+//		double totalOcc = 100.*DC.getInstance().totalOccupancy();
+//		double sectorOcc = 100.*DC.getInstance().totalSectorOccupancy(sector);
+//		String occStr = "total DC occ " + DoubleFormat.doubleFormat(totalOcc, 2) + "%" + " sector " + sector +
+//				" occ " + DoubleFormat.doubleFormat(sectorOcc, 2) + "%";
+//		feedbackStrings.add("$aqua$" + occStr);
 
-		double totalOcc = 100.*DC.getInstance().totalOccupancy();
-		double sectorOcc = 100.*DC.getInstance().totalSectorOccupancy(sector);
-		String occStr = "total DC occ " + DoubleFormat.doubleFormat(totalOcc, 2) + "%" + " sector " + sector +
-				" occ " + DoubleFormat.doubleFormat(sectorOcc, 2) + "%";
-		feedbackStrings.add("$aqua$" + occStr);
-
-		// reconstructed feedback?
-		if (showDCHBCrosses()) {
-			_dcCrossDrawer.setMode(CrossDrawer.HB);
-			_dcCrossDrawer.vdrawFeedback(container, pp, wp, feedbackStrings, 0);
-		}
-		if (showDCTBCrosses()) {
-			_dcCrossDrawer.setMode(CrossDrawer.TB);
-			_dcCrossDrawer.vdrawFeedback(container, pp, wp, feedbackStrings, 0);
-		}
 		
-		//Other (not DC) Crosses
-		if (showCrosses()) {
-			_fmtCrossDrawer.vdrawFeedback(container, pp, wp, feedbackStrings, 0);
-		}
-
-		if (showMcTruth()) {
-			_mcHitDrawer.vdrawFeedback(container, pp, wp, feedbackStrings, 0);
-		}
-		
-		_reconDrawer.vdrawFeedback(container, pp, wp, feedbackStrings, 0);
 
 	}
 
@@ -1188,8 +917,9 @@ public class SectorView extends CedView implements ChangeListener {
 	 */
 	@Override
 	public boolean rightClicked(MouseEvent mouseEvent) {
-
+		
 		JPopupMenu popup = null;
+
 
 		// near a swum trajectory?
 		Point2D.Double wp = new Point2D.Double();
@@ -1231,50 +961,7 @@ public class SectorView extends CedView implements ChangeListener {
 						double sliderPhi = getRelativePhi(desiredPhi);
 						_controlPanel.getPhiSlider().setValue((int) sliderPhi);
 						getContainer().refresh();
-					} else if (source == integralItem) {
-						PlotView pview = Ced.getCed()
-								.getPlotView();
-						if (pview != null) {
-							PlotCanvas canvas = pview.getPlotCanvas();
-							try {
-								SwimTrajectory traj = traj2D.getTrajectory3D();
-								traj.computeBDL(FieldProbe.factory());
-
-								// do we already have data?
-								boolean havePlotData = (canvas.getDataSet() == null) ? false
-										: canvas.getDataSet().dataAdded();
-
-								if (!havePlotData) {
-									initPlot(canvas, traj2D);
-								} else { // have to add a curve
-									int curveCount = canvas.getDataSet()
-											.getCurveCount();
-									DataSet dataSet = canvas.getDataSet();
-									dataSet.addCurve(
-											"X",
-											traj2D.summaryString()
-													+ " ["
-													+ MagneticFields
-															.getInstance().getActiveFieldDescription()
-													+ "]");
-									for (double v[] : traj) {
-										dataSet.addToCurve(curveCount,
-												v[SwimTrajectory.PATHLEN_IDX],
-												v[SwimTrajectory.BXDL_IDX]);
-
-										setCurveStyle(canvas, curveCount);
-									}
-
-								}
-
-								ViewManager.getInstance().setVisible(pview,
-										true);
-								canvas.repaint();
-							} catch (DataSetException e) {
-								e.printStackTrace();
-							}
-						} // pview not null
-					} // integral
+					} 
 				}
 			};
 
@@ -1289,44 +976,10 @@ public class SectorView extends CedView implements ChangeListener {
 			popup.show(getContainer().getComponent(), p.x, p.y);
 			return true;
 		}
-
 		return false;
 	}
 
-	private void initPlot(PlotCanvas canvas, SwimTrajectory2D traj2D)
-			throws DataSetException {
-		SwimTrajectory traj = traj2D.getTrajectory3D();
-		DataSet dataSet = new DataSet(DataSetType.XYXY, "X",
-				traj2D.summaryString() + " ["
-						+ MagneticFields.getInstance().getActiveFieldDescription() + "]");
 
-		canvas.getParameters().setPlotTitle("Magnetic Field Integral");
-		canvas.getParameters().setXLabel("Path Length (m)");
-		canvas.getParameters().setYLabel(
-				"<html>" + UnicodeSupport.INTEGRAL + "|<bold>B</bold> "
-						+ UnicodeSupport.TIMES + " <bold>dL</bold>| kG-m");
-
-		for (double v[] : traj) {
-			dataSet.add(v[SwimTrajectory.PATHLEN_IDX],
-					v[SwimTrajectory.BXDL_IDX]);
-		}
-		canvas.setDataSet(dataSet);
-		setCurveStyle(canvas, 0);
-	}
-
-	private void setCurveStyle(PlotCanvas canvas, int index) {
-		int cindex = index % plotColors.length;
-		canvas.getDataSet().getCurveStyle(index)
-				.setLineColor(plotColors[cindex]);
-		canvas.getDataSet().getCurveStyle(index)
-				.setFillColor(plotColors[cindex]);
-		canvas.getDataSet().getCurveStyle(index)
-				.setSymbolType(cnuphys.splot.style.SymbolType.X);
-		canvas.getDataSet().getCurveStyle(index).setSymbolSize(6);
-		canvas.getDataSet().getCurve(index).getFit()
-				.setFitType(FitType.CUBICSPLINE);
-
-	}
 
 	/**
 	 * Convert world (not global, but graphical world) to clas global (bab)
@@ -1396,184 +1049,6 @@ public class SectorView extends CedView implements ChangeListener {
 		return false;
 	}
 
-	// draw the BST panels
-	private void drawBSTPanels(Graphics g, IContainer container) {
-		List<BSTxyPanel> panels = GeometryManager.getBSTxyPanels();
-		if (panels == null) {
-			return;
-		}
-
-		int sector = 0;
-		switch (_displaySectors) {
-		case SECTORS14:
-			sector = 1;
-			break;
-
-		case SECTORS25:
-			sector = 2;
-			break;
-
-		case SECTORS36:
-			sector = 3;
-			break;
-		}
-
-		double phi = (sector - 1) * 60.0 + getSliderPhi();
-		double cosphi = Math.cos(Math.toRadians(phi));
-		double sinphi = Math.sin(Math.toRadians(phi));
-
-		// set the perp distance
-		for (BSTxyPanel panel : panels) {
-			Point2D.Double avgXY = panel.getXyAverage();
-			double perp = avgXY.y * cosphi - avgXY.x * sinphi;
-			panel.setPerp(perp);
-		}
-
-		Collections.sort(panels);
-
-		Graphics2D g2 = (Graphics2D) g;
-		Shape oldClip = g2.getClip();
-		// clip the active area
-		Rectangle sr = container.getInsetRectangle();
-		g2.clipRect(sr.x, sr.y, sr.width, sr.height);
-
-		Stroke oldStroke = g2.getStroke();
-		g2.setStroke(stroke);
-		g2.setColor(Color.black);
-
-		// there are 132 panels
-		// mark the hits if there is data
-		CentralSupport.markPanelHits(this, panels);
-
-		int index = 0;
-		for (BSTxyPanel panel : panels) {
-
-			int alpha = 10 + index / 3;
-			Color col = new Color(128, 128, 128, alpha);
-			Color col2 = new Color(128, 128, 128, alpha + 40);
-			WorldPolygon poly[] = getFromBSTPanel(panel, cosphi, sinphi);
-
-			for (int j = 0; j < 3; j++) {
-				boolean hit = panel.hit[j];
-
-				WorldGraphicsUtilities.drawWorldPolygon(g2, container, poly[j],
-						hit ? BSTHITFILL : col, col2, 0, LineStyle.SOLID);
-			}
-		}
-
-		// restore
-		g2.setStroke(oldStroke);
-		g2.setClip(oldClip);
-	}
-
-	/**
-	 * Get the world graphic coordinates from lab XYZ
-	 * 
-	 * @param x
-	 *            the lab x in cm
-	 * @param y
-	 *            the lab y in cm
-	 * @param z
-	 *            the lab z in cm
-	 * @param wp
-	 *            the world point
-	 */
-	private void labToWorldBST(double x, double y, double z, Point2D.Double wp,
-			double cosphi, double sinphi) {
-		wp.x = z;
-		wp.y = x * cosphi + y * sinphi;
-
-	}
-
-	private WorldPolygon[] getFromBSTPanel(BSTxyPanel panel, double cosphi,
-			double sinphi) {
-
-		WorldPolygon polys[] = new WorldPolygon[3];
-
-		// note conversion to cm from mm
-		double x1 = panel.getX1() / 10;
-		double x2 = panel.getX2() / 10;
-
-		double y1 = panel.getY1() / 10;
-		double y2 = panel.getY2() / 10;
-
-		double z0 = panel.getZ0() / 10;
-		double z1 = panel.getZ1() / 10;
-		double z2 = panel.getZ2() / 10;
-		double z3 = panel.getZ3() / 10;
-		double z4 = panel.getZ4() / 10;
-		double z5 = panel.getZ5() / 10;
-
-		double x[] = new double[5];
-		double y[] = new double[5];
-
-		Point2D.Double wp = new Point2D.Double();
-
-		labToWorldBST(x1, y1, z0, wp, cosphi, sinphi);
-		x[0] = wp.x;
-		y[0] = wp.y;
-
-		labToWorldBST(x2, y2, z0, wp, cosphi, sinphi);
-		x[1] = wp.x;
-		y[1] = wp.y;
-
-		labToWorldBST(x2, y2, z1, wp, cosphi, sinphi);
-		x[2] = wp.x;
-		y[2] = wp.y;
-
-		labToWorldBST(x1, y1, z1, wp, cosphi, sinphi);
-		x[3] = wp.x;
-		y[3] = wp.y;
-
-		x[4] = x[0];
-		y[4] = y[0];
-
-		polys[0] = new WorldPolygon(x, y, 5);
-
-		labToWorldBST(x1, y1, z2, wp, cosphi, sinphi);
-		x[0] = wp.x;
-		y[0] = wp.y;
-
-		labToWorldBST(x2, y2, z2, wp, cosphi, sinphi);
-		x[1] = wp.x;
-		y[1] = wp.y;
-
-		labToWorldBST(x2, y2, z3, wp, cosphi, sinphi);
-		x[2] = wp.x;
-		y[2] = wp.y;
-
-		labToWorldBST(x1, y1, z3, wp, cosphi, sinphi);
-		x[3] = wp.x;
-		y[3] = wp.y;
-
-		x[4] = x[0];
-		y[4] = y[0];
-
-		polys[1] = new WorldPolygon(x, y, 5);
-
-		labToWorldBST(x1, y1, z4, wp, cosphi, sinphi);
-		x[0] = wp.x;
-		y[0] = wp.y;
-
-		labToWorldBST(x2, y2, z4, wp, cosphi, sinphi);
-		x[1] = wp.x;
-		y[1] = wp.y;
-
-		labToWorldBST(x2, y2, z5, wp, cosphi, sinphi);
-		x[2] = wp.x;
-		y[2] = wp.y;
-
-		labToWorldBST(x1, y1, z5, wp, cosphi, sinphi);
-		x[3] = wp.x;
-		y[3] = wp.y;
-
-		x[4] = x[0];
-		y[4] = y[0];
-
-		polys[2] = new WorldPolygon(x, y, 5);
-
-		return polys;
-	}
 	
 	/**
 	 * Draw a single wire. All indices are 1-based
@@ -1591,8 +1066,8 @@ public class SectorView extends CedView implements ChangeListener {
 			byte superlayer, byte layer, short wire, float trkDoca, Point location) {
 
 		SectorSuperLayer sectSL = _superLayers[(sector < 4) ? 0 : 1][superlayer-1];
-		sectSL.drawDCHit(g, container, fillColor, frameColor, 
-				layer, wire, trkDoca, location);
+//		sectSL.drawDCHit(g, container, fillColor, frameColor, 
+//				layer, wire, trkDoca, location);
 		
 	}
 	
@@ -1619,41 +1094,6 @@ public class SectorView extends CedView implements ChangeListener {
 		return view;
 
 	}
-	
-	class DebugPoint {
-		
-		//LAB coordinates
-		private double phi;  //deg
-		private double rho;  //cm
-		private double z;   //cm
-		private double x;
-		private double y;
-		
-		public DebugPoint(double phi, double rho, double z) {
-			this.phi = phi;
-			this.rho = rho;
-			this.z = z;
-			double rphi = Math.toRadians(phi);
-			x = rho*Math.cos(rphi);
-			y = rho*Math.sin(rphi);
-		}
-		
-		/**
-		 * get the sector 1..6
-		 * @return the sector 1..6
-		 */
-		public int sector() {
-			return GeometryManager.getSector(phi);
-		}
-		
-		public Point toLocal(IContainer container) {
-			Point2D.Double wp = new Point2D.Double();
-			Point pp = new Point();
-			projectClasToWorld(x, y, z, projectionPlane, wp);
-			container.worldToLocal(pp, wp);
-			return pp;
-		}
-		
-	}
+
 	
 }

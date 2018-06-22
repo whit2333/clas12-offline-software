@@ -13,8 +13,10 @@ import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.style.LineStyle;
 import cnuphys.bCNU.item.AItem;
 import cnuphys.bCNU.layer.LogicalLayer;
+import cnuphys.fastMCed.frame.FastMCed;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.MagFieldDisplayArray;
+import cnuphys.fastMCed.view.sector.SectorView;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.GridCoordinate;
 import cnuphys.magfield.MagneticFieldChangeListener;
@@ -89,6 +91,7 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 	 */
 	@Override
 	public void drawItem(Graphics g, IContainer container) {
+		
 		if (_failedToLoad) {
 			return;
 		}
@@ -101,7 +104,7 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 			return;
 		}
 
-
+		// what is the display option?
 		// what is the display option?
 		int displayOption = _view.getMagFieldDisplayOption();
 		// should be unnecessary
@@ -113,7 +116,6 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 		boolean hasSolenoid = MagneticFields.getInstance().hasSolenoid();
 
 		drawItemSectorView(g, container, displayOption, hasTorus, hasSolenoid);
-
 	}
 
 
@@ -151,121 +153,121 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 			int displayOption,
 			boolean hasTorus,
 			boolean hasSolenoid) {
-//
-//
-//		if (_activeProbe == null) {
-//			return;
-//		}
-//		
-//		Rectangle bounds = container.getComponent().getBounds();
-//		bounds.x = 0;
-//		bounds.y = 0;
-//	
-//		
-//		
-//		// get the boundary
-//	    Rectangle fieldRect;
-//		
-//		fieldRect = getFieldRect(container, hasTorus, hasSolenoid);
-//
-//
-//		Rectangle updateRect = bounds.intersection(fieldRect);
-//
-//		int xsteps = updateRect.width / pixelStep + 1;
-//		int ysteps = updateRect.height / pixelStep + 1;
-//
-//		Point2D.Double wp = new Point2D.Double();
-//		Point pp = new Point();
-//
-//		int pstep2 = pixelStep / 2;
-//
-//		float result[] = new float[3];
-//		double coords[] = new double[5];
-//
-//		pp.x = updateRect.x + pstep2;
-//		for (int i = 0; i < xsteps; i++) {
-//			pp.y = updateRect.y + pstep2;
-//			for (int j = 0; j < ysteps; j++) {
-//				container.localToWorld(pp, wp);
-//
-//				// get the true Cartesian coordinates
-//				((SectorView) (_view)).getCLASCordinates(container, pp, wp, coords);
-//
-//				double z = coords[2];
-//				double rho = coords[3];
-//				double phi = coords[4];
-//				
-//				if (_activeProbe.containsCylindrical(phi, rho, z)) {
-//
-//				if (displayOption == MagFieldDisplayArray.BMAGDISPLAY) {
-//					double bmag = _activeProbe.fieldMagnitudeCylindrical(phi, rho, z) / 10.;
-//
-//					Color color = _colorScaleModelTorus.getColor(bmag);
-//					g.setColor(color);
-//					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
-//				}
-//				else if (displayOption == MagFieldDisplayArray.BGRADDISPLAY) {
-//					_activeProbe.gradientCylindrical(phi, rho, z, result);
-//					double gmag = Math.sqrt(result[0]*result[0] +
-//							result[1]*result[1] + result[2]*result[2]);
-//					
-//					//convert to T/m
-//					gmag *= 10;
-//					
-//					Color color = _colorScaleModelGradient.getColor(gmag);
-//					
-//					if (color.getAlpha() < 255) {
-//						color = new Color(color.getRed(), color.getGreen(), color.getBlue(), 255);
-//					}
-//					
-//					
-//					g.setColor(color);
-//					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
-//					
-//				}
-//				else { // one of the components
-//					_activeProbe.fieldCylindrical(phi, rho, z, result);
-//					double comp = 0.0;
-//					switch (displayOption) {
-//					case MagFieldDisplayArray.BXDISPLAY:
-//						comp = result[0] / 10.;
-//						break;
-//					case MagFieldDisplayArray.BYDISPLAY:
-//						comp = result[1] / 10.;
-//						break;
-//					case MagFieldDisplayArray.BZDISPLAY:
-//						comp = result[2] / 10.;
-//						break;
-//					case MagFieldDisplayArray.BPERPDISPLAY:
-//						// normal vect to sect view is
-//						// -sin(phi)*i + cos(phi)*j
-//						double sinp = Math.sin(Math.toRadians(phi));
-//						double cosp = Math.cos(Math.toRadians(phi));
-//						comp = (-result[0] * sinp + result[1] * cosp) / 10.;
-//						break;
-//
-//					}
-//					Color color = _colorScaleModelTorus.getColor(Math.abs(comp));
-//					g.setColor(color);
-//
-//					// distinguish positive and negative
-//					if (comp > 0) {
-//						g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
-//					}
-//					else {
-//						// g.drawRect(pp.x - pstep2, pp.y - pstep2, pixelStep -
-//						// 1,
-//						// pixelStep - 1);
-//						g.fillOval(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
-//					}
-//
-//				} //a component
-//				}
-//
-//				pp.y += pixelStep;
-//			}
-//			pp.x += pixelStep;
-//		} // end for (xsteps)
+
+		if (_activeProbe == null) {
+			return;
+		}
+		
+		Rectangle bounds = container.getComponent().getBounds();
+		bounds.x = 0;
+		bounds.y = 0;
+	
+		
+		
+		// get the boundary
+	    Rectangle fieldRect;
+		
+		fieldRect = getFieldRect(container, hasTorus, hasSolenoid);
+
+
+		Rectangle updateRect = bounds.intersection(fieldRect);
+
+		int xsteps = updateRect.width / pixelStep + 1;
+		int ysteps = updateRect.height / pixelStep + 1;
+
+		Point2D.Double wp = new Point2D.Double();
+		Point pp = new Point();
+
+		int pstep2 = pixelStep / 2;
+
+		float result[] = new float[3];
+		double coords[] = new double[5];
+		
+		pp.x = updateRect.x + pstep2;
+		for (int i = 0; i < xsteps; i++) {
+			pp.y = updateRect.y + pstep2;
+			for (int j = 0; j < ysteps; j++) {
+				container.localToWorld(pp, wp);
+
+				// get the true Cartesian coordinates
+				((SectorView) (_view)).getCLASCordinates(container, pp, wp, coords);
+
+				double z = coords[2];
+				double rho = coords[3];
+				double phi = coords[4];
+				
+				if (_activeProbe.containsCylindrical(phi, rho, z)) {
+
+				if (displayOption == MagFieldDisplayArray.BMAGDISPLAY) {
+					
+					double bmag = _activeProbe.fieldMagnitudeCylindrical(phi, rho, z) / 10.;
+
+					Color color = _colorScaleModelTorus.getColor(bmag);
+					g.setColor(color);
+					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
+				}
+				else if (displayOption == MagFieldDisplayArray.BGRADDISPLAY) {
+					_activeProbe.gradientCylindrical(phi, rho, z, result);
+					double gmag = Math.sqrt(result[0]*result[0] +
+							result[1]*result[1] + result[2]*result[2]);
+					
+					//convert to T/m
+					gmag *= 10;
+					
+					Color color = _colorScaleModelGradient.getColor(gmag);
+					
+					if (color.getAlpha() < 255) {
+						color = new Color(color.getRed(), color.getGreen(), color.getBlue(), 255);
+					}
+					
+					
+					g.setColor(color);
+					g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
+					
+				}
+				else { // one of the components
+					_activeProbe.fieldCylindrical(phi, rho, z, result);
+					double comp = 0.0;
+					switch (displayOption) {
+					case MagFieldDisplayArray.BXDISPLAY:
+						comp = result[0] / 10.;
+						break;
+					case MagFieldDisplayArray.BYDISPLAY:
+						comp = result[1] / 10.;
+						break;
+					case MagFieldDisplayArray.BZDISPLAY:
+						comp = result[2] / 10.;
+						break;
+					case MagFieldDisplayArray.BPERPDISPLAY:
+						// normal vect to sect view is
+						// -sin(phi)*i + cos(phi)*j
+						double sinp = Math.sin(Math.toRadians(phi));
+						double cosp = Math.cos(Math.toRadians(phi));
+						comp = (-result[0] * sinp + result[1] * cosp) / 10.;
+						break;
+
+					}
+					Color color = _colorScaleModelTorus.getColor(Math.abs(comp));
+					g.setColor(color);
+
+					// distinguish positive and negative
+					if (comp > 0) {
+						g.fillRect(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
+					}
+					else {
+						// g.drawRect(pp.x - pstep2, pp.y - pstep2, pixelStep -
+						// 1,
+						// pixelStep - 1);
+						g.fillOval(pp.x - pstep2, pp.y - pstep2, pixelStep, pixelStep);
+					}
+
+				} //a component
+				}
+
+				pp.y += pixelStep;
+			}
+			pp.x += pixelStep;
+		} // end for (xsteps)
 	}
 
 	/**
@@ -282,7 +284,7 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 	 */
 	@Override
 	public boolean shouldDraw(Graphics g, IContainer container) {
-
+		
 		if (fieldBoundary == null) {
 			return true;
 		}

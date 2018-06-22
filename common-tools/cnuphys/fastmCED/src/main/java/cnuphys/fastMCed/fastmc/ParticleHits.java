@@ -7,10 +7,10 @@ import java.util.Vector;
 import org.jlab.geom.DetectorHit;
 import org.jlab.geom.prim.Path3D;
 
+import cnuphys.fastmc.geometry.DCGeometry;
+import cnuphys.fastmc.geometry.FTOFGeometry;
 import cnuphys.lund.LundId;
 import cnuphys.splot.plot.DoubleFormat;
-import geometry.DCGeometry;
-import geometry.FTOFGeometry;
 
 /**
  * These are the hits as determind bt the fastMC engine for a single trajectory.

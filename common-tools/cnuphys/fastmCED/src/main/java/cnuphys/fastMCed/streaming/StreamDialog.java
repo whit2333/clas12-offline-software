@@ -10,12 +10,15 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 import javax.swing.Box;
+import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+
+import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.dialog.ButtonPanel;
 import cnuphys.bCNU.dialog.DialogUtilities;
@@ -25,7 +28,7 @@ import cnuphys.bCNU.graphics.component.CommonBorder;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 
-public class StreamDialog extends JDialog {
+public class StreamDialog extends JDialog implements IStreamProcessor {
 
 	/**
 	 * Maximum number of events we will allow for accumulation
@@ -55,6 +58,14 @@ public class StreamDialog extends JDialog {
 
 	// the ClasIO event manager
 	private PhysicsEventManager _eventManager = PhysicsEventManager.getInstance();
+	
+	
+	//buttons
+	private JButton _runButton;
+	private JButton _resumeButton;
+	private JButton _closeButton;
+
+	
 
 	// Object that accumulates and stores data
 	// This will be the accumulation manager
@@ -67,14 +78,14 @@ public class StreamDialog extends JDialog {
 	 */
 	public StreamDialog() {
 		setTitle("Stream Events");
-		setModal(true);
+		setModal(false);
 		setIconImage(ImageManager.cnuIcon.getImage());
 
 		// close is like a cancel
 		WindowAdapter wa = new WindowAdapter() {
 			@Override
 			public void windowClosing(WindowEvent we) {
-				doClose(DialogUtilities.CANCEL_RESPONSE);
+				handleClose();
 			}
 		};
 		addWindowListener(wa);
@@ -83,6 +94,7 @@ public class StreamDialog extends JDialog {
 		pack();
 		GraphicsUtilities.centerComponent(this);
 
+		StreamManager.getInstance().addStreamListener(this);
 	}
 
 	// add all the widgets
@@ -91,7 +103,6 @@ public class StreamDialog extends JDialog {
 
 		Box box = Box.createVerticalBox();
 
-		_numRemaining = _eventManager.getNumRemainingEvents();
 
 		// path label
 
@@ -99,17 +110,9 @@ public class StreamDialog extends JDialog {
 		_pathLabel = new JLabel();
 		_totalLabel = new JLabel();
 		_remainingLabel = new JLabel();
+		
+		fixNumRemaining();
 
-		if (_numRemaining > 0) {
-			_pathLabel.setText(_eventManager.getCurrentSourceDescription());
-			_totalLabel.setText("Total number: "
-					+ _eventManager.getEventCount());
-			_remainingLabel.setText("Remaining: " + _numRemaining);
-		} else {
-			_pathLabel.setText("No event file or source.");
-			_totalLabel.setText("Total number: 0");
-			_remainingLabel.setText("Remaining: 0");
-		}
 		subBox.add(DialogUtilities.paddedPanel(6, 6, _pathLabel));
 		subBox.add(DialogUtilities.paddedPanel(6, 6, _totalLabel));
 		subBox.add(DialogUtilities.paddedPanel(6, 6, _remainingLabel));
@@ -117,7 +120,7 @@ public class StreamDialog extends JDialog {
 		box.add(DialogUtilities.paddedPanel(6, 6, subBox));
 
 		// accumulation panel
-		box.add(accumulationPanel(_numRemaining > 0));
+		box.add(streamPanel(_numRemaining > 0));
 
 		// progress bar
 		_progressBar = new JProgressBar(0, 100) {
@@ -141,9 +144,24 @@ public class StreamDialog extends JDialog {
 		add(Box.createHorizontalStrut(4), BorderLayout.WEST);
 
 	}
+	
+	private void fixNumRemaining() {
+		_numRemaining = _eventManager.getNumRemainingEvents();
+		if (_numRemaining > 0) {
+			_pathLabel.setText(_eventManager.getCurrentSourceDescription());
+			_totalLabel.setText("Total number: "
+					+ _eventManager.getEventCount());
+			_remainingLabel.setText("Remaining: " + _numRemaining);
+		} else {
+			_pathLabel.setText("No event file or source.");
+			_totalLabel.setText("Total number: 0");
+			_remainingLabel.setText("Remaining: 0");
+		}
+		
+	}
 
-	// the number-to-accumulate panel
-	private JPanel accumulationPanel(boolean hasSource) {
+	// the number-to-stream panel
+	private JPanel streamPanel(boolean hasSource) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
 		panel.add(new JLabel("Number to accumulate: "));
@@ -159,136 +177,193 @@ public class StreamDialog extends JDialog {
 		return panel;
 	}
 
+	
 	/**
 	 * Create the button panel.
 	 * 
 	 * @return the button panel.
 	 */
 	private JPanel createButtonPanel() {
-		// closeout buttons-- use OK and CANCEL
-
-		// buttons
+		
+		JPanel panel = new JPanel();
+		
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
+		_runButton = new JButton(" Run ");
+		_resumeButton = new JButton(" Resume ");
+		_closeButton = new JButton(" Close ");
 
 		ActionListener alist = new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String command = e.getActionCommand();
+				Object source = e.getSource();
 
-				if (ButtonPanel.OK_LABEL.equals(command)) {
-					doClose(DialogUtilities.OK_RESPONSE);
+				if (source == _runButton) {
+					handleRun();
+				}
+				else if (source == _resumeButton) {
+					StreamManager.getInstance().setStreamState(StreamReason.STARTED);
+				}
+				else if (source == _closeButton) {
+					handleClose();
 				}
 
-				else if (ButtonPanel.CANCEL_LABEL.equals(command)) {
-					doClose(DialogUtilities.CANCEL_RESPONSE);
-				}
-
-				else if (ButtonPanel.APPLY_LABEL.equals(command)) {
-					doClose(DialogUtilities.APPLY_RESPONSE);
-				}
 
 			}
 
 		};
+		
+		_runButton.addActionListener(alist);
+		_resumeButton.addActionListener(alist);
+		_closeButton.addActionListener(alist);
 
-		return ButtonPanel.closeOutPanel(ButtonPanel.USE_OKCANCEL, alist, 50);
+		panel.add(_runButton);
+		panel.add(_resumeButton);
+		panel.add(_closeButton);
+		
+		fixButtons(StreamManager.getInstance().getStreamState());
+		
+		return panel;
 
 	}
+	
+	private void handleClose() {
+		doClose(DialogUtilities.CANCEL_RESPONSE);
+	}
+	//convenience
+	private StreamReason getState() {
+		return StreamManager.getInstance().getStreamState();
+	}
+	
+	private boolean isStarted() {
+		return getState() == StreamReason.STARTED;
+	}
+	
+	private boolean isPaused() {
+		return getState() == StreamReason.PAUSED;
+	}
 
-	// user has hit ok or cancel
-	private void doClose(int reason) {
-		_reason = reason;
+	@Override
+	public void setVisible(boolean vis) {
 
-		if (reason == DialogUtilities.OK_RESPONSE) {
+		if (!vis) {
+			StreamManager.getInstance().setStreamState(StreamReason.STOPPED);
+			StreamManager.getInstance().removeStreamListener(this);
+		}
+		super.setVisible(vis);
+	}
+	
+	private void handleRun() {
 
-			// if number field was not enabled treat as cancel.
-			if (!_numberField.isEnabled()) {
+		// if number field was not enabled treat as cancel.
+		if (!_numberField.isEnabled()) {
+			_reason = DialogUtilities.CANCEL_RESPONSE;
+			setVisible(false);
+			return;
+		}
+
+
+		try {
+			int count = Integer.parseInt(_numberField.getText().trim());
+			if (count < 1) {
 				_reason = DialogUtilities.CANCEL_RESPONSE;
-				StreamManager.getInstance().notifyStreamListeners(
-						StreamReason.STOPPED);
-				setVisible(false);
-				return;
+			} else {
+				count = Math.min(count, MAXSTREAMCOUNT);
+				count = Math.min(count, _numRemaining);
 			}
+			final int fcount = count;
 
+			Runnable runnable = new Runnable() {
 
-			try {
-				int count = Integer.parseInt(_numberField.getText().trim());
-				if (count < 1) {
-					_reason = DialogUtilities.CANCEL_RESPONSE;
-				} else {
-					count = Math.min(count, MAXSTREAMCOUNT);
-					count = Math.min(count, _numRemaining);
-				}
-				final int fcount = count;
+				@Override
+				public void run() {
+	//				_eventManager.setStreaming(true);
 
-				Runnable runnable = new Runnable() {
+					int modCount = Math.max(2, fcount / 100);
 
-					@Override
-					public void run() {
-						_eventManager.setStreaming(true);
+					int count = 0;
+					while ((isStarted() || isPaused()) && (count < fcount)) {
 
-						int modCount = Math.max(2, fcount / 100);
-
-						int count = 0;
-						while (isVisible() && (count < fcount)) {
+						if (isPaused()) {
 							
+							try {
+								Thread.sleep(1000);
+								//System.err.println("Stream is paused.");
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+
+						} else {
 							if (_eventManager.hasEvent()) {
 								boolean gotOne = _eventManager.nextEvent();
 								if (!gotOne) {
 									System.err.println("PhysicsEventManager nextEvent() failed.");
 									System.exit(1);
-								}
-								else {
+								} else {
 									count++;
 								}
 							}
-							
 
 							if (((count + 1) % modCount) == 0) {
 								int value = (int) ((100.0 * count) / fcount);
+								fixNumRemaining();
 								_progressBar.setValue(value);
 
 							}
 						}
-						
-						
-						// we are done accumulating
-						StreamManager.getInstance().notifyStreamListeners(
-								StreamReason.FINISHED);
-						_eventManager.setStreaming(false);
-											
-						
-						SwingUtilities.invokeLater(new Runnable() {
-							@Override
-							public void run() {
-								setVisible(false);
-								//reload last event
-								_eventManager.reloadCurrentEvent();
-
-								ViewManager.getInstance()
-										.refreshAllViews();
-								
-							}
-						});
-
 					}
-				};
+					
+					
+					// we are done streaming
+					
+					StreamManager.getInstance().setStreamState(StreamReason.STOPPED);
 
-				StreamManager.getInstance().notifyStreamListeners(StreamReason.STARTED);
+					
+					setVisible(false);
 
-				(new Thread(runnable)).start();
+//					if (StreamManager.getInstance().isStopped()) {
+//						setVisible(false);
+//					}
+//					
+//					//				_eventManager.setStreaming(false);
+										
+					
+					SwingUtilities.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							//reload last event
+							_eventManager.reloadCurrentEvent();
 
-				lastCount = count;
-			} catch (Exception e) {
-				_reason = DialogUtilities.CANCEL_RESPONSE;
-			}
+							ViewManager.getInstance()
+									.refreshAllViews();
+							
+						}
+					});
 
-		} //ok
-		else {
-			setVisible(false);
+					fixNumRemaining();
+	//				doClose(DialogUtilities.OK_RESPONSE);
+
+				} // run
+			};
+
+			StreamManager.getInstance().setStreamState(StreamReason.STARTED);
+
+			(new Thread(runnable)).start();
+
+			lastCount = count;
+		} catch (Exception e) {
+			_reason = DialogUtilities.CANCEL_RESPONSE;
 		}
+		
 	}
 
+	// user has hit ok or cancel
+	private void doClose(int reason) {
+		_reason = reason;
+		setVisible(false);
+	}
+
+	
 	/**
 	 * Why the dialog closed.
 	 * 
@@ -298,5 +373,41 @@ public class StreamDialog extends JDialog {
 	public int getReason() {
 		return _reason;
 	}
+	
+	private void fixButtons(StreamReason reason) {
+		//fix buttons
+		switch(reason) {
+		case STARTED:
+			_runButton.setEnabled(false);
+			_resumeButton.setEnabled(false);
+			break;
+		case STOPPED:
+			_runButton.setEnabled(true);
+			_resumeButton.setEnabled(false);
+			break;
+		case PAUSED:
+			_runButton.setEnabled(false);
+			_resumeButton.setEnabled(true);
+			fixNumRemaining();
+			break;
+		}
+	}
+
+	//STARTED, STOPPED, PAUSED, FINISHED, RESUMED
+	@Override
+	public void streamingChange(StreamReason reason) {
+		fixButtons(reason);
+	}
+
+	@Override
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+		return StreamProcessStatus.CONTINUE;
+	}
+
+	@Override
+	public String flagExplanation() {
+		return "No way this happened.";
+	}
+	
 
 }

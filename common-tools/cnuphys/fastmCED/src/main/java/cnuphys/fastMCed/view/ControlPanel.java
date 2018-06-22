@@ -101,7 +101,7 @@ public class ControlPanel extends JPanel implements ChangeListener {
 
 	// color model panel for accumulation
 	private ColorModelPanel _colorPanel;
-	
+
 	private static int MIN_WIDTH = 250;
 
 	/**
@@ -138,9 +138,9 @@ public class ControlPanel extends JPanel implements ChangeListener {
 		add(box, BorderLayout.NORTH);
 
 		add(_feedbackPane, BorderLayout.CENTER);
-		
+
 	}
-	
+
 	@Override
 	public Dimension getMinimumSize() {
 		Dimension d = super.getMinimumSize();
@@ -149,7 +149,7 @@ public class ControlPanel extends JPanel implements ChangeListener {
 		}
 		return d;
 	}
-	
+
 	@Override
 	public Dimension getPreferredSize() {
 		Dimension d = super.getPreferredSize();
@@ -158,7 +158,6 @@ public class ControlPanel extends JPanel implements ChangeListener {
 		}
 		return d;
 	}
-
 
 	/**
 	 * Add a component to the south, below the feedback.
@@ -191,7 +190,6 @@ public class ControlPanel extends JPanel implements ChangeListener {
 			if (Bits.checkBit(controlPanelBits, FIELDLEGEND)) {
 				ColorModelLegend legend;
 				int gap = 30;
-
 				legend = new ColorModelLegend(MagFieldItem._colorScaleModelTorus, FULLWIDTH - 2 * gap, "Field (T)",
 						gap);
 
@@ -202,25 +200,6 @@ public class ControlPanel extends JPanel implements ChangeListener {
 				panel.add(glegend);
 				magFieldPanel.add(panel, BorderLayout.SOUTH);
 			}
-
-			// Box mfbox = Box.createVerticalBox();
-			//
-			// _magFieldDisplayArray = new MagFieldDisplayArray(_view,
-			// displayArrayBits);
-			// mfbox.add(_magFieldDisplayArray);
-			//
-			// if (Bits.checkBit(controlPanelBits, FIELDLEGEND)) {
-			// if (_view instanceof CentralZView) {
-			// mfbox.add(new ColorModelLegend(
-			// MagFieldItem._colorScaleModelSolenoid, FULLWIDTH,
-			// "Field Magnitude (T)"));
-			// } else {
-			// mfbox.add(new ColorModelLegend(
-			// MagFieldItem._colorScaleModelTorus, FULLWIDTH,
-			// "Field Magnitude (T)"));
-			// }
-			// }
-			// magFieldPanel.add(mfbox);
 		}
 
 		// options
@@ -241,7 +220,6 @@ public class ControlPanel extends JPanel implements ChangeListener {
 			basic.add(createPhiSlider(isBig), BorderLayout.NORTH);
 			addBasic = true;
 		}
-
 
 		// target z slider
 		if (Bits.checkBit(controlPanelBits, TARGETSLIDER)) {
@@ -264,10 +242,11 @@ public class ControlPanel extends JPanel implements ChangeListener {
 		if (addBasic) {
 			tabbedPane.add(basic, "basic");
 		}
-
+		
 		if (magFieldPanel != null) {
 			tabbedPane.add(magFieldPanel, "field");
 		}
+
 
 		return tabbedPane;
 	}
@@ -385,7 +364,7 @@ public class ControlPanel extends JPanel implements ChangeListener {
 	public DisplayArray getDisplayArray() {
 		return _displayArray;
 	}
-
+	
 	/**
 	 * Get the mag field options array
 	 * 
