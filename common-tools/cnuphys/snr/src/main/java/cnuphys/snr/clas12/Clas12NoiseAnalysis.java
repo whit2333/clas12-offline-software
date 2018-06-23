@@ -178,13 +178,13 @@ public class Clas12NoiseAnalysis {
 	 * arrays contain 1-based indices, just like in the clasio banks
 	 * 
 	 * @param sector
-	 *            the sector array
+	 *            the 1-based sector array
 	 * @param superlayer
-	 *            the superlayer array
+	 *            the 1-based superlayer array
 	 * @param layer
-	 *            the layer array
+	 *            the 1-based layer array
 	 * @param wire
-	 *            the wire array
+	 *            the 1-based wire array
 	 * @param results
 	 *            container for the results
 	 */

@@ -125,7 +125,8 @@ public class AllDCView extends AView {
 				PropertySupport.TITLE, _baseTitle + ((CLONE_COUNT == 0) ? "" : ("_(" + CLONE_COUNT + ")")),
 				PropertySupport.STANDARDVIEWDECORATIONS, true);
 
-		view._controlPanel = new ControlPanel(view, ControlPanel.FEEDBACK,
+		view._controlPanel = new ControlPanel(view, 
+				ControlPanel.NOISECONTROL + ControlPanel.FEEDBACK,
 				0, 3, 5);
 
 		view.add(view._controlPanel, BorderLayout.EAST);

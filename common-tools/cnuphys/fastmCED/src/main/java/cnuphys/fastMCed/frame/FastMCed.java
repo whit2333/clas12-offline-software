@@ -33,6 +33,8 @@ import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.FileUtilities;
 import cnuphys.bCNU.util.PropertySupport;
 import cnuphys.bCNU.util.X11Colors;
+import cnuphys.bCNU.view.LogView;
+import cnuphys.bCNU.view.PlotView;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.bCNU.view.VirtualView;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
@@ -40,8 +42,8 @@ import cnuphys.fastMCed.consumers.ConsumerManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.FastMCMenuAddition;
 import cnuphys.fastMCed.properties.PropertiesManager;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
-import cnuphys.fastMCed.streaming.StreamDialog;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
@@ -107,6 +109,8 @@ public class FastMCed extends BaseMDIApplication
 	private SectorView _sectorView14;
 	private SectorView _sectorView25;
 	private SectorView _sectorView36;
+	private PlotView _plotView;
+	private LogView _logView;
 
 
 	/**
@@ -211,48 +215,14 @@ public class FastMCed extends BaseMDIApplication
 		_virtualView.moveToStart(_sectorView25, 0, VirtualView.UPPERLEFT);
 		_virtualView.moveToStart(_sectorView36, 0, VirtualView.UPPERLEFT);
 
+		_virtualView.moveTo(_plotView, 0, VirtualView.CENTER);
 
 		_virtualView.moveTo(_allDCView, 1);
 		_virtualView.moveTo(_trajInfoView, 0, VirtualView.UPPERRIGHT);
 		_virtualView.moveTo(_dcDataView, 2, VirtualView.BOTTOMLEFT);
 		_virtualView.moveTo(_ftofDataView, 2, VirtualView.BOTTOMRIGHT);
 
-		// _virtualView.moveToStart(_sectorView14, 0, VirtualView.UPPERLEFT);
-		// _virtualView.moveToStart(_sectorView25, 0, VirtualView.UPPERLEFT);
-		// _virtualView.moveToStart(_sectorView36, 0, VirtualView.UPPERLEFT);
-		//
-		// _virtualView.moveTo(_plotView, 0, VirtualView.CENTER);
-		//
-		// _virtualView.moveTo(dcHistoGrid, 13);
-		// _virtualView.moveTo(ftofHistoGrid, 14);
-		// _virtualView.moveTo(bstHistoGrid, 15);
-		// _virtualView.moveTo(pcalHistoGrid, 16);
-		// _virtualView.moveTo(ecHistoGrid, 17);
-		//
-		// _virtualView.moveTo(_allDCView, 3);
-		// _virtualView.moveTo(_eventView, 6, VirtualView.CENTER);
-		// _virtualView.moveTo(_centralXYView, 2, VirtualView.BOTTOMLEFT);
-		// _virtualView.moveTo(_centralZView, 2, VirtualView.UPPERRIGHT);
-		//
-		// // note no constraint means "center"
-		// _virtualView.moveTo(_dcXyView, 7);
-		// _virtualView.moveTo(_projectedDCView, 8);
-		//
-		// _virtualView.moveTo(_pcalView, 4);
-		// _virtualView.moveTo(_ecView, 5);
-		// _virtualView.moveTo(_logView, 12, VirtualView.UPPERRIGHT);
-		// _virtualView.moveTo(_monteCarloView, 1, VirtualView.TOPCENTER);
-		// _virtualView.moveTo(_reconEventView, 1, VirtualView.BOTTOMCENTER);
-		//
-		// _virtualView.moveTo(_tofView, 11, VirtualView.CENTER);
-		//
-		// _virtualView.moveTo(_ftcalXyView, 12, VirtualView.CENTER);
-		//
-		// if (_use3D) {
-		// _virtualView.moveTo(_forward3DView, 9, VirtualView.CENTER);
-		// _virtualView.moveTo(_central3DView, 10, VirtualView.BOTTOMLEFT);
-		// _virtualView.moveTo(_ftCal3DView, 10, VirtualView.BOTTOMRIGHT);
-		// }
+		_virtualView.moveTo(_logView, 5, VirtualView.UPPERRIGHT);
 
 		Log.getInstance().config("reset views on virtual dekstop");
 
@@ -286,74 +256,13 @@ public class FastMCed extends BaseMDIApplication
 		// data views
 		_dcDataView = new DataView("Drift Chamber Hits", DataTableModel.DETECTOR_DC);
 		_ftofDataView = new DataView("FTOF Hits", DataTableModel.DETECTOR_FTOF);
+		
+		ViewManager.getInstance().getViewMenu().addSeparator();
+		//plot view
+		_plotView = new PlotView();
+		_logView = new LogView();
 
-		// // add event view
-		// _eventView = ClasIoEventView.createEventView();
-		//
-		// // add three sector views
-		// ViewManager.getInstance().getViewMenu().addSeparator();
-		// _sectorView36=SectorView.createSectorView(DisplaySectors.SECTORS36);
-		// _sectorView25=SectorView.createSectorView(DisplaySectors.SECTORS25);
-		// _sectorView14=SectorView.createSectorView(DisplaySectors.SECTORS14);
-		// ViewManager.getInstance().getViewMenu().addSeparator();
-		//
-		// // add monte carlo view
-		// _monteCarloView = new ClasIoMonteCarloView();
-		//
-		//
-		// // add a reconstructed tracks view
-		// _reconEventView = ClasIoReconEventView.getInstance();
-		//
-		// ViewManager.getInstance().getViewMenu().addSeparator();
-		//
-		// // add an alldc view
-		// _allDCView = AllDCView.createAllDCView();
-		//
-		// _tofView = TOFView.createTOFView();
-		//
-		// // add a bstZView
-		// _centralZView = CentralZView.createCentralZView();
-		//
-		// // add a bstXYView
-		// _centralXYView = CentralXYView.createCentralXYView();
-		//
-		// // add a ftcalxyYView
-		// _ftcalXyView = FTCalXYView.createFTCalXYView();
-		//
-		// // add a DC XY View
-		// _dcXyView = DCXYView.createDCXYView();
-		//
-		// // projected dC view
-		// _projectedDCView = ProjectedDCView.createProjectedDCView();
-		//
-		// // add an ec view
-		// _ecView = ECView.createECView();
-		//
-		// // add an pcal view
-		// _pcalView = PCALView.createPCALView();
-		//
-		// // 3D view?
-		// if (_use3D) {
-		// ViewManager.getInstance().getViewMenu().addSeparator();
-		// _forward3DView = new ForwardView3D();
-		// _central3DView = new CentralView3D();
-		// _ftCal3DView = new FTCalView3D();
-		// }
-		//
-		// // add logview
-		// ViewManager.getInstance().getViewMenu().addSeparator();
-		// //plot view
-		// _plotView = new PlotView();
-		//
-		// _logView = new LogView();
-		//
-		//
-		// //add histograms
-		// addDcHistogram();
-		// addFtofHistogram();
-		// addBstHistogram();
-		// addPcalHistogram();
-		// addEcHistogram();
+
 
 		// log some environment info
 		Log.getInstance().config(Environment.getInstance().toString());
@@ -420,6 +329,27 @@ public class FastMCed extends BaseMDIApplication
 	private void addToFileMenu() {
 		MenuManager mmgr = MenuManager.getInstance();
 		JMenu fmenu = mmgr.getFileMenu();
+		
+		fmenu.insertSeparator(0);
+
+		// restore default config
+		final JMenuItem defConItem = new JMenuItem("Restore Default Configuration");
+
+		ActionListener al1 = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Object source = e.getSource();
+
+				if (source == defConItem) {
+					restoreDefaultViewLocations();
+					refresh();
+				}
+			}
+		};
+
+		defConItem.addActionListener(al1);
+		fmenu.add(defConItem, 0);
+
 	}
 
 	/**
@@ -484,6 +414,15 @@ public class FastMCed extends BaseMDIApplication
 		fixTitle();
 		PhysicsEventManager.getInstance().reloadCurrentEvent();
 	}
+	
+	/**
+	 * Get the plot view
+	 * @return the plot voew;
+	 */
+	public PlotView getPlotView() {
+		return _plotView;
+	}
+
 
 	/**
 	 * Fix the title of te main frame
@@ -641,6 +580,7 @@ public class FastMCed extends BaseMDIApplication
 		GeometryManager.getInstance();
 		StreamManager.getInstance();
 		ConsumerManager.getInstance();
+		SNRManager.getInstance();
 
 		// now make the frame visible, in the AWT thread
 		EventQueue.invokeLater(new Runnable() {

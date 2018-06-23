@@ -21,8 +21,15 @@ import javax.swing.event.ChangeListener;
 
 import org.jlab.geom.prim.Plane3D;
 
+import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
+import cnuphys.splot.fit.FitType;
+import cnuphys.splot.pdata.DataSet;
+import cnuphys.splot.pdata.DataSetException;
+import cnuphys.splot.pdata.DataSetType;
+import cnuphys.splot.plot.PlotCanvas;
+import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.SwimTrajectory2D;
 import cnuphys.bCNU.drawable.DrawableAdapter;
 import cnuphys.bCNU.drawable.IDrawable;
@@ -39,6 +46,9 @@ import cnuphys.bCNU.util.UnicodeSupport;
 import cnuphys.bCNU.util.VectorSupport;
 import cnuphys.bCNU.util.X11Colors;
 import cnuphys.bCNU.view.BaseView;
+import cnuphys.bCNU.view.PlotView;
+import cnuphys.bCNU.view.ViewManager;
+import cnuphys.fastMCed.frame.FastMCed;
 import cnuphys.fastMCed.item.BeamLineItem;
 import cnuphys.fastMCed.item.FTOFPanelItem;
 import cnuphys.fastMCed.item.MagFieldItem;
@@ -77,6 +87,11 @@ public class SectorView extends AView implements ChangeListener {
 	private static Stroke stroke = GraphicsUtilities.getStroke(1.5f,
 			LineStyle.SOLID);
 
+	//for bdl plot
+	private static Color plotColors[] = { X11Colors.getX11Color("Dark Red"),
+			X11Colors.getX11Color("Dark Blue"),
+			X11Colors.getX11Color("Dark Green"), Color.black, Color.gray,
+			X11Colors.getX11Color("wheat") };
 	
 	//for naming clones
 	private static int CLONE_COUNT[] = {0, 0, 0};
@@ -190,8 +205,7 @@ public class SectorView extends AView implements ChangeListener {
 		view._controlPanel = new ControlPanel(view, ControlPanel.NOISECONTROL
 				+ ControlPanel.PHISLIDER
 				+ ControlPanel.FEEDBACK
-				+ ControlPanel.FIELDLEGEND + ControlPanel.TARGETSLIDER
-				+ ControlPanel.ACCUMULATIONLEGEND, 
+				+ ControlPanel.FIELDLEGEND + ControlPanel.TARGETSLIDER,
 				  DisplayBits.MAGFIELD, 3, 5);
 
 		view.add(view._controlPanel, BorderLayout.EAST);
@@ -961,7 +975,50 @@ public class SectorView extends AView implements ChangeListener {
 						double sliderPhi = getRelativePhi(desiredPhi);
 						_controlPanel.getPhiSlider().setValue((int) sliderPhi);
 						getContainer().refresh();
-					} 
+					} else if (source == integralItem) {
+						PlotView pview = FastMCed.getFastMCed()
+								.getPlotView();
+						if (pview != null) {
+							PlotCanvas canvas = pview.getPlotCanvas();
+							try {
+								SwimTrajectory traj = traj2D.getTrajectory3D();
+								traj.computeBDL(FieldProbe.factory());
+
+								// do we already have data?
+								boolean havePlotData = (canvas.getDataSet() == null) ? false
+										: canvas.getDataSet().dataAdded();
+
+								if (!havePlotData) {
+									initPlot(canvas, traj2D);
+								} else { // have to add a curve
+									int curveCount = canvas.getDataSet()
+											.getCurveCount();
+									DataSet dataSet = canvas.getDataSet();
+									dataSet.addCurve(
+											"X",
+											traj2D.summaryString()
+													+ " ["
+													+ MagneticFields
+															.getInstance().getActiveFieldDescription()
+													+ "]");
+									for (double v[] : traj) {
+										dataSet.addToCurve(curveCount,
+												v[SwimTrajectory.PATHLEN_IDX],
+												v[SwimTrajectory.BXDL_IDX]);
+
+										setCurveStyle(canvas, curveCount);
+									}
+
+								}
+
+								ViewManager.getInstance().setVisible(pview,
+										true);
+								canvas.repaint();
+							} catch (DataSetException e) {
+								e.printStackTrace();
+							}
+						} // pview not null
+					}
 				}
 			};
 
@@ -980,6 +1037,40 @@ public class SectorView extends AView implements ChangeListener {
 	}
 
 
+	private void initPlot(PlotCanvas canvas, SwimTrajectory2D traj2D)
+			throws DataSetException {
+		SwimTrajectory traj = traj2D.getTrajectory3D();
+		DataSet dataSet = new DataSet(DataSetType.XYXY, "X",
+				traj2D.summaryString() + " ["
+						+ MagneticFields.getInstance().getActiveFieldDescription() + "]");
+
+		canvas.getParameters().setPlotTitle("Magnetic Field Integral");
+		canvas.getParameters().setXLabel("Path Length (m)");
+		canvas.getParameters().setYLabel(
+				"<html>" + UnicodeSupport.INTEGRAL + "|<bold>B</bold> "
+						+ UnicodeSupport.TIMES + " <bold>dL</bold>| kG-m");
+
+		for (double v[] : traj) {
+			dataSet.add(v[SwimTrajectory.PATHLEN_IDX],
+					v[SwimTrajectory.BXDL_IDX]);
+		}
+		canvas.setDataSet(dataSet);
+		setCurveStyle(canvas, 0);
+	}
+
+	private void setCurveStyle(PlotCanvas canvas, int index) {
+		int cindex = index % plotColors.length;
+		canvas.getDataSet().getCurveStyle(index)
+				.setLineColor(plotColors[cindex]);
+		canvas.getDataSet().getCurveStyle(index)
+				.setFillColor(plotColors[cindex]);
+		canvas.getDataSet().getCurveStyle(index)
+				.setSymbolType(cnuphys.splot.style.SymbolType.X);
+		canvas.getDataSet().getCurveStyle(index).setSymbolSize(6);
+		canvas.getDataSet().getCurve(index).getFit()
+				.setFitType(FitType.CUBICSPLINE);
+
+	}
 
 	/**
 	 * Convert world (not global, but graphical world) to clas global (bab)

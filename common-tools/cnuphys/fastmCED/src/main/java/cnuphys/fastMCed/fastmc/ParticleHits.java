@@ -1,6 +1,7 @@
 package cnuphys.fastMCed.fastmc;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
@@ -10,10 +11,11 @@ import org.jlab.geom.prim.Path3D;
 import cnuphys.fastmc.geometry.DCGeometry;
 import cnuphys.fastmc.geometry.FTOFGeometry;
 import cnuphys.lund.LundId;
+import cnuphys.snr.clas12.Clas12NoiseResult;
 import cnuphys.splot.plot.DoubleFormat;
 
 /**
- * These are the hits as determind bt the fastMC engine for a single trajectory.
+ * These are the hits as determined by the fastMC engine for a single trajectory.
  * @author heddle
  *
  */
@@ -24,15 +26,15 @@ public class ParticleHits {
 	private LundId _lundId;
 	
 	//drift chamber hits
-	private List<DetectorHit> _dcHits;
+	private List<AugmentedDetectorHit> _dcHits;
 	
 	//ftof hits
-	private List<DetectorHit> _ftofHits;
+	private List<AugmentedDetectorHit> _ftofHits;
 	
 	//ftof layer hits. 
 	//The first index is the sector [0..5]
 	//The second index is [0-2] for panel [1A, 1B, 2]
-	private List<DetectorHit>[][] _ftofLayerHits = new List[6][3];
+	private List<AugmentedDetectorHit>[][] _ftofLayerHits = new List[6][3];
 	
 	/**
 	 * The particle hits for a single trajectory as determined by fastMC
@@ -64,8 +66,8 @@ public class ParticleHits {
 	 * @param ptype is [0, 1, 2] for [1A, 1B, 2]
 	 * @return the count of these hits
 	 */
-	public int FTOFLayerHitCount(int sect0, int ptype) {
-		 List<DetectorHit> hits = _ftofLayerHits[sect0][ptype];
+	public int layerHitCountFTOF(int sect0, int ptype) {
+		 List<AugmentedDetectorHit> hits = _ftofLayerHits[sect0][ptype];
 		 return (hits == null) ? 0 : hits.size();
 	}
 	
@@ -73,7 +75,7 @@ public class ParticleHits {
 	 * Get the number of DC Hits
 	 * @return the number of DC Hits
 	 */
-	public int DCHitCount() {
+	public int hitCountDC() {
 		return (_dcHits == null) ? 0 : _dcHits.size();
 	}
 	
@@ -81,7 +83,7 @@ public class ParticleHits {
 	 * Get the number of FTOF Hits
 	 * @return the number of FTOF Hits
 	 */
-	public int FTOFHitCount() {
+	public int hitCountFTOF() {
 		return (_ftofHits == null) ? 0 : _ftofHits.size();
 	}
 	
@@ -91,7 +93,7 @@ public class ParticleHits {
 	 * @param ptype is [0, 1, 2] for [1A, 1B, 2]
 	 * @return the list of these hits
 	 */
-	public List<DetectorHit> getTOFLayerHits(int sect0, int ptype) {
+	public List<AugmentedDetectorHit> getTOFLayerHits(int sect0, int ptype) {
 		return _ftofLayerHits[sect0][ptype];
 	}
 	
@@ -99,7 +101,7 @@ public class ParticleHits {
 	 * Get the list of ftof hits
 	 * @return list of ftof hits
 	 */
-	public List<DetectorHit> getFTOFHits() {
+	public List<AugmentedDetectorHit> getFTOFHits() {
 		return _ftofHits;
 	}
 
@@ -107,7 +109,7 @@ public class ParticleHits {
 	 * Get the list of drift chamber hits
 	 * @return list of drift chamber hits
 	 */
-	public List<DetectorHit> getDCHits() {
+	public List<AugmentedDetectorHit> getDCHits() {
 		return _dcHits;
 	}
 
@@ -158,16 +160,17 @@ public class ParticleHits {
 	 * @param layer  the 1-based layer (<=0 if exclude from filtering)
 	 * @return a filtered list
 	 */
-	public static List<DetectorHit> filter(List<DetectorHit> rawList, int sector, int superLayer, int layer) {
+	public static List<AugmentedDetectorHit> filter(List<AugmentedDetectorHit> rawList, int sector, int superLayer, int layer) {
 		
-		Vector<DetectorHit> filteredHits = new Vector<>();
+		Vector<AugmentedDetectorHit> filteredHits = new Vector<>();
 		//convert to 0 based
 		sector--;
 		superLayer--;
 		layer--;
 		
 		if (rawList != null) {
-			for (DetectorHit hit : rawList) {
+			for (AugmentedDetectorHit aughit : rawList) {
+				DetectorHit hit = aughit.hit;
 				boolean accept = true;
 				
 				if (accept && (sector >= 0)) {
@@ -181,12 +184,51 @@ public class ParticleHits {
 				}
 				
 				if (accept) {
-					filteredHits.add(hit);
+					filteredHits.add(aughit);
 				}
 			}
 		}
 		
 		return filteredHits;
+	}
+	
+	/**
+	 * Get a list of augmented hits. We can add information to augmented hits,
+	 * such as whether this was a noise hit.
+	 * @param detectorHits the list to upgrade.
+	 * @return the corresponding list of augmented hits
+	 */
+	public static List<AugmentedDetectorHit> fromDetectorHits(List<DetectorHit> detectorHits) {
+		if (detectorHits == null) {
+			return null;
+		}
+		
+		ArrayList<AugmentedDetectorHit> augHits = new ArrayList<>();
+		for (DetectorHit dh : detectorHits) {
+			augHits.add(new AugmentedDetectorHit(dh));
+		}
+		
+		return augHits;
+	}
+	
+	/**
+	 * Add hit feedback data to the feedback strings
+	 * @param hit the hit that the mouse is over
+	 * @param lid the Lund Id
+	 * @param feedbackStrings the list of feedbackstrings being added to
+	 */
+	public static void addHitFeedback(AugmentedDetectorHit hit, LundId lid, List<String> feedbackStrings) {
+		if (hit != null) {
+			String lidName = (lid != null) ? lid.getName() : "???";
+			int lidId = (lid != null) ? lid.getId() : -99999;
+			feedbackStrings.add("$yellow$pid " + lidName + " (" + lidId + ")");
+			feedbackStrings.add("$yellow$energy dep " + DoubleFormat.doubleFormat(hit.getEnergy(), 4));
+			feedbackStrings.add("$yellow$time " + DoubleFormat.doubleFormat(hit.getTime(), 4));
+			
+			if (hit.isDCHit()) {
+				feedbackStrings.add("$white$called noise by SNR: " + (hit.isNoise() ? "yes" : "no"));
+			}
+		}
 	}
 	
 	/**
@@ -196,14 +238,6 @@ public class ParticleHits {
 	 * @param feedbackStrings the list of feedbackstrings being added to
 	 */
 	public static void addHitFeedback(DetectorHit hit, LundId lid, List<String> feedbackStrings) {
-		if (hit != null) {
-			
-			String lidName = (lid != null) ? lid.getName() : "???";
-			int lidId = (lid != null) ? lid.getId() : -99999;
-			feedbackStrings.add("$yellow$pid " + lidName + " (" + lidId + ")");
-			feedbackStrings.add("$yellow$energy dep " + DoubleFormat.doubleFormat(hit.getEnergy(), 4));
-			feedbackStrings.add("$yellow$time " + DoubleFormat.doubleFormat(hit.getTime(), 4));
-		}
 	}
-	
+		
 }

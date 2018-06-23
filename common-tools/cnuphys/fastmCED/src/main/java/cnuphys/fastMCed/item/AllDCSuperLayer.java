@@ -8,7 +8,6 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 
-import org.jlab.geom.DetectorHit;
 import org.jlab.geom.prim.Point3D;
 
 //import cnuphys.ced.dcnoise.NoiseEventListener;
@@ -16,6 +15,7 @@ import org.jlab.geom.prim.Point3D;
 //import cnuphys.ced.dcnoise.test.TestParameters;
 import cnuphys.lund.LundId;
 import cnuphys.lund.LundStyle;
+import cnuphys.snr.NoiseReductionParameters;
 import cnuphys.bCNU.format.DoubleFormat;
 import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.world.WorldGraphicsUtilities;
@@ -26,7 +26,9 @@ import cnuphys.bCNU.util.Fonts;
 import cnuphys.bCNU.util.UnicodeSupport;
 import cnuphys.bCNU.util.X11Colors;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.alldc.AllDCView;
 import cnuphys.fastmc.geometry.DCGeometry;
@@ -165,6 +167,11 @@ public class AllDCSuperLayer extends RectangleItem {
 		WorldGraphicsUtilities.drawWorldText(g, container, left, top, ""
 				+ _superLayer, -9, -5);
 
+		//draw SNR masks?
+		if (_view.showMasks()) {
+			drawSNRMasks(g, container);
+		}
+		
 		// now the data
 		drawHitData(g, container);
 		// shade the layers
@@ -186,6 +193,77 @@ public class AllDCSuperLayer extends RectangleItem {
 		g.drawPolygon(_lastDrawnPolygon);
 	}
 	
+	//draw the SNR mask data where SNR thinks segments mught start
+	private void drawSNRMasks(Graphics g, IContainer container) {
+		//need zero based sector and super layer
+		NoiseReductionParameters parameters = SNRManager.getInstance().getParameters(
+				_sector - 1, _superLayer - 1);
+
+		Rectangle2D.Double wr = new Rectangle2D.Double();
+
+		for (int wire = 0; wire < parameters.getNumWire(); wire++) {
+			//where it thinks segments start
+			boolean leftSeg = parameters.getLeftSegments().checkBit(wire);
+			boolean rightSeg = parameters.getRightSegments().checkBit(wire);
+			if (leftSeg || rightSeg) {
+				if (leftSeg) {
+					drawMask(g, container, wire,
+							parameters.getLeftLayerShifts(), 1, wr);
+				}
+				if (rightSeg) {
+					drawMask(g, container, wire,
+							parameters.getRightLayerShifts(), -1, wr);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Draws the masking that shows where the noise algorithm thinks there are
+	 * segments. Anything not masked is noise.
+	 * 
+	 * @param g
+	 *            the graphics context.
+	 * @param container
+	 *            the rendering container
+	 * @param wire
+	 *            the ZERO BASED wire 0..
+	 * @param shifts
+	 *            the parameter shifts for this direction
+	 * @param sign
+	 *            the direction 1 for left -1 for right
+	 * @param wr
+	 *            essentially workspace
+	 */
+	private void drawMask(Graphics g, IContainer container, int wire,
+			int shifts[], int sign, Rectangle2D.Double wr) {
+
+		wire++; // convert to 1-based
+
+		Color fill;
+		if (sign == 1) {
+			fill = SNRManager.maskFillLeft;
+		} else {
+			fill = SNRManager.maskFillRight;
+		}
+
+		for (int layer = 1; layer <= NUM_LAYER; layer++) {
+			getCell(layer, wire, wr);
+			WorldGraphicsUtilities.drawWorldRectangle(g, container, wr, fill,
+					null);
+
+			// ugh -- shifts are 0-based
+			for (int shift = 1; shift <= shifts[layer - 1]; shift++) {
+				int tempWire = wire + sign * shift;
+				if ((tempWire > 0) && (tempWire <= NUM_WIRE)) {
+					getCell(layer, tempWire, wr);
+					WorldGraphicsUtilities.drawWorldRectangle(g, container, wr,
+							fill, null);
+				}
+			}
+		}
+
+	}
 
 	/**
 	 * Draw in single event mode
@@ -205,23 +283,18 @@ public class AllDCSuperLayer extends RectangleItem {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, 0);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, 0);
 
 				if (!filteredHits.isEmpty()) {
-					for (DetectorHit hit : filteredHits) {
+					for (AugmentedDetectorHit hit : filteredHits) {
 
 						// NUMBERS COMING OUT OF DETECTOR HIT ARE 0-BASED
-
-//						System.err.println("ID: " + particleHits.lundId() + " name: " + lid.getName() + "   Sect: "
-//								+ hit.getSectorId() + "  SUPL: " + hit.getSuperlayerId() + "   LAY: " + hit.getLayerId()
-//								+ "  WIRE: " + hit.getComponentId());
 
 						// get 1-based
 						int layer = hit.getLayerId() + 1;
 						int wire = hit.getComponentId() + 1;
 
-						drawDCHit(g, container, layer, wire, false, lid, wr);
-
+						drawDCHit(g, container, layer, wire, hit.isNoise(), lid, wr);
 					}
 				}
 			}
@@ -248,6 +321,11 @@ public class AllDCSuperLayer extends RectangleItem {
 	 */
 	private void drawDCHit(Graphics g, IContainer container, int layer,
 			int wire, boolean noise, LundId lid, Rectangle2D.Double wr) {
+		
+		//might not even draw it if it is noise
+		if (noise && _view.hideNoise()) {
+			return;
+		}
 
 		if (wire > NUM_WIRE) {
 			String msg = "Bad wire number in drawGemcDCHit " + wire
@@ -271,6 +349,11 @@ public class AllDCSuperLayer extends RectangleItem {
 				hitLine = hitFill.darker();
 			}
 		}
+		
+		if (noise && _view.showNoiseAnalysis()) {
+			hitFill = Color.black;
+		}
+
 
 		WorldGraphicsUtilities.drawWorldRectangle(g, container, wr,
 				hitFill, hitLine);
@@ -353,22 +436,32 @@ public class AllDCSuperLayer extends RectangleItem {
 		
 		
 		List<ParticleHits> hits = _eventManager.getParticleHits();
-		int wire0 = wire -1;
+		int wire0 = wire-1;
 
 		if (hits != null) {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, layer);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, layer);
 				
-				for (DetectorHit hit : filteredHits) {
+				for (AugmentedDetectorHit hit : filteredHits) {
 					if (hit.getComponentId() == wire0) {
+						
+						//might not even care if it is noise
+						if (hit.isNoise() && _view.hideNoise()) {
+							break;
+						}
+
+
 						ParticleHits.addHitFeedback(hit, lid, feedbackStrings);
+						break;
 					}
 				}
 			}
 			
 		}
+		
+		SNRManager.getInstance().addParametersToFeedback(_sector, _superLayer, feedbackStrings);
 		
 		
 		// some occupancy numbers

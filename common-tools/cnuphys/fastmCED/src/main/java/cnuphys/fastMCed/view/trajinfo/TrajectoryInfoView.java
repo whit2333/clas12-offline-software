@@ -5,6 +5,7 @@ import java.util.Vector;
 import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
+import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.lund.TrajectoryRowData;
 import cnuphys.lund.TrajectoryTableModel;
 
@@ -25,6 +26,10 @@ public class TrajectoryInfoView extends ATrajectoryInfoView {
 	public void newPhysicsEvent(PhysicsEvent event) {
 		_trajectoryTable.clear(); // remove existing events
 
+		if (StreamManager.getInstance().isStarted()) {
+			return;
+		}
+		
 		ISwimAll allSwimmer = _eventManager.getAllSwimmer();
 		if (allSwimmer != null) {
 			TrajectoryTableModel model = _trajectoryTable

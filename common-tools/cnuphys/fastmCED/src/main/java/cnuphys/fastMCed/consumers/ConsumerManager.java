@@ -1,15 +1,22 @@
 package cnuphys.fastMCed.consumers;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
+import cnuphys.bCNU.log.Log;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.PluginLoader;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
@@ -24,8 +31,22 @@ import cnuphys.fastMCed.streaming.StreamReason;
  * @author heddle
  *
  */
-public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPhysicsEventListener, IStreamProcessor  {
+public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPhysicsEventListener, IStreamProcessor, ActionListener  {
 	
+	// optional full path to consumers folder
+	private String _consumerPath = sysPropOrEnvVar("CONSUMERDIR");
+	
+	/** Last selected data file */
+	private static String dataFilePath = Environment.getInstance().getHomeDirectory();
+
+
+	/** possible class file extensions */
+	private static String extensions[] = { "class"};
+
+	// filter to look for lund files
+	private static FileNameExtensionFilter _classFileFilter = new FileNameExtensionFilter("Consumer class Files",
+			extensions);
+
 	//map consumers to menu tems
 	private Hashtable<PhysicsEventConsumer, JCheckBoxMenuItem> hash =  new Hashtable<>();
 	
@@ -37,6 +58,9 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	
 	// the base class forconsumer plugins
 	protected Class<PhysicsEventConsumer> _consumerClaz;
+	
+	//load a consumer (a .class file) directly
+	private JMenuItem _loadItem;
 
 	//the menu
 	private JMenu _menu;
@@ -49,15 +73,24 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		String cwd = Environment.getInstance().getCurrentWorkingDirectory();
 		
 		_consumerDir = new File(cwd, "consumers");
+		String classPath = _consumerDir.getPath();
 		
-		if (_consumerDir.exists() && (_consumerDir.isDirectory())) {
-			System.err.println("Found Consumers Directory");
+		//TODO prepend other dirs
+		if (_consumerPath != null) {
+			classPath = _consumerPath + File.pathSeparator + classPath;
 		}
-		else {
-			System.err.println("Did not find Consumers Directory");
-			_consumerDir = null;
-			return;
-		}
+		
+		System.err.println("Consumer plugin path: [" + classPath + "]");
+		Log.getInstance().info("Consumer plugin path: [" + classPath + "]");
+		
+//		if (_consumerDir.exists() && (_consumerDir.isDirectory())) {
+//			System.err.println("Found Consumers Directory");
+//		}
+//		else {
+//			System.err.println("Did not find Consumers Directory");
+//			_consumerDir = null;
+//			return;
+//		}
 		
 		try {
 			_consumerClaz = (Class<PhysicsEventConsumer>) Class.forName("cnuphys.fastMCed.consumers.PhysicsEventConsumer");
@@ -68,9 +101,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		
 		//let's try to load
 
-		String classPath = _consumerDir.getPath();
 		
-		//TODO append other class paths from command args
 		PluginLoader loader = new PluginLoader(classPath, _consumerClaz, null);
 		
 		List<Object> objs = loader.load();
@@ -99,6 +130,10 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	
 	private JCheckBoxMenuItem createMenuItem(PhysicsEventConsumer consumer, boolean selected) {
 		JCheckBoxMenuItem item = new JCheckBoxMenuItem(consumer.getConsumerName(), selected);
+		
+		if (hash.size() == 0) {
+			_menu.addSeparator();
+		}
 		hash.put(consumer, item);
 		return item;
 	}
@@ -111,6 +146,10 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		if (_menu == null) {
 			_menu = new JMenu("Consumers");
 			
+			_loadItem = new JMenuItem("Load a consumer .class file...");
+			_loadItem.addActionListener(instance);
+			_menu.add(_loadItem);
+			
 			for (PhysicsEventConsumer consumer : this) {
 				_menu.add(createMenuItem(consumer, true));
 			}
@@ -119,6 +158,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		
 		return _menu;
 	}
+	
 	
 	private boolean isActive(PhysicsEventConsumer consumer) {
 		if (consumer == null) {
@@ -180,4 +220,51 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		}		
 	}
 	
+	// get a property or environment variable
+	// the property takes precedence
+	private String sysPropOrEnvVar(String key) {
+		String s = System.getProperty(key);
+		if (s == null) {
+			s = System.getenv(key);
+		}
+		return s;
+	}
+	
+	//direct load of a class
+	private void handleLoad() {
+		//open the file
+		
+		JFileChooser chooser = new JFileChooser(dataFilePath);
+		chooser.setSelectedFile(null);
+		chooser.setFileFilter(_classFileFilter);
+		int returnVal = chooser.showOpenDialog(null);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = chooser.getSelectedFile();
+			
+			try {
+				String className = PluginLoader.getFullClassName(file);
+				Object object = PluginLoader.instantiateFromClassFile(file, className);
+				if (object instanceof PhysicsEventConsumer) {
+					PhysicsEventConsumer consumer = (PhysicsEventConsumer)object;
+					add(consumer);
+					_menu.add(createMenuItem(consumer, true));
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			
+			
+		}
+
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent e) {
+		if (e.getSource() == _loadItem) {
+			handleLoad();
+		}
+	}
+
+
 }

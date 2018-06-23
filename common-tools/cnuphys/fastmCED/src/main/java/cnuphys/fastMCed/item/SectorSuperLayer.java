@@ -12,6 +12,7 @@ import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.item.PolygonItem;
 import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.view.sector.ISuperLayer;
 import cnuphys.fastMCed.view.sector.SectorView;
@@ -36,7 +37,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	// sector 1-based 1..6
 	private int _sector;
 
-	private int _superlayer;
+	private int _superLayer;
 
 	// cache the outline
 	private Point2D.Double[] _cachedWorldPolygon = GeometryManager.allocate(34);
@@ -63,7 +64,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 		super(logLayer);
 		_view = view;
 		_sector = sector;
-		_superlayer = superLayer;
+		_superLayer = superLayer;
 		_superlayerDrawer = new SuperLayerDrawing(_view, this);
 	}
 	
@@ -110,6 +111,8 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	public void getFeedbackStrings(IContainer container, Point screenPoint, Point2D.Double worldPoint,
 			List<String> feedbackStrings) {
 		_superlayerDrawer.getFeedbackStrings(container, screenPoint, worldPoint, feedbackStrings);
+		
+
 	}
 
 	/**
@@ -127,7 +130,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	private Point2D.Double[] getWorldPolygon() {
 
 		if (_dirty) {
-			DCGeometry.getSuperLayerPolygon(_superlayer, projectionPlane(), _cachedWorldPolygon);
+			DCGeometry.getSuperLayerPolygon(_superLayer, projectionPlane(), _cachedWorldPolygon);
 			if (isLowerSector()) {
 				SuperLayerDrawing.flipPolyToLowerSector(_cachedWorldPolygon);
 			}
@@ -168,7 +171,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	 */
 	@Override
 	public int superlayer() {
-		return _superlayer;
+		return _superLayer;
 	}
 	
 	/**

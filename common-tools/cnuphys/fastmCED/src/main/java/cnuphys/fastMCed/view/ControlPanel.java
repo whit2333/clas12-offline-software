@@ -10,17 +10,16 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import cnuphys.bCNU.feedback.FeedbackPane;
 import cnuphys.bCNU.graphics.colorscale.ColorModelLegend;
-import cnuphys.bCNU.graphics.colorscale.ColorModelPanel;
 import cnuphys.bCNU.graphics.component.CommonBorder;
 import cnuphys.bCNU.util.Bits;
 import cnuphys.bCNU.util.Fonts;
 import cnuphys.bCNU.util.UnicodeSupport;
 import cnuphys.fastMCed.item.MagFieldItem;
+import cnuphys.fastMCed.snr.NoisePanel;
 
 @SuppressWarnings("serial")
 /**
@@ -29,7 +28,7 @@ import cnuphys.fastMCed.item.MagFieldItem;
  * @author heddle
  *
  */
-public class ControlPanel extends JPanel implements ChangeListener {
+public class ControlPanel extends JPanel  {
 
 	private static final int SLIDERWIDTH = 210;
 	private static final int FEEDBACKWIDTH = 220;
@@ -61,14 +60,9 @@ public class ControlPanel extends JPanel implements ChangeListener {
 	 * Bit used to create a feedback pane
 	 */
 	public static final int FEEDBACK = 040;
-
+	
 	/**
-	 * Bit used to create an accumulation legend
-	 */
-	public static final int ACCUMULATIONLEGEND = 0100;
-
-	/**
-	 * Bit used to create an accumulation legend
+	 * Bit used to create a noise panel
 	 */
 	public static final int NOISECONTROL = 0200;
 
@@ -94,13 +88,13 @@ public class ControlPanel extends JPanel implements ChangeListener {
 
 	// the feedback pane
 	private FeedbackPane _feedbackPane;
+	
+	// noise display panel
+	private NoisePanel _noisePanel;
 
 	// colums and gaps for display array
 	private int _nc;
 	private int _hgap;
-
-	// color model panel for accumulation
-	private ColorModelPanel _colorPanel;
 
 	private static int MIN_WIDTH = 250;
 
@@ -173,6 +167,11 @@ public class ControlPanel extends JPanel implements ChangeListener {
 	private JTabbedPane addTabbedPane(AView view, int controlPanelBits, int displayArrayBits) {
 		JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.setFont(Fonts.smallFont);
+		
+		// dc noise control
+		if (Bits.checkBit(controlPanelBits, NOISECONTROL)) {
+			_noisePanel = new NoisePanel(_view);
+		}
 
 		// mag field
 
@@ -247,17 +246,11 @@ public class ControlPanel extends JPanel implements ChangeListener {
 			tabbedPane.add(magFieldPanel, "field");
 		}
 
+		if (_noisePanel != null) {
+			tabbedPane.add(_noisePanel, "noise");
+		}
 
 		return tabbedPane;
-	}
-
-	/**
-	 * Get the slider for the acumulation legend
-	 * 
-	 * @return the slider
-	 */
-	public JSlider getAccumulationSlider() {
-		return (_colorPanel == null) ? null : _colorPanel.getSlider();
 	}
 
 	/**
@@ -374,20 +367,31 @@ public class ControlPanel extends JPanel implements ChangeListener {
 		return _magFieldDisplayArray;
 	}
 
+	/**
+	 * Convenience method to see it we show results of the SNR analysis
+	 * 
+	 * @return <code>true</code> if we are to show results of the SNR analysis
+	 */
+	public boolean showSNRAnalysis() {
+		return _noisePanel.showSNRAnalysis();
+	}
 
-	@Override
-	public void stateChanged(ChangeEvent e) {
-		Object source = e.getSource();
-		if (_colorPanel != null) {
-			JSlider slider = _colorPanel.getSlider();
+	/**
+	 * Convenience method to see it we show the segment masks
+	 * 
+	 * @return <code>true</code> if we are to show the masks.
+	 */
+	public boolean showMasks() {
+		return _noisePanel.showMasks();
+	}
 
-			if (source == slider) {
-				double val = _colorPanel.getValue();
-				_view.setMedianSetting(val);
-				_view.refresh();
-			}
-		}
-
+	/**
+	 * Convenience method to see it we hide the noise hits
+	 * 
+	 * @return <code>true</code> if we are to hide the noise hits
+	 */
+	public boolean hideNoise() {
+		return _noisePanel.hideNoise();
 	}
 
 }

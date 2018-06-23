@@ -89,7 +89,7 @@ public class StreamManager {
 			StreamProcessStatus status = listener.streamingPhysicsEvent(event);
 			
 			if (status == StreamProcessStatus.FLAG) {
-				System.err.println("DUDE " + Thread.currentThread().getName());
+
 				StreamManager.getInstance().setStreamState(StreamReason.PAUSED);
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override

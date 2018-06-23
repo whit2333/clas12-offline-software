@@ -32,7 +32,7 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	public abstract void streamingChange(StreamReason reason);
 
 	/**
-	 * A new event in the stream. This occures when FastMCed is  not
+	 * A new event in the stream. This occurs when FastMCed is  not
 	 * looking event by event, but when it is quickly streaming through
 	 * a large number of events. NOTE: this is NOT on a separate thread.It
 	 * will in fact be on the GUI thread. This is by design.

@@ -7,6 +7,7 @@ import javax.swing.table.DefaultTableModel;
 
 import org.jlab.geom.DetectorHit;
 
+import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.lund.LundId;
 
@@ -164,25 +165,25 @@ public class DataTableModel extends DefaultTableModel {
 		if (plist != null) {
 			for (ParticleHits phits : plist) {
 
-				List<DetectorHit> hitList = null;
+				List<AugmentedDetectorHit> hitList = null;
 
 				switch (_detector) {
 				case DETECTOR_DC:
-					if (phits.DCHitCount() > 0) {
+					if (phits.hitCountDC() > 0) {
 						hitList = phits.getDCHits();
 					}
 					break;
 
 				case DETECTOR_FTOF:
-					if (phits.FTOFHitCount() > 0) {
+					if (phits.hitCountFTOF() > 0) {
 						hitList = phits.getFTOFHits();
 					}
 					break;
 				} //end switch
 				
 				if (hitList != null) {
-					for (DetectorHit hit : hitList) {
-						HitAndID hitID = new HitAndID(phits.getLundId(), hit);
+					for (AugmentedDetectorHit aughit : hitList) {
+						HitAndID hitID = new HitAndID(phits.getLundId(), aughit);
 						_data.add(hitID);
 					}
 				}
@@ -200,13 +201,15 @@ public class DataTableModel extends DefaultTableModel {
 	}
 	
 
-	class HitAndID extends Vector<DetectorHit> {
+	class HitAndID extends Vector<AugmentedDetectorHit> {
 		public final String name;
+		public final AugmentedDetectorHit augHit;
 		public final DetectorHit hit;
 		public final int intId;
 		
-		public HitAndID(LundId lid, DetectorHit hit) {
-			this.hit = hit;
+		public HitAndID(LundId lid, AugmentedDetectorHit augHit) {
+			this.augHit = augHit;
+			hit = augHit.hit;
 			name = (lid == null) ? "???" : lid.getName();
 			intId = (lid == null) ? -999 : lid.getId();
 		}

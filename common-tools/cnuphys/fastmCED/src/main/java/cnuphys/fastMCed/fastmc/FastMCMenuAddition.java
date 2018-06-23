@@ -2,14 +2,11 @@ package cnuphys.fastMCed.fastmc;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
@@ -18,7 +15,6 @@ import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
-import cnuphys.fastMCed.fastmc.accept.AcceptanceManager;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
 import cnuphys.fastMCed.streaming.StreamDialog;
 import cnuphys.fastMCed.streaming.StreamManager;
@@ -26,7 +22,7 @@ import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 
-public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysicsEventListener, IStreamProcessor {
+public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener, IStreamProcessor {
 
 	//the physics event manager
 	private PhysicsEventManager _physicsEventManager = PhysicsEventManager.getInstance();
@@ -34,14 +30,7 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 	// the open menu
 	private JMenuItem _openItem;
 
-	// define acceptance
-	private JMenu _acceptanceMenu;
-	
 	private StreamDialog _streamDialog;
-
-	// hard coded acceptance definitions
-	private JCheckBoxMenuItem _eItem;
-	private JCheckBoxMenuItem _pItem;
 
 	// the next menu item
 	private JMenuItem _nextItem;
@@ -67,19 +56,12 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 	public FastMCMenuAddition(JMenu menu) {
 		_menu = menu;
 
-		// had hardcoded rules
-		_acceptanceMenu = new JMenu("Acceptance Rule");
-		_eItem = addCheckBoxItem("e- in 36 DC layers",
-				AcceptanceManager.getInstance().getElectronCondition().isActive());
-		_pItem = addCheckBoxItem("p in 36 DC layers", AcceptanceManager.getInstance().getProtonCondition().isActive());
 
 		// add things in reverse order because of the items already in the file
 		// menu
 		_menu.insertSeparator(0);
 		_streamItem = addItem("Stream Events...", KeyEvent.VK_S);
 		_nextItem = addItem("Next Event", KeyEvent.VK_N);
-		_menu.insertSeparator(0);
-		_menu.add(_acceptanceMenu, 0);
 		_menu.insertSeparator(0);
 
 		_menu.add(getRecentEventFileMenu(), 0);
@@ -188,14 +170,6 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 		}
 
 	}
-
-	// add a menu item
-	private JCheckBoxMenuItem addCheckBoxItem(String label, boolean on) {
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(label, on);
-		item.addItemListener(this);
-		_acceptanceMenu.add(item);
-		return item;
-	}
 	
 	// add a menu item
 	private JMenuItem addItem(String label) {
@@ -265,18 +239,6 @@ public class FastMCMenuAddition implements ActionListener, ItemListener, IPhysic
 
 		_nextItem.setEnabled(goodFile && !streaming);
 		_streamItem.setEnabled(goodFile && !streaming);
-	}
-
-	@Override
-	public void itemStateChanged(ItemEvent e) {
-		Object o = e.getSource();
-		if (o == _eItem) {
-			AcceptanceManager.getInstance().getElectronCondition().setActive(_eItem.isSelected());
-
-		} else if (o == _pItem) {
-			AcceptanceManager.getInstance().getProtonCondition().setActive(_pItem.isSelected());
-		}
-		AcceptanceManager.getInstance().testEvent(PhysicsEventManager.getInstance().getCurrentEvent());
 	}
 
 	@Override

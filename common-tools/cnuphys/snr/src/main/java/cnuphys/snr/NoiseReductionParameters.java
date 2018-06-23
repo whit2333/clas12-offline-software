@@ -241,6 +241,8 @@ public class NoiseReductionParameters {
 		for (int layer = 0; layer < _numLayer; layer++) {
 			_packedData[layer].clear();
 		}
+		leftSegments.clear();
+		rightSegments.clear();
 		_analyzed = false;
 	}
 

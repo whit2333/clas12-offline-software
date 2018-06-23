@@ -9,36 +9,37 @@ import java.awt.Shape;
 import java.awt.geom.Point2D;
 import java.util.List;
 
-import org.jlab.geom.DetectorHit;
-import org.jlab.geom.prim.Line3D;
 import org.jlab.geom.prim.Point3D;
 
 import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.graphics.world.WorldGraphicsUtilities;
-import cnuphys.bCNU.log.Log;
 import cnuphys.bCNU.util.MathUtilities;
-import cnuphys.bCNU.util.VectorSupport;
 import cnuphys.bCNU.util.X11Colors;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastmc.geometry.DCGeometry;
 import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.lund.LundId;
+import cnuphys.snr.NoiseReductionParameters;
 
 public class SuperLayerDrawing {
 
 	// convenient access to the event manager
 	private PhysicsEventManager _eventManager = PhysicsEventManager.getInstance();
+	
+	private static final int NUM_LAYER = 6;
+	private static final int NUM_SUPERLAYER = 6;
+	private static final int NUM_WIRE = 112;
+
 
 	// pixel density thresholds. As we zoom in. the pixels/cm increases. At
 	// certain thresholds, other drawing kicks in
 	public static final double wireThreshold[] = { Double.NaN, 2.0, 2.0, 1.7, 1.7, 1.6, 1.6 };
 	public static final double closeupThreshold[] = { Double.NaN, 16.0, 16.0, 12.0, 12.0, 7.0, 7.0 };
 	
-	/** number of wires in any layer */
-	public static final int NUM_WIRE = 112;
-
 	// for hits cells
 	public static final Color defaultHitCellFill = Color.red;
 	public static final Color defaultHitCellLine = X11Colors.getX11Color("Dark Red");
@@ -107,6 +108,12 @@ public class SuperLayerDrawing {
 				.getMeanPixelDensity(_view.getContainer()) > SuperLayerDrawing.wireThreshold[_iSupl.superlayer()])) {
 			drawWires(g, container, reallyClose);
 		}
+		
+		//draw SNR masks?
+		if (_view.showMasks()) {
+			drawSNRMasks(g, container);
+		}
+
 
 		// draw the hits
 		drawHits(g, container, reallyClose);
@@ -116,6 +123,74 @@ public class SuperLayerDrawing {
 		g.drawPolygon(lastDrawnPolygon);
 
 		g2.setClip(clip);
+	}
+	
+	//draw the SNR mask data where SNR thinks segments mught start
+	private void drawSNRMasks(Graphics g, IContainer container) {
+		//need zero based sector and super layer
+		NoiseReductionParameters parameters = SNRManager.getInstance().getParameters(
+				_iSupl.sector() - 1, _iSupl.superlayer() - 1);
+
+		for (int wire = 0; wire < parameters.getNumWire(); wire++) {
+			boolean leftSeg = parameters.getLeftSegments().checkBit(wire);
+			boolean rightSeg = parameters.getRightSegments().checkBit(wire);
+			if (leftSeg) {
+				drawMask(g, container, wire, parameters.getLeftLayerShifts(), 1);
+			}
+			if (rightSeg) {
+				drawMask(g, container, wire, parameters.getRightLayerShifts(), -1);
+			}
+		}
+	}
+	
+	/**
+	 * Draws the masking that shows where the noise algorithm thinks there are
+	 * segments. Anything not masked is noise.
+	 * 
+	 * @param g
+	 *            the graphics context.
+	 * @param container
+	 *            the rendering container
+	 * @param wire
+	 *            the ZERO BASED wire 0..
+	 * @param shifts
+	 *            the parameter shifts for this direction
+	 * @param sign
+	 *            the direction 1 for left -1 for right * @param wr essentially
+	 *            workspace
+	 */
+	private void drawMask(Graphics g, IContainer container, int wire, int shifts[], int sign) {
+
+		wire++; // convert to 1-based
+
+		if (sign == 1) {
+			g.setColor(SNRManager.maskFillLeft);
+		} else {
+			g.setColor(SNRManager.maskFillRight);
+		}
+
+		for (int layer = 1; layer <= NUM_LAYER; layer++) {
+
+			Polygon hexagon = getHexagon(container, layer, wire);
+
+			if (hexagon != null) {
+				g.fillPolygon(hexagon);
+				g.drawPolygon(hexagon);
+			}
+
+			// ugh -- shifts are 0-based
+			for (int shift = 1; shift <= shifts[layer - 1]; shift++) {
+				int tempWire = wire + sign * shift;
+				if ((tempWire > 0) && (tempWire <= NUM_WIRE)) {
+					hexagon = getHexagon(container, layer, tempWire);
+					if (hexagon != null) {
+						g.fillPolygon(hexagon);
+						g.drawPolygon(hexagon);
+					}
+				}
+			}
+		}
+
 	}
 
 	/**
@@ -190,14 +265,14 @@ public class SuperLayerDrawing {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), 0);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), 0);
 
 				if (!filteredHits.isEmpty()) {
-					for (DetectorHit hit : filteredHits) {
+					for (AugmentedDetectorHit hit : filteredHits) {
 						int layer = hit.getLayerId() + 1;
 						int wire = hit.getComponentId() + 1;
 
-						drawDCHit(g, container, layer, wire, false, lid);
+						drawDCHit(g, container, layer, wire, hit.isNoise(), lid);
 
 					}
 				}
@@ -224,6 +299,11 @@ public class SuperLayerDrawing {
 	 */
 	private void drawDCHit(Graphics g, IContainer container, int layer, int wire, boolean noise, LundId pid) {
 
+		//might not even draw it if it is noise
+		if (noise && _view.hideNoise()) {
+			return;
+		}
+
 
 		// get the hexagon
 		Polygon hexagon = getHexagon(container, layer, wire);
@@ -232,6 +312,11 @@ public class SuperLayerDrawing {
 		}
 		
 		Color fc = pid.getStyle().getFillColor();
+		
+		if (noise && _view.showNoiseAnalysis()) {
+			fc = Color.black;
+		}
+		
 		Color lc = pid.getStyle().getLineColor();
 		
 		g.setColor(fc);
@@ -539,29 +624,41 @@ public class SuperLayerDrawing {
 			int data[] = new int[2];
 			getLayerAndWire(container, screenPoint, data);
 			int layer = data[0];
-			int wire = data[1];
+			int wire = data[1];  
+	
+			feedbackStrings.add("Superlayer " + _iSupl.superlayer() + "  Layer "
+					+ layer + "  Wire " + wire);
+
 			
-			
+			int wire0 = wire-1;  //convert to 0 based
 			List<ParticleHits> hits = _eventManager.getParticleHits();
 
 			if (hits != null) {
 				for (ParticleHits particleHits : hits) {
 					LundId lid = particleHits.getLundId();
 
-					List<DetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), layer);
+					List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), layer);
 
 					if (!filteredHits.isEmpty()) {
-						for (DetectorHit hit : filteredHits) {
-							if (hit.getComponentId() == wire) {
+						for (AugmentedDetectorHit hit : filteredHits) {
+							if (hit.getComponentId() == wire0) {
+								
+								//might not even care if it is noise
+								if (hit.isNoise() && _view.hideNoise()) {
+									break;
+								}
+								
 								ParticleHits.addHitFeedback(hit, lid, feedbackStrings);
+								break;
 							}
 						}
 					}
 				}
 			}		
 
+			SNRManager.getInstance().addParametersToFeedback(_iSupl.sector(), _iSupl.superlayer(), feedbackStrings);
 
-		}
+		} //contains
 	}
 
 

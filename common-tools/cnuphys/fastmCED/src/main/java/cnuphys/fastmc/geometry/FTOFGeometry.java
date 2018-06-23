@@ -16,6 +16,9 @@ import org.jlab.geom.prim.Path3D;
 import org.jlab.geom.prim.Plane3D;
 import org.jlab.geom.prim.Point3D;
 
+import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
+import cnuphys.fastMCed.fastmc.ParticleHits;
+
 public class FTOFGeometry {
 
 	public static final int PANEL_1A = 0;
@@ -55,11 +58,12 @@ public class FTOFGeometry {
 	 * @param path the path generated from a swim trajectory for the full detector
 	 * @return the list of hits FastMC geometry only.
 	 */
-	public static List<DetectorHit> getHits(Path3D path) {
+	public static List<AugmentedDetectorHit> getHits(Path3D path) {
 		if (path == null) {
 			return null;
 		}
-		return _ftofDetector.getHits(path);
+		return ParticleHits.fromDetectorHits(_ftofDetector.getHits(path));
+
 	}
 	
 	/**
@@ -69,11 +73,11 @@ public class FTOFGeometry {
 	 * @param path the 3D path
 	 * @return the layer hits
 	 */
-	public static List<DetectorHit> getHits(int sect0, int ptype, Path3D path) {
+	public static List<AugmentedDetectorHit> getHits(int sect0, int ptype, Path3D path) {
 		if (path == null) {
 			return null;
 		}
-		return _ftofLayers[sect0][ptype].getHits(path);
+		return ParticleHits.fromDetectorHits(_ftofLayers[sect0][ptype].getHits(path));
 	}
 
 	/**

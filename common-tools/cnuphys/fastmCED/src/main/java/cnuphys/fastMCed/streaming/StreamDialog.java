@@ -31,7 +31,7 @@ import cnuphys.fastMCed.eventio.PhysicsEventManager;
 public class StreamDialog extends JDialog implements IStreamProcessor {
 
 	/**
-	 * Maximum number of events we will allow for accumulation
+	 * Maximum number of events we will allow for streaming
 	 */
 	public static final int MAXSTREAMCOUNT = 1000000;
 
@@ -41,7 +41,7 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	// get the number of events
 	private JTextField _numberField;
 
-	// progress bar as events are accumulated
+	// progress bar as events are streamed
 	private JProgressBar _progressBar;
 
 	// path to event file
@@ -65,16 +65,11 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	private JButton _resumeButton;
 	private JButton _closeButton;
 
-	
-
-	// Object that accumulates and stores data
-	// This will be the accumulation manager
-//	private IAccumulator _accumulator;
 
 	private static int lastCount = 1000;
 
 	/**
-	 * Constructor for the accumulation Dialog
+	 * Constructor for the streaming Dialog
 	 */
 	public StreamDialog() {
 		setTitle("Stream Events");
@@ -119,7 +114,7 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 		subBox.setBorder(new CommonBorder("Event File"));
 		box.add(DialogUtilities.paddedPanel(6, 6, subBox));
 
-		// accumulation panel
+		// streaming panel
 		box.add(streamPanel(_numRemaining > 0));
 
 		// progress bar
@@ -164,7 +159,7 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	private JPanel streamPanel(boolean hasSource) {
 		JPanel panel = new JPanel();
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
-		panel.add(new JLabel("Number to accumulate: "));
+		panel.add(new JLabel("Number to stream: "));
 		_numberField = new JTextField(6);
 
 		if (!hasSource) {

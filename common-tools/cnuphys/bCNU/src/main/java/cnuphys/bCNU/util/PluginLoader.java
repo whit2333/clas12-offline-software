@@ -1,13 +1,18 @@
 package cnuphys.bCNU.util;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Vector;
 
@@ -42,6 +47,10 @@ public class PluginLoader {
 		}
 
 	};
+	
+	private PluginLoader() {
+		
+	}
 
 	/**
 	 * Plugin (actually any object) loader for a given class
@@ -90,7 +99,7 @@ public class PluginLoader {
 		}
 
 		// get the class path pieces which should be directories Or jar files
-		String cptokens[] = Environment.getInstance().splitClassPath();
+		String cptokens[] = Environment.getInstance().splitPath(_classPath);
 
 		if (cptokens != null) {
 			for (String cptoken : cptokens) {
@@ -204,6 +213,38 @@ public class PluginLoader {
 		}
 		// System.exit(0);
 	}
+	
+	public static String getFullClassName(File file) throws IOException {           
+ 
+        PluginLoader pl = new PluginLoader();
+        MCL mcl = pl.new MCL(file);
+        
+        String name = mcl.getClassname();
+        return name;
+    }
+
+	
+	public static Object instantiateFromClassFile(File file, String className) {
+		URI uri = file.toURI();
+		try {
+			URL url[] = {uri.toURL()};
+			URLClassLoader ucl = new URLClassLoader(url);
+			Class claz = ucl.loadClass(className);
+			if (!isAbstract(claz)) {
+				return claz.newInstance();
+			}
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
 
 	// load the classes
 	private void loadClasses(List<Object> objects, Vector<PHolder> v) {
@@ -255,7 +296,7 @@ public class PluginLoader {
 	}
 
 	// is the class abstract?
-	private boolean isAbstract(Class claz) {
+	private static boolean isAbstract(Class claz) {
 		if (claz == null) {
 			return false;
 		}
@@ -263,7 +304,7 @@ public class PluginLoader {
 		return Modifier.isAbstract(claz.getModifiers());
 	}
 	
-	private boolean isAnonClass(Class claz) {
+	private static boolean isAnonClass(Class claz) {
 		if (claz == null) {
 			return false;
 		}
@@ -341,5 +382,29 @@ public class PluginLoader {
 			this.file = file;
 			this.className = className;
 		}
+	}
+	
+	class MCL extends ClassLoader {
+		
+		ByteBuffer bb;
+		
+		public MCL(File file) {
+	        FileChannel roChannel;
+			try {
+				roChannel = new RandomAccessFile(file, "r").getChannel();
+		        bb = roChannel.map(FileChannel.MapMode.READ_ONLY, 0, (int)roChannel.size());         
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} 
+
+		}
+		
+		
+    	public String getClassname() {
+     		Class<?> clazz = defineClass((String)null, bb, (ProtectionDomain)null);
+    		return (clazz == null) ? null : clazz.getName();
+    	}
 	}
 }

@@ -49,11 +49,7 @@ import org.jlab.geom.prim.Vector3D;
 @SuppressWarnings("serial")
 public abstract class AView extends BaseView implements IFeedbackProvider, SwimTrajectoryListener,
 		MagneticFieldChangeListener, IPhysicsEventListener {
-	
-	//for accumulation drawing
-	private double _medianRelSetting = 0.25;
-
-	
+		
 	static protected FieldProbe _activeProbe;
 		
 	//to add separator for first clone
@@ -665,26 +661,43 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 		wp.y = Math.hypot(pisect.x(), pisect.y());
 		return pisect;
 	}
-	
+		
+	/**
+	 * Convenience method to see it we show results of the SNR analysis
+	 * 
+	 * @return <code>true</code> if we are to show results of the SNR analysis
+	 */
+	public boolean showNoiseAnalysis() {
+		if (_controlPanel == null) {
+			return false;
+		}
+		return _controlPanel.showSNRAnalysis();
+	}
 
 	/**
-	 * Get the median setting used in accumulation drawing
-	 * @return the median setting used in accumulation drawing
+	 * Convenience method to see it we show the segment masks
+	 * 
+	 * @return <code>true</code> if we are to show the masks.
 	 */
-	public double getMedianSetting() {
-		return _medianRelSetting;
+	public boolean showMasks() {
+		if (_controlPanel == null) {
+			return false;
+		}
+		return _controlPanel.showMasks();
 	}
-	
-	/**
-	 * Set the median setting used in accumulation drawing
-	 * @param medianSetting the median setting used in accumulation drawing
-	 */
-	public void setMedianSetting(double medianSetting) {
-		_medianRelSetting = Math.max(0, Math.min(1, medianSetting));
-	}
-	
 
-	
+	/**
+	 * Convenience method to see it we hide the noise hits
+	 * 
+	 * @return <code>true</code> if we are to hide the noise hits
+	 */
+	public boolean hideNoise() {
+		if (_controlPanel == null) {
+			return false;
+		}
+		return _controlPanel.hideNoise();
+	}
+
 	/**
 	 * Clone the view. 
 	 * @return the cloned view

@@ -11,18 +11,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
-import org.jlab.geom.DetectorHit;
 import org.jlab.geom.prim.Path3D;
 import org.jlab.physics.io.LundReader;
 
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.util.Environment;
-import cnuphys.fastMCed.fastmc.NoiseData;
 import cnuphys.fastMCed.fastmc.ParticleHits;
-import cnuphys.fastMCed.fastmc.accept.AcceptanceManager;
-import cnuphys.fastMCed.fastmc.accept.AcceptanceResult;
-import cnuphys.fastMCed.fastmc.accept.AcceptanceStatus;
 import cnuphys.fastMCed.frame.FastMCed;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.lund.LundFileSupport;
@@ -48,8 +44,11 @@ public class PhysicsEventManager {
 	// current generated event
 	private PhysicsEvent _currentEvent;
 
-	private Vector<ParticleHits> _particleHits = new Vector<ParticleHits>();
-
+	//particle hits corresponding to the current event.
+	//these are the results from the FastMC engine given the tracks
+	//found in Lund file event and swum by Swimmer
+	private Vector<ParticleHits> _currentParticleHits = new Vector<ParticleHits>();
+		
 	// Lund reader
 	private LundReader _lundReader;
 
@@ -204,9 +203,9 @@ public class PhysicsEventManager {
 	 * @return the number of dc hits for tht particle
 	 */
 	public int particleDCHitCount(int lundid) {
-		for (ParticleHits phits : _particleHits) {
+		for (ParticleHits phits : _currentParticleHits) {
 			if (phits.lundId() == lundid) {
-				return phits.DCHitCount();
+				return phits.hitCountDC();
 			}
 		}
 		return 0;
@@ -215,7 +214,8 @@ public class PhysicsEventManager {
 	// parse the event
 	// this gets the event first.
 	private void parseEvent(PhysicsEvent event) {
-		_particleHits.clear();
+		
+		_currentParticleHits.clear();
 		Swimming.setNotifyOn(false); // prevent refreshes
 		Swimming.clearAllTrajectories();
 		Swimming.setNotifyOn(true); // prevent refreshes
@@ -236,33 +236,40 @@ public class PhysicsEventManager {
 			for (SwimTrajectory traj : trajectories) {
 				if (traj.getLundId() != null) {
 					Path3D path3D = GeometryManager.fromSwimTrajectory(traj);
-					_particleHits.add(new ParticleHits(traj.getLundId(), path3D));
+					_currentParticleHits.add(new ParticleHits(traj.getLundId(), path3D));
 				}
 			}
 		}
-
-		// TODO figure out what to do with the acceptance mechansim.
-		AcceptanceResult accResult = AcceptanceManager.getInstance().testEvent(event);
-		if (accResult.status == AcceptanceStatus.NOTACCEPTED) {
-			System.err.println("Not Accepted " + accResult.condition.getDescription());
-		}
+		
+		//do the SNR analysis
+		SNRManager.getInstance().analyzeSNR(_currentParticleHits);
 
 		// notify all listeners of the event
 
 		if (StreamManager.getInstance().isStarted()) {
 			StreamManager.getInstance().notifyStreamListeners(event);
 		} else {
-			notifyPhysicsListeners(event);
+			Runnable runnable = new Runnable() {
+
+				@Override
+				public void run() {
+					notifyPhysicsListeners(event);
+				}
+				
+			};
+			(new Thread(runnable)).start();
+	//		notifyPhysicsListeners(event);
 		}
 	}
 
 	/**
-	 * Get the hits for all particles
-	 * 
-	 * @return the detector hits
+	 * Get the hits for all particles in the current event
+	 * These are the results from the FastMC engine given the tracks
+	 * found in Lund file event and swum by Swimmer
+	 * @return the detector hits for the current event
 	 */
 	public Vector<ParticleHits> getParticleHits() {
-		return _particleHits;
+		return _currentParticleHits;
 	}
 
 	/**
@@ -333,49 +340,6 @@ public class PhysicsEventManager {
 		return _currentEvent;
 	}
 
-	/**
-	 * Get the data needed to run the SNR analysis
-	 * 
-	 * @return the data for the snr analysis
-	 */
-	public NoiseData getNoiseData() {
-
-		if ((_particleHits == null) || (_particleHits.isEmpty())) {
-			return null;
-		}
-
-		// count DC hits
-		int count = 0;
-		for (ParticleHits phits : _particleHits) {
-			count += phits.DCHitCount();
-		}
-
-		if (count == 0) {
-			return null;
-		}
-
-		NoiseData nd = new NoiseData();
-		nd.count = count;
-		nd.sector = new byte[count];
-		nd.superlayer = new byte[count];
-		nd.layer = new byte[count];
-		nd.wire = new short[count];
-		int index = 0;
-		for (ParticleHits phits : _particleHits) {
-			List<DetectorHit> ldh = phits.getDCHits();
-			if (ldh != null) {
-				for (DetectorHit hit : ldh) {
-					nd.sector[index] = (byte) (hit.getSectorId() + 1);
-					nd.superlayer[index] = (byte) (hit.getSuperlayerId() + 1);
-					nd.layer[index] = (byte) (hit.getLayerId() + 1);
-					nd.wire[index] = (short) (hit.getComponentId() + 1);
-					index++;
-				}
-			}
-		}
-
-		return nd;
-	}
 
 	/**
 	 * Open a Lund File
@@ -403,7 +367,7 @@ public class PhysicsEventManager {
 		_eventNum = 0;
 		_currentEvent = null;
 		_currentFile = null;
-		_particleHits.clear();
+		_currentParticleHits.clear();
 	}
 
 	/**
