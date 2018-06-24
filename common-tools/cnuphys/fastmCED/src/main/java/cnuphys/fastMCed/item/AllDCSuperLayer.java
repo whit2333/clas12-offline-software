@@ -28,10 +28,10 @@ import cnuphys.bCNU.util.X11Colors;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.geometry.DCGeometry;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.alldc.AllDCView;
-import cnuphys.fastmc.geometry.DCGeometry;
 
 public class AllDCSuperLayer extends RectangleItem {
 	

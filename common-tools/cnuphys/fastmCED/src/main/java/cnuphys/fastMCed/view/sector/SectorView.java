@@ -49,6 +49,9 @@ import cnuphys.bCNU.view.BaseView;
 import cnuphys.bCNU.view.PlotView;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.frame.FastMCed;
+import cnuphys.fastMCed.geometry.FTOFGeometry;
+import cnuphys.fastMCed.geometry.FTOFPanel;
+import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.item.BeamLineItem;
 import cnuphys.fastMCed.item.FTOFPanelItem;
 import cnuphys.fastMCed.item.MagFieldItem;
@@ -56,9 +59,6 @@ import cnuphys.fastMCed.item.SectorSuperLayer;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.ControlPanel;
 import cnuphys.fastMCed.view.DisplayBits;
-import cnuphys.fastmc.geometry.FTOFGeometry;
-import cnuphys.fastmc.geometry.FTOFPanel;
-import cnuphys.fastmc.geometry.GeometryManager;
 
 /**
  * This is the classic sector view.

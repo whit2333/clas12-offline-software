@@ -8,8 +8,8 @@ import java.util.Vector;
 import org.jlab.geom.DetectorHit;
 import org.jlab.geom.prim.Path3D;
 
-import cnuphys.fastmc.geometry.DCGeometry;
-import cnuphys.fastmc.geometry.FTOFGeometry;
+import cnuphys.fastMCed.geometry.DCGeometry;
+import cnuphys.fastMCed.geometry.FTOFGeometry;
 import cnuphys.lund.LundId;
 import cnuphys.snr.clas12.Clas12NoiseResult;
 import cnuphys.splot.plot.DoubleFormat;

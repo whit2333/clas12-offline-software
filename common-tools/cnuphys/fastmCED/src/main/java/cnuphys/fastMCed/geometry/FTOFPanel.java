@@ -1,4 +1,4 @@
-package cnuphys.fastmc.geometry;
+package cnuphys.fastMCed.geometry;
 
 
 import java.awt.geom.Point2D;

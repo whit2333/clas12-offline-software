@@ -18,10 +18,10 @@ import cnuphys.bCNU.util.X11Colors;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.geometry.DCGeometry;
+import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
-import cnuphys.fastmc.geometry.DCGeometry;
-import cnuphys.fastmc.geometry.GeometryManager;
 import cnuphys.lund.LundId;
 import cnuphys.snr.NoiseReductionParameters;
 

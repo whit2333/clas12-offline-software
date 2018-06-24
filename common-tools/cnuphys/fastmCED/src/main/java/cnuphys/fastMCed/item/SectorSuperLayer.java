@@ -12,13 +12,13 @@ import cnuphys.bCNU.graphics.container.IContainer;
 import cnuphys.bCNU.item.PolygonItem;
 import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.geometry.DCGeometry;
+import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.view.sector.ISuperLayer;
 import cnuphys.fastMCed.view.sector.SectorView;
 import cnuphys.fastMCed.view.sector.SuperLayerDrawing;
-import cnuphys.fastmc.geometry.DCGeometry;
-import cnuphys.fastmc.geometry.GeometryManager;
 
 /**
  * Used in SectorView views.

@@ -12,10 +12,10 @@ import cnuphys.bCNU.graphics.world.WorldGraphicsUtilities;
 import cnuphys.bCNU.item.PolygonItem;
 import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.geometry.FTOFPanel;
+import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.view.sector.SectorView;
-import cnuphys.fastmc.geometry.FTOFPanel;
-import cnuphys.fastmc.geometry.GeometryManager;
 
 public class FTOFPanelItem extends PolygonItem {
 	

@@ -33,7 +33,7 @@ import cnuphys.bCNU.view.BaseView;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
-import cnuphys.fastmc.geometry.GeometryManager;
+import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.lund.SwimTrajectoryListener;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.MagneticFieldChangeListener;
