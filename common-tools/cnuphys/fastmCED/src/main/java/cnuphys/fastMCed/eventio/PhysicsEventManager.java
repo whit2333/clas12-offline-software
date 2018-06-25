@@ -102,22 +102,6 @@ public class PhysicsEventManager {
 		return instance;
 	}
 
-	// /**
-	// * Are we streaming?
-	// * @return <code>true</code>if we are in streaming mode
-	// */
-	// public boolean isStreaming() {
-	// return _streaming;
-	// }
-	//
-	// /**
-	// * Set whether we are streaming
-	// * @param streaming the value of the flag
-	// */
-	// public void setStreaming(boolean streaming) {
-	// _streaming = streaming;
-	// }
-
 	/**
 	 * Accessor for the all swimmer
 	 * 
@@ -237,7 +221,7 @@ public class PhysicsEventManager {
 			for (SwimTrajectory traj : trajectories) {
 				if (traj.getLundId() != null) {
 					Path3D path3D = GeometryManager.fromSwimTrajectory(traj);
-					_currentParticleHits.add(new ParticleHits(traj.getLundId(), path3D));
+					_currentParticleHits.add(new ParticleHits(traj.getLundId(), traj.getGeneratedParticleRecord(), path3D));
 				}
 			}
 		}

@@ -40,7 +40,7 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	 * a large number of events. NOTE: this is NOT on a separate thread.It
 	 * will in fact be on the GUI thread. This is by design.
 	 * @param event the new event arriving through the FastMCed streaming mechanism.
-	 * @return StreamingReason.CONTINUE (success) or StreamingReason.FLAG (problem). 
+	 * @return StreamProcessStatus.CONTINUE (success) or StreamingReason.FLAG (problem). 
 	 * Any consumer returning StreamingReason.FLAG will halt the process
 	 * and cause the GUI to display the event that caused the StreamingReason.FLAG. 
 	 * The normal return (nothing interesting) is StreamingReason.CONTINUE

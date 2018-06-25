@@ -52,7 +52,6 @@ import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.view.alldc.AllDCView;
-import cnuphys.fastMCed.view.data.DataTableModel;
 import cnuphys.fastMCed.view.data.DataView;
 import cnuphys.fastMCed.view.sector.DisplaySectors;
 import cnuphys.fastMCed.view.sector.SectorView;
@@ -115,6 +114,8 @@ public class FastMCed extends BaseMDIApplication
 	private PlotView _plotView;
 	private LogView _logView;
 
+	//consumer classes dir provide by -p command line argument
+	private static String _userConsumerDir;
 
 	/**
 	 * Constructor (private--used to create singleton)
@@ -162,7 +163,6 @@ public class FastMCed extends BaseMDIApplication
 					FontMetrics fm = FastMCed.getInstance().getFontMetrics(bstrFont);
 					bstrW = fm.stringWidth(backgroundStr);
 					bstrH = fm.getHeight();
-					System.err.println("BSTR W = " + bstrW + "  H = " + bstrH);
 				}
 				
 				int hgap = 200;
@@ -522,6 +522,14 @@ public class FastMCed extends BaseMDIApplication
 	}
 	
 	/**
+	 * Get the optional consumer classes directory provide by -p command line argument
+	 * @return the optional consumer classes directory path.
+	 */
+	public static String getUserConsumerDir() {
+		return _userConsumerDir;
+	}
+	
+	/**
 	 * Launch the FastMCed GUI
 	 * @param consumerPath an optional path to a folder that contains your consumer classes.
 	 * This allows you to load consumers at startup.
@@ -582,7 +590,8 @@ public class FastMCed extends BaseMDIApplication
 				if (arg[i].equalsIgnoreCase("-p")) {
 					if (i < lm1) {
 						i++;
-						System.err.println("Consumer Dir: [" + arg[i] + "]");
+						_userConsumerDir = arg[i];
+						System.err.println("Consumer Dir: [" + _userConsumerDir + "]");
 					}
 				}
 

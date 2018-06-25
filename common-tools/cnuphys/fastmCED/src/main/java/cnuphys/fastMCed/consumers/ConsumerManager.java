@@ -22,6 +22,7 @@ import cnuphys.bCNU.util.PluginLoader;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.frame.FastMCed;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
@@ -79,6 +80,9 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		//TODO prepend other dirs
 		if (_consumerPath != null) {
 			classPath = _consumerPath + File.pathSeparator + classPath;
+		}
+		if (FastMCed.getUserConsumerDir() != null) {
+			classPath = FastMCed.getUserConsumerDir() + File.pathSeparator + classPath;
 		}
 		
 		System.err.println("Consumer plugin path: [" + classPath + "]");

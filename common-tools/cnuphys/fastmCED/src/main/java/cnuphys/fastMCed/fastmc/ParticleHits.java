@@ -10,9 +10,9 @@ import org.jlab.geom.DetectorHit;
 import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Path3D;
 
-import cnuphys.bCNU.attributes.AttributeType;
 import cnuphys.fastMCed.geometry.DCGeometry;
 import cnuphys.fastMCed.geometry.FTOFGeometry;
+import cnuphys.lund.GeneratedParticleRecord;
 import cnuphys.lund.LundId;
 import cnuphys.splot.plot.DoubleFormat;
 
@@ -30,6 +30,9 @@ public class ParticleHits {
 
 	// the 3D path that generated the hits
 	private Path3D _path;
+	
+	//contains the vertex and moment information
+	private GeneratedParticleRecord _genParticleRecord;
 
 	/**
 	 * A mapping of the detector type to a list of augmented detector hits
@@ -41,11 +44,14 @@ public class ParticleHits {
 	 * 
 	 * @param lundId
 	 *            the Lund Id
+	 * @ parm particleRec
+	 *            contains the vertex and momentum information
 	 * @param path
 	 *            the path
 	 */
-	public ParticleHits(LundId lundId, Path3D path) {
+	public ParticleHits(LundId lundId, GeneratedParticleRecord particleRec, Path3D path) {
 		_lundId = lundId;
+		_genParticleRecord = particleRec;
 		_path = path;
 		int charge = lundId.getCharge();
 
@@ -92,6 +98,15 @@ public class ParticleHits {
 	 */
 	public LundId getLundId() {
 		return _lundId;
+	}
+	
+	/**
+	 * Get the generated particle record for this trajectory/track.
+	 * It contains information like the vertex and momentum.
+	 * @return the generated particle record for this trajectory/track.
+	 */
+	public GeneratedParticleRecord getGeneratedParticleRecord() {
+		return _genParticleRecord;
 	}
 
 	/**
@@ -217,19 +232,6 @@ public class ParticleHits {
 				feedbackStrings.add("$white$called noise by SNR: " + (hit.isNoise() ? "yes" : "no"));
 			}
 		}
-	}
-
-	/**
-	 * Add hit feedback data to the feedback strings
-	 * 
-	 * @param hit
-	 *            the hit that the mouse is over
-	 * @param lid
-	 *            the Lund Id
-	 * @param feedbackStrings
-	 *            the list of feedbackstrings being added to
-	 */
-	public static void addHitFeedback(DetectorHit hit, LundId lid, List<String> feedbackStrings) {
 	}
 
 }
