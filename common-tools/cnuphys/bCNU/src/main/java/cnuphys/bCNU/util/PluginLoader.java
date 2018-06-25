@@ -337,23 +337,17 @@ public class PluginLoader {
 			if (file.isDirectory()) {
 				searchDir(file, v);
 			} else if (file.getAbsolutePath().endsWith(".class")) {
-				String klass = file.getAbsolutePath();
-
-				klass = klass.substring(_pdirLen + 1).replace(File.separatorChar, '.');
-				// remove .class
-				klass = klass.substring(0, klass.lastIndexOf('.'));
-
-				//always skip the to do plugin it needs to be created last
-				if (!klass.contains("ToDoPlugin")) {
+				String klass;
+				try {
+					klass = getFullClassName(file);
 					if ((_excludes == null) || !_excludes.contains(klass)) {
 						// System.err.println("KLAS: " + klass);
 						// _attemptedLoads.add(klass);
 						v.add(new PHolder(file, klass));
 					}
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-//				else {
-//					System.err.println("Skipped todo plugin.");
-//				}
 
 			}
 		}
