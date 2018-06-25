@@ -1,6 +1,7 @@
 package cnuphys.fastMCed.streaming;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -10,6 +11,7 @@ import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.graphics.ImageManager;
 import cnuphys.bCNU.view.ViewManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 
 public class StreamManager {
 	
@@ -76,7 +78,7 @@ public class StreamManager {
 	 * Notify the stream listeners of a physics event
 	 * @param event the event
 	 */
-	public void notifyStreamListeners(PhysicsEvent event) {
+	public void notifyStreamListeners(PhysicsEvent event, List<ParticleHits> particleHits) {
 		
 		// Guaranteed to return a non-null array
 		Object[] listeners = _listeners.getListenerList();
@@ -86,7 +88,7 @@ public class StreamManager {
 		// listeners.
 		for (int i = listeners.length - 2; i >= 0; i -= 2) {
 			IStreamProcessor listener = (IStreamProcessor) listeners[i + 1];
-			StreamProcessStatus status = listener.streamingPhysicsEvent(event);
+			StreamProcessStatus status = listener.streamingPhysicsEvent(event, particleHits);
 			
 			if (status == StreamProcessStatus.FLAG) {
 

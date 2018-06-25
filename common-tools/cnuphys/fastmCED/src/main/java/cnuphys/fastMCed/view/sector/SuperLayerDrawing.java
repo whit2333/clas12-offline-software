@@ -9,6 +9,7 @@ import java.awt.Shape;
 import java.awt.geom.Point2D;
 import java.util.List;
 
+import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Point3D;
 
 import cnuphys.bCNU.graphics.container.IContainer;
@@ -265,7 +266,7 @@ public class SuperLayerDrawing {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), 0);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _iSupl.sector(), _iSupl.superlayer(), 0);
 
 				if (!filteredHits.isEmpty()) {
 					for (AugmentedDetectorHit hit : filteredHits) {
@@ -637,7 +638,7 @@ public class SuperLayerDrawing {
 				for (ParticleHits particleHits : hits) {
 					LundId lid = particleHits.getLundId();
 
-					List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _iSupl.sector(), _iSupl.superlayer(), layer);
+					List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _iSupl.sector(), _iSupl.superlayer(), layer);
 
 					if (!filteredHits.isEmpty()) {
 						for (AugmentedDetectorHit hit : filteredHits) {

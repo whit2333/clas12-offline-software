@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.JMenu;
@@ -197,7 +198,7 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 	 *            the generated physics event
 	 */
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		fixMenuState();
 	}
 
@@ -247,7 +248,7 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 	}
 
 	@Override
-	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {		// TODO Auto-generated method stub
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		return null;
 	}
 

@@ -8,6 +8,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.List;
 
+import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Point3D;
 
 //import cnuphys.ced.dcnoise.NoiseEventListener;
@@ -283,7 +284,7 @@ public class AllDCSuperLayer extends RectangleItem {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, 0);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _sector, _superLayer, 0);
 
 				if (!filteredHits.isEmpty()) {
 					for (AugmentedDetectorHit hit : filteredHits) {
@@ -442,7 +443,7 @@ public class AllDCSuperLayer extends RectangleItem {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getDCHits(), _sector, _superLayer, layer);
+				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _sector, _superLayer, layer);
 				
 				for (AugmentedDetectorHit hit : filteredHits) {
 					if (hit.getComponentId() == wire0) {

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Vector;
 
 import org.jlab.geom.DetectorHit;
+import org.jlab.geom.DetectorId;
 import org.jlab.io.base.DataEvent;
 
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
@@ -111,7 +112,7 @@ public class SNRManager  {
 		//total dc hit count
 		int dcCount = 0;
 		for (ParticleHits ph : particleHits) {
-			dcCount += ph.hitCountDC();
+			dcCount += ph.hitCount(DetectorId.DC);
 		}
 		
 		if (dcCount < 1) {
@@ -125,10 +126,10 @@ public class SNRManager  {
 
 		int index = 0;
 		for (ParticleHits ph : particleHits) {
-			List<AugmentedDetectorHit> dcHits = ph.getDCHits();
+			List<AugmentedDetectorHit> dcHits = ph.getHits(DetectorId.DC);
 			if ((dcHits != null) && !dcHits.isEmpty()) {
 				for (AugmentedDetectorHit aughit : dcHits) {
-					DetectorHit hit = aughit.hit;
+					DetectorHit hit = aughit._hit;
 					// a hit has 0-based indices noise package wants 1-based
 					sector[index] = hit.getSectorId() + 1;
 					superlayer[index] = hit.getSuperlayerId() + 1;
@@ -145,7 +146,7 @@ public class SNRManager  {
 		index = 0;
 		boolean[] isNoise = _noiseResults.noise;
 		for (ParticleHits ph : particleHits) {
-			List<AugmentedDetectorHit> dcHits = ph.getDCHits();
+			List<AugmentedDetectorHit> dcHits = ph.getHits(DetectorId.DC);
 			if ((dcHits != null) && !dcHits.isEmpty()) {
 				for (AugmentedDetectorHit aughit : dcHits) {
 					aughit.setNoise(isNoise[index]);

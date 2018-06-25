@@ -1,10 +1,12 @@
 package cnuphys.fastMCed.view.trajinfo;
 
+import java.util.List;
 import java.util.Vector;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.lund.TrajectoryRowData;
 import cnuphys.lund.TrajectoryTableModel;
@@ -23,7 +25,7 @@ public class TrajectoryInfoView extends ATrajectoryInfoView {
 	
 
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		_trajectoryTable.clear(); // remove existing events
 
 		if (StreamManager.getInstance().isStarted()) {

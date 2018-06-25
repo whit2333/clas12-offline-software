@@ -11,6 +11,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
+import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Path3D;
 import org.jlab.physics.io.LundReader;
 
@@ -205,7 +206,7 @@ public class PhysicsEventManager {
 	public int particleDCHitCount(int lundid) {
 		for (ParticleHits phits : _currentParticleHits) {
 			if (phits.lundId() == lundid) {
-				return phits.hitCountDC();
+				return phits.hitCount(DetectorId.DC);
 			}
 		}
 		return 0;
@@ -247,7 +248,7 @@ public class PhysicsEventManager {
 		// notify all listeners of the event
 
 		if (StreamManager.getInstance().isStarted()) {
-			StreamManager.getInstance().notifyStreamListeners(event);
+			StreamManager.getInstance().notifyStreamListeners(event, _currentParticleHits);
 		} else {
 			Runnable runnable = new Runnable() {
 
@@ -318,7 +319,13 @@ public class PhysicsEventManager {
 	}
 
 	public String getCurrentSourceDescription() {
-		return "lund file: " + ((_currentFile == null) ? "none" : _currentFile.getName());
+		
+		if (_currentFile == null) {
+			return "lund file: none";
+		}
+		else {
+			return "lund file: " + _currentFile.getName() + " #events: " + _eventCount;
+		}
 	}
 
 	/**
@@ -440,7 +447,7 @@ public class PhysicsEventManager {
 				for (int i = listeners.length - 2; i >= 0; i -= 2) {
 					IPhysicsEventListener listener = (IPhysicsEventListener) listeners[i + 1];
 					if (listeners[i] == IPhysicsEventListener.class) {
-						listener.newPhysicsEvent(event);
+						listener.newPhysicsEvent(event, _currentParticleHits);
 					}
 				}
 			}

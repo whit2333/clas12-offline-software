@@ -1,7 +1,10 @@
 package cnuphys.fastMCed.consumers;
 
+import java.util.List;
+
 import org.jlab.clas.physics.PhysicsEvent;
 
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
@@ -24,7 +27,7 @@ public class EventHasNoiseConsumer extends PhysicsEventConsumer {
 	}
 
 	@Override
-	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		if (SNRManager.getInstance().getNoiseCount() > 0) {
 			return StreamProcessStatus.FLAG;
 		}
@@ -34,7 +37,7 @@ public class EventHasNoiseConsumer extends PhysicsEventConsumer {
 	}
 
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		System.err.println(getConsumerName() + "  got a new event via next event");
 
 	}

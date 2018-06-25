@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.List;
 
 import javax.swing.Box;
 import javax.swing.JButton;
@@ -27,6 +28,7 @@ import cnuphys.bCNU.graphics.ImageManager;
 import cnuphys.bCNU.graphics.component.CommonBorder;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 
 public class StreamDialog extends JDialog implements IStreamProcessor {
 
@@ -395,7 +397,7 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	}
 
 	@Override
-	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		return StreamProcessStatus.CONTINUE;
 	}
 

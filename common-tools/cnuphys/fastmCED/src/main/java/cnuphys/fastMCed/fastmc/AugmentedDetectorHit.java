@@ -3,59 +3,72 @@ package cnuphys.fastMCed.fastmc;
 import org.jlab.geom.DetectorHit;
 import org.jlab.geom.DetectorId;
 
+/**
+ * Augmented hits wrap an underlying FastMC Detector hit so that additional information 
+ * cane be attached.
+ * @author heddle
+ *
+ */
 public class AugmentedDetectorHit  {
 	
 	/** The underlying raw detector hit from FastMC */
-	public DetectorHit hit;
+	public DetectorHit _hit;
 		
+	//was this noise? (relevant for DC only)
 	private boolean _noise;
 	
-	public AugmentedDetectorHit(DetectorHit hit) {
-		this.hit = hit;
-	}
-	
 	/**
-	 * Is this considered a noise hit?
-	 * @return <code>true</code>
+	 * Create from a FastMC hit. This just wraps it with additional information.
+	 * @param hit
 	 */
-	public boolean isNoise() {
-		return _noise;
+	public AugmentedDetectorHit(DetectorHit hit) {
+		_hit = hit;
 	}
 	
 	/**
-	 * Get the detector id
-	 * @return the detector id
+	 * Get the detector id enum.
+	 * @return the detector id enum value.
 	 */
 	public DetectorId getDetectorId() {
-		return hit.getDetectorId();
+		return _hit.getDetectorId();
 	}
 	
 	/**
 	 * get the energy from the underlying raw FastMC DetectorHit
-	 * @return the energy
+	 * @return the energy (Units?)
 	 */
 	public double getEnergy() {
-		return hit.getEnergy();
+		return _hit.getEnergy();
 	}
 	
 	/**
 	 * get the time from the underlying raw FastMC DetectorHit
-	 * @return the time
+	 * @return the time (Units?)
 	 */
 	public double getTime() {
-		return hit.getTime();
+		return _hit.getTime();
 	}
 	
 	/**
-	 * Convenience check as to whether this is a DC hit
-	 * @return <code>true</code> if this is a Drift Chamber hit
+	 * Convenience check as to whether this is for a given DetectorId
+	 * @return <code>true</code> if this hit is for the given detector.
 	 */
-	public boolean isDCHit() {
-		return hit.getDetectorId() == DetectorId.DC;
+	public boolean isDetectorHit(DetectorId id) {
+		return _hit.getDetectorId() == id;
 	}
 	
 	/**
-	 * Set whether this is noise
+	 * Is this considered a noise hit (Relevant for DC only.)
+	 * @return <code>true</code> if this is a DC noise hit as determined
+	 * by the cnuphys SNR package. Return <code>false</code> it it wasn't,
+	 * or if this hit is to a Drift Chamber hit.
+	 */
+	public boolean isNoise() {
+		return _noise;
+	}
+
+	/**
+	 * Set whether this is noise (Relevant for DC only.)
 	 * @param noise the noise parameter value
 	 */
 	public void setNoise(boolean noise) {
@@ -67,7 +80,7 @@ public class AugmentedDetectorHit  {
 	 * @return the zero-based sector
 	 */
 	public int getSectorId() {
-		return hit.getSectorId();
+		return _hit.getSectorId();
 	}
 	
 	/**
@@ -75,7 +88,7 @@ public class AugmentedDetectorHit  {
 	 * @return the zero-based superlayer
 	 */
 	public int getSuperlayerId() {
-		return hit.getSuperlayerId();
+		return _hit.getSuperlayerId();
 	}
 
 	/**
@@ -83,7 +96,7 @@ public class AugmentedDetectorHit  {
 	 * @return the zero-based layer
 	 */
 	public int getLayerId() {
-		return hit.getLayerId();
+		return _hit.getLayerId();
 	}
 	
 	/**
@@ -91,7 +104,7 @@ public class AugmentedDetectorHit  {
 	 * @return the zero-based conponent
 	 */
 	public int getComponentId() {
-		return hit.getComponentId();
+		return _hit.getComponentId();
 	}
 
 

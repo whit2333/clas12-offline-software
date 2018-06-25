@@ -21,6 +21,7 @@ import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.PluginLoader;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
@@ -184,10 +185,10 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	}
 
 	@Override
-	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		for (PhysicsEventConsumer consumer : this) {
 			if (isActive(consumer)) {
-				StreamProcessStatus status = consumer.streamingPhysicsEvent(event);
+				StreamProcessStatus status = consumer.streamingPhysicsEvent(event, particleHits);
 				if (status == StreamProcessStatus.FLAG) {
 					System.err.println("FLAGGED");
 					_flagExplanation = consumer.flagExplanation() + 
@@ -214,9 +215,9 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	}
 
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		for (PhysicsEventConsumer consumer : this) {
-			consumer.newPhysicsEvent(event);
+			consumer.newPhysicsEvent(event, particleHits);
 		}		
 	}
 	

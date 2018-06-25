@@ -1,22 +1,23 @@
 package cnuphys.fastMCed.view.data;
 
 
+import java.util.List;
+
 import org.jlab.clas.physics.PhysicsEvent;
+import org.jlab.geom.DetectorId;
 
 import cnuphys.bCNU.util.PropertySupport;
 import cnuphys.bCNU.view.BaseView;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 
 public class DataView extends BaseView implements
 		IPhysicsEventListener {
 
 	protected DataTable _dataTable;
 
-	protected PhysicsEventManager _eventManager = PhysicsEventManager
-			.getInstance();
-
-	public DataView(String title, int detector) {
+	public DataView(String title, DetectorId detector) {
 		super(PropertySupport.TITLE, title, PropertySupport.ICONIFIABLE, true,
 				PropertySupport.TOOLBAR, false,
 				PropertySupport.MAXIMIZABLE, true, PropertySupport.CLOSABLE, true,
@@ -26,9 +27,8 @@ public class DataView extends BaseView implements
 
 		_dataTable = new DataTable(detector);
 		add(_dataTable.getScrollPane());
-
 		// need to listen for events
-		_eventManager.addPhysicsListener(this, 1);
+		PhysicsEventManager.getInstance().addPhysicsListener(this, 1);
 	}
 
 	@Override
@@ -36,8 +36,8 @@ public class DataView extends BaseView implements
 	}
 
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
-		_dataTable.getDataModel().setData(_eventManager.getParticleHits());
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
+		_dataTable.getDataModel().setData(particleHits);
 	}
 
 }

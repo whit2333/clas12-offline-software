@@ -1,8 +1,11 @@
 package cnuphys.fastMCed.consumers;
 
+import java.util.List;
+
 import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
@@ -43,7 +46,7 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	 * The normal return (nothing interesting) is StreamingReason.CONTINUE
 	 */
 	@Override
-	public abstract StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event);
+	public abstract StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits);
 
 	/**
 	 * A new Lund file has been opened via the FastMCed gui.<br>
@@ -62,7 +65,7 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	 * @see cnuphys.fastMCed.streaming.IStreamProcessor
 	 */
 	@Override
-	public abstract void newPhysicsEvent(PhysicsEvent event);
+	public abstract void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits);
 	
 	/**
 	 * If the consumer flags an event, it will be asked

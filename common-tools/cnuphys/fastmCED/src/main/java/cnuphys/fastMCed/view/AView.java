@@ -33,6 +33,7 @@ import cnuphys.bCNU.view.BaseView;
 import cnuphys.bCNU.view.ViewManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.lund.SwimTrajectoryListener;
 import cnuphys.magfield.FieldProbe;
@@ -473,7 +474,7 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 	 *            the new event.
 	 */
 	@Override
-	public void newPhysicsEvent(final PhysicsEvent event) {
+	public void newPhysicsEvent(final PhysicsEvent event, List<ParticleHits> particleHits) {
 		getUserComponent().repaint();
 		fixTitle(event);
 		getContainer().redoFeedback();

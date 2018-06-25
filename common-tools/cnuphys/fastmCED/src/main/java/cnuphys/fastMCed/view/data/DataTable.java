@@ -1,12 +1,13 @@
 package cnuphys.fastMCed.view.data;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.TableColumn;
+
+import org.jlab.geom.DetectorId;
 
 import cnuphys.lund.HeaderRenderer;
 import cnuphys.lund.SimpleRenderer;
@@ -16,7 +17,7 @@ public class DataTable extends JTable {
 	// a scroll pane for this table
 	private JScrollPane _scrollPane;
 
-	public DataTable(int detector) {
+	public DataTable(DetectorId detector) {
 		super(new DataTableModel(detector));
 
 		setFont(new Font("SansSerif", Font.PLAIN, 10));

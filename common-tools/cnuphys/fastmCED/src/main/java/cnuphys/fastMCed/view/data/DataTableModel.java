@@ -6,77 +6,72 @@ import java.util.Vector;
 import javax.swing.table.DefaultTableModel;
 
 import org.jlab.geom.DetectorHit;
+import org.jlab.geom.DetectorId;
 
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.lund.LundId;
 
 public class DataTableModel extends DefaultTableModel {
-	
-	public static final int DETECTOR_DC   = 0;
-	public static final int DETECTOR_FTOF = 1;
-	
-	public static final int COL_ROW        = 0;
-	public static final int COL_ID         = 1;
-	public static final int COL_NAME       = 2;
-	public static final int COL_SECTOR     = 3;
-	public static final int COL_SUPERLAYER = 4;
-	public static final int COL_LAYER      = 5;
-	public static final int COL_COMPONENT  = 6;
-	
 
-	//the witdh of the columns
-	protected static final int columnWidths[] = {
-			50, //ROW
+	public static final int COL_ROW = 0;
+	public static final int COL_ID = 1;
+	public static final int COL_NAME = 2;
+	public static final int COL_SECTOR = 3;
+	public static final int COL_SUPERLAYER = 4;
+	public static final int COL_LAYER = 5;
+	public static final int COL_COMPONENT = 6;
+
+	// the witdh of the columns
+	protected static final int columnWidths[] = { 50, // ROW
 			70, // ID
 			70, // name
 			70, // sector
 			70, // superlayer
-			70,  // layer
+			70, // layer
 			70, // component
 	};
-	
-    //which detector
-	private int _detector = -1;
-	
-	//the model data
-	protected Vector<HitAndID> _data = new Vector<HitAndID> (25);
-	
+
+	// which detector
+	private DetectorId _detectorId;
+
+	// the model data
+	protected Vector<HitAndID> _data = new Vector<HitAndID>(25);
+
 	/**
 	 * Constructor
 	 */
-	public DataTableModel(int detector) {
-		super(getColumnNames(detector), 2);
-		_detector = detector;
+	public DataTableModel(DetectorId detectorId) {
+		super(getColumnNames(detectorId), 2);
+		_detectorId = detectorId;
 	}
-	
-	//get the preferred width
+
+	// get the preferred width
 	public static int getPreferredWidth() {
 		int w = 20;
-		
+
 		for (int cw : columnWidths) {
 			w += cw;
 		}
 		return w;
 	}
-	
 
-	private static String[] getColumnNames(int detector) {
-		String [] cnames = {
-				"Index", "PID", "Name", "Sector", "Superlayer", "Layer", "Component"
-		};
-		
+	//modify the column names based on detector id
+	private static String[] getColumnNames(DetectorId detector) {
+		String[] cnames = { "Index", "PID", "Name", "Sector", "Superlayer", "Layer", "Component" };
+
 		switch (detector) {
-		case DETECTOR_DC:
+		case DC:
 			cnames[COL_COMPONENT] = "Wire";
 			break;
 
-		case DETECTOR_FTOF:
+		case FTOF:
 			cnames[COL_COMPONENT] = "Paddle";
 			break;
-}
-		
-		
+
+		default:
+		}
+
 		return cnames;
 	}
 
@@ -111,14 +106,14 @@ public class DataTableModel extends DefaultTableModel {
 		if (row < _data.size()) {
 			HitAndID hitId = _data.get(row);
 			if (hitId != null) {
-				
+
 				DetectorHit hit = hitId.hit;
-				
+
 				switch (col) {
-				
+
 				case COL_ROW:
 					return "" + (row + 1);
-					
+
 				case COL_ID:
 					return "" + hitId.intId;
 
@@ -130,7 +125,7 @@ public class DataTableModel extends DefaultTableModel {
 
 				case COL_SUPERLAYER:
 					return "" + (hit.getSuperlayerId() + 1);
-					
+
 				case COL_LAYER:
 					return "" + (hit.getLayerId() + 1);
 
@@ -144,7 +139,6 @@ public class DataTableModel extends DefaultTableModel {
 		return null;
 	}
 
-
 	/**
 	 * Clear all the data
 	 */
@@ -154,40 +148,25 @@ public class DataTableModel extends DefaultTableModel {
 		}
 	}
 
-
 	/**
 	 * @param data
 	 *            the data to set
 	 */
-	public void setData(Vector<ParticleHits> plist) {
+	public void setData(List<ParticleHits> plist) {
 		_data.clear();
 
 		if (plist != null) {
 			for (ParticleHits phits : plist) {
 
-				List<AugmentedDetectorHit> hitList = null;
+				List<AugmentedDetectorHit> hitList = phits.getHits(_detectorId);
 
-				switch (_detector) {
-				case DETECTOR_DC:
-					if (phits.hitCountDC() > 0) {
-						hitList = phits.getDCHits();
-					}
-					break;
-
-				case DETECTOR_FTOF:
-					if (phits.hitCountFTOF() > 0) {
-						hitList = phits.getFTOFHits();
-					}
-					break;
-				} //end switch
-				
 				if (hitList != null) {
 					for (AugmentedDetectorHit aughit : hitList) {
 						HitAndID hitID = new HitAndID(phits.getLundId(), aughit);
 						_data.add(hitID);
 					}
 				}
-			} //for phits
+			} // for phits
 		}
 		fireTableDataChanged();
 	}
@@ -199,17 +178,16 @@ public class DataTableModel extends DefaultTableModel {
 	public boolean isCellEditable(int row, int column) {
 		return false;
 	}
-	
 
 	class HitAndID extends Vector<AugmentedDetectorHit> {
 		public final String name;
 		public final AugmentedDetectorHit augHit;
 		public final DetectorHit hit;
 		public final int intId;
-		
+
 		public HitAndID(LundId lid, AugmentedDetectorHit augHit) {
 			this.augHit = augHit;
-			hit = augHit.hit;
+			hit = augHit._hit;
 			name = (lid == null) ? "???" : lid.getName();
 			intId = (lid == null) ? -999 : lid.getId();
 		}

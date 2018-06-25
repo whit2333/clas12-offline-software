@@ -11,6 +11,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -20,6 +21,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 
 import org.jlab.clas.physics.PhysicsEvent;
+import org.jlab.geom.DetectorId;
 
 import cnuphys.bCNU.application.BaseMDIApplication;
 import cnuphys.bCNU.application.Desktop;
@@ -41,6 +43,7 @@ import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.consumers.ConsumerManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.FastMCMenuAddition;
+import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.properties.PropertiesManager;
 import cnuphys.fastMCed.snr.SNRManager;
@@ -254,8 +257,8 @@ public class FastMCed extends BaseMDIApplication
 		_trajInfoView = new TrajectoryInfoView();
 
 		// data views
-		_dcDataView = new DataView("Drift Chamber Hits", DataTableModel.DETECTOR_DC);
-		_ftofDataView = new DataView("FTOF Hits", DataTableModel.DETECTOR_FTOF);
+		_dcDataView = new DataView("Drift Chamber Hits", DetectorId.DC);
+		_ftofDataView = new DataView("FTOF Hits", DetectorId.FTOF);
 		
 		ViewManager.getInstance().getViewMenu().addSeparator();
 		//plot view
@@ -499,7 +502,7 @@ public class FastMCed extends BaseMDIApplication
 	}
 
 	@Override
-	public void newPhysicsEvent(PhysicsEvent event) {
+	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		fixEventNumberLabel();
 	}
 	
@@ -509,13 +512,28 @@ public class FastMCed extends BaseMDIApplication
 	}
 
 	@Override
-	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event) {
+	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		return StreamProcessStatus.CONTINUE;
 	}
 
 	@Override
 	public String flagExplanation() {
 		return "This should not have happened (A).";
+	}
+	
+	/**
+	 * Launch the FastMCed GUI
+	 * @param consumerPath an optional path to a folder that contains your consumer classes.
+	 * This allows you to load consumers at startup.
+	 */
+	public static void launch(String consumerPath) {
+		if (consumerPath == null) {
+			main(null);
+		}
+		else {
+			String arg[] = {"-p", consumerPath};
+			main(arg);
+		}
 	}
 
 	/**
@@ -564,7 +582,7 @@ public class FastMCed extends BaseMDIApplication
 				if (arg[i].equalsIgnoreCase("-p")) {
 					if (i < lm1) {
 						i++;
-						FileUtilities.setDefaultDir(arg[i]);
+						System.err.println("Consumer Dir: [" + arg[i] + "]");
 					}
 				}
 
