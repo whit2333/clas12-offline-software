@@ -82,7 +82,7 @@
 						
 			<!-- make it executable -->
 		    <manifest>
-		        <attribute name="Main-Class" value="cnuphys.fastMCed.frame.fastMCed"/>
+		        <attribute name="Main-Class" value="cnuphys.fastMCed.frame.FastMCed"/>
 		    	<attribute name="Class-Path" value="${coat} ${vecm} ${apache} ${nr}"/>
 		    </manifest>
 		</jar>
