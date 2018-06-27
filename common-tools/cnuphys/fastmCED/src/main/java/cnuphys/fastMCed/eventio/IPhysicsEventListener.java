@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 
 
@@ -16,10 +17,10 @@ import cnuphys.fastMCed.fastmc.ParticleHits;
 public interface IPhysicsEventListener extends EventListener {
 	
 	/**
-	 * A new Lund file has been opened
-	 * @param path the full path to the file
+	 * A new event generator is active
+	 * @param generator the now active generator
 	 */
-	public void openedNewLundFile(final String path);
+	public void newEventGenerator(final AEventGenerator generator);
 		
 	/**
 	 * New event has arrived from the FastMC engine via the "next event" mechanism.

@@ -15,6 +15,10 @@ import cnuphys.fastMCed.streaming.StreamReason;
  *
  */
 public class EventHasNoiseConsumer extends PhysicsEventConsumer {
+	
+	public EventHasNoiseConsumer() {
+		_active = false; //default is not active
+	}
 
 	@Override
 	public String getConsumerName() {
@@ -38,8 +42,6 @@ public class EventHasNoiseConsumer extends PhysicsEventConsumer {
 
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
-		System.err.println(getConsumerName() + "  got a new event via next event");
-
 	}
 
 	@Override

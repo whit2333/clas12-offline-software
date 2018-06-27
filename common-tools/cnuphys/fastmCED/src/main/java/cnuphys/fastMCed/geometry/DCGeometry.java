@@ -2,7 +2,6 @@ package cnuphys.fastMCed.geometry;
 
 
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.jlab.detector.base.GeometryFactory;
@@ -21,8 +20,6 @@ import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Shape3D;
 import org.jlab.geom.prim.Triangle3D;
 
-import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
-import cnuphys.fastMCed.fastmc.ParticleHits;
 
 public class DCGeometry {
 
@@ -47,12 +44,11 @@ public class DCGeometry {
 	 *            the path generated from a swim trajectory
 	 * @return the list of hits FastMC geometry only.
 	 */
-	public static List<AugmentedDetectorHit> getHits(Path3D path) {
+	public static List<DetectorHit> getHits(Path3D path) {
 		if (path == null) {
 			return null;
 		}
-		
-		return ParticleHits.fromDetectorHits(_dcDetector.getHits(path));
+		return _dcDetector.getHits(path);
 	}
 
 	/**

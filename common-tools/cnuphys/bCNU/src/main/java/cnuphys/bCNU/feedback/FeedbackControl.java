@@ -4,6 +4,8 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Vector;
+
 import javax.swing.event.EventListenerList;
 
 import cnuphys.bCNU.application.BaseMDIApplication;
@@ -19,10 +21,10 @@ public class FeedbackControl {
 	private EventListenerList _listenerList;
 
 	// the newly acquired feedback strings
-	private ArrayList<String> _newFeedbackStrings = new ArrayList<String>(50);
+	private Vector<String> _newFeedbackStrings = new Vector<String>(50);
 
 	// the previous feedback strings
-	private ArrayList<String> _oldFeedbackStrings = new ArrayList<String>(50);
+	private Vector<String> _oldFeedbackStrings = new Vector<String>(50);
 
 	/**
 	 * Create a feedback controller for a container.
@@ -129,11 +131,12 @@ public class FeedbackControl {
 		}
 		
 		if (BaseMDIApplication.getHeadsUpDisplay() != null) {
+			System.err.println("HUD update");
 			BaseMDIApplication.getHeadsUpDisplay().update(_newFeedbackStrings);
 		}
 		
 		// swap old and new
-		ArrayList<String> temp = _oldFeedbackStrings;
+		Vector<String> temp = _oldFeedbackStrings;
 		_oldFeedbackStrings = _newFeedbackStrings;
 		_newFeedbackStrings = temp;
 		_newFeedbackStrings.clear();

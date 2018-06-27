@@ -266,10 +266,10 @@ public class SuperLayerDrawing {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _iSupl.sector(), _iSupl.superlayer(), 0);
+				List<AugmentedDetectorHit> augHits = particleHits.getHits(DetectorId.DC, _iSupl.sector()-1, _iSupl.superlayer()-1);
 
-				if (!filteredHits.isEmpty()) {
-					for (AugmentedDetectorHit hit : filteredHits) {
+				if (augHits != null) {
+					for (AugmentedDetectorHit hit : augHits) {
 						int layer = hit.getLayerId() + 1;
 						int wire = hit.getComponentId() + 1;
 
@@ -638,10 +638,10 @@ public class SuperLayerDrawing {
 				for (ParticleHits particleHits : hits) {
 					LundId lid = particleHits.getLundId();
 
-					List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _iSupl.sector(), _iSupl.superlayer(), layer);
+					List<AugmentedDetectorHit> augHits = particleHits.getHits(DetectorId.DC, _iSupl.sector()-1, _iSupl.superlayer()-1);
 
-					if (!filteredHits.isEmpty()) {
-						for (AugmentedDetectorHit hit : filteredHits) {
+					if (augHits != null) {
+						for (AugmentedDetectorHit hit : augHits) {
 							if (hit.getComponentId() == wire0) {
 								
 								//might not even care if it is noise

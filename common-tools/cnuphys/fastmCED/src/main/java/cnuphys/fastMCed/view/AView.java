@@ -31,6 +31,7 @@ import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.bCNU.util.UnicodeSupport;
 import cnuphys.bCNU.view.BaseView;
 import cnuphys.bCNU.view.ViewManager;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
@@ -393,14 +394,14 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 		if (event == null) {
 			feedbackStrings.add("$orange red$No event");
 		} else {
-			int evNum = PhysicsEventManager.getInstance().getEventNumber();
+			int evNum = PhysicsEventManager.getInstance().eventNumber();
 			int evCount = PhysicsEventManager.getInstance().getEventCount();
 			
 			String evStr = "event #" + evNum + " of " + evCount;
 
 			feedbackStrings.add("$orange red$" +evStr);
 			
-			feedbackStrings.add("$orange red$" + _eventManager.getCurrentSourceDescription());
+			feedbackStrings.add("$orange red$" + _eventManager.getGeneratorDescription());
 		}
 
 		// get the sector
@@ -494,7 +495,7 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 			title = title.substring(0, index);
 		}
 
-		int num = _eventManager.getEventNumber();
+		int num = _eventManager.eventNumber();
 		if (num > 0) {
 			setTitle(title + evnumAppend + num + ")");
 		}
@@ -517,13 +518,11 @@ public abstract class AView extends BaseView implements IFeedbackProvider, SwimT
 
 
 	/**
-	 * Opened a new event file
-	 * 
-	 * @param path
-	 *            the path to the new file
+	 * A new event generator is active
+	 * @param generator the now active generator
 	 */
 	@Override
-	public void openedNewLundFile(final String path) {
+	public void newEventGenerator(final AEventGenerator generator) {
 	}
 
 

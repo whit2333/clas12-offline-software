@@ -58,27 +58,13 @@ public class FTOFGeometry {
 	 * @param path the path generated from a swim trajectory for the full detector
 	 * @return the list of hits FastMC geometry only.
 	 */
-	public static List<AugmentedDetectorHit> getHits(Path3D path) {
+	public static List<DetectorHit> getHits(Path3D path) {
 		if (path == null) {
 			return null;
 		}
-		return ParticleHits.fromDetectorHits(_ftofDetector.getHits(path));
-
+		return _ftofDetector.getHits(path);
 	}
 	
-	/**
-	 * Get the layer hits
-	 * @param sect0 the 0-based sector 0..5
-	 * @param ptype the panel type (0,1,2) = (1A, 1B, 2)
-	 * @param path the 3D path
-	 * @return the layer hits
-	 */
-	public static List<AugmentedDetectorHit> getHits(int sect0, int ptype, Path3D path) {
-		if (path == null) {
-			return null;
-		}
-		return ParticleHits.fromDetectorHits(_ftofLayers[sect0][ptype].getHits(path));
-	}
 
 	/**
 	 * Initialize the FTOF Geometry

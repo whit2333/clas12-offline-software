@@ -4,9 +4,6 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Vector;
-
-import org.jlab.geom.DetectorHit;
 import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Path3D;
 
@@ -37,7 +34,7 @@ public class ParticleHits {
 	/**
 	 * A mapping of the detector type to a list of augmented detector hits
 	 */
-	private EnumMap<DetectorId, List<AugmentedDetectorHit>> hits;
+	private EnumMap<DetectorId, HitHolder> hits;
 
 	/**
 	 * The particle hits for a single trajectory as determined by fastMC
@@ -57,9 +54,13 @@ public class ParticleHits {
 
 		hits = new EnumMap<>(DetectorId.class);
 		if (charge != 0) {
-			// these calls will get the hits
-			hits.put(DetectorId.DC, DCGeometry.getHits(path));
-			hits.put(DetectorId.FTOF, FTOFGeometry.getHits(path));
+			HitHolder dcHH = new HitHolder(6, 6);
+			HitHolder ftofHH = new HitHolder(6, 0);
+			
+			dcHH.fill(DCGeometry.getHits(path));
+			ftofHH.fill(FTOFGeometry.getHits(path));
+			hits.put(DetectorId.DC, dcHH);
+			hits.put(DetectorId.FTOF, ftofHH);
 		}
 	}
 
@@ -73,22 +74,98 @@ public class ParticleHits {
 	}
 
 	/**
-	 * Get the number of DC Hits
-	 * 
-	 * @return the number of DC Hits
+	 * Get the total number of hits across all sectors, superLayers
+	 * and Layers for a given detector type
+	 * @param id the DetorId enum value
+	 * @return the total number of hits
 	 */
-	public int hitCount(DetectorId id) {
-		List<AugmentedDetectorHit> list = hits.get(id);
-		return (list == null) ? 0 : list.size();
+	public int totalHitCount(DetectorId id) {
+		HitHolder holder = hits.get(id);
+		if (holder == null) {
+			return 0;
+		}
+		else {
+			return holder.totalHitCount();
+		}
+	}
+	
+	/**
+	 * Get the total hit count for a given sector
+	 * @param id the DetorId enum value
+	 * @param sect0
+	 *            the zero based sector
+	 * @return the total hit count for a sector
+	 */
+	public int sectorHitCount(DetectorId id, int sect0) {
+		HitHolder holder = hits.get(id);
+		if (holder == null) {
+			return 0;
+		}
+		else {
+			return holder.sectorHitCount(sect0);
+		}
+	}
+	
+	/**
+	 * Get the total hit count for a given sector
+	 * @param id the DetorId enum value
+	 * @param sect0
+	 *            the zero based sector
+	 * @param supl0 the zero based superlayer
+	 * @return the the total hit count for a given sector and superLayer
+	 */
+	public int superLayerHitCount(DetectorId id, int sect0, int supl0) {
+		HitHolder holder = hits.get(id);
+		if (holder == null) {
+			return 0;
+		}
+		else {
+			return holder.hitCount(sect0, supl0);
+		}
 	}
 
 	/**
-	 * Get the list of ftof hits
-	 * 
-	 * @return list of ftof hits
+	 * Get all the hits, all sectors and superLayers
+	 * @return all the hits, all sectors and superLayers
 	 */
-	public List<AugmentedDetectorHit> getHits(DetectorId id) {
+	public ArrayList<AugmentedDetectorHit> getAllHits(DetectorId id) {
+		HitHolder holder = hits.get(id);
+		if (holder == null) {
+			return null;
+		}
+		else {
+			return holder.getAllHits();
+		}
+	}
+	/**
+	 * Get the HitHolder
+	 * 
+	 * @param id
+	 *            the detectorId enum value
+	 */
+	public HitHolder getHitHolder(DetectorId id) {
 		return hits.get(id);
+	}
+
+	/**
+	 * Get the list of hits
+	 * 
+	 * @param id
+	 *            the detectorId enum value
+	 * @param sect0
+	 *            the zero based sector
+	 * @param supl0
+	 *            the zero based superLayer
+	 * @return of list of hits with matching sector and superLayer and a mix of
+	 *         layers and components
+	 */
+	public List<AugmentedDetectorHit> getHits(DetectorId id, int sect0, int supl0) {
+		HitHolder holder = hits.get(id);
+		if (holder == null) {
+			return null;
+		} else {
+			return hits.get(id).getHits(sect0, supl0);
+		}
 	}
 
 	/**
@@ -142,73 +219,6 @@ public class ParticleHits {
 		return _lundId.getStyle().getFillColor();
 	}
 
-	/**
-	 * Filter a raw list of hits on specific values of sector, superlayer and
-	 * layer. If you don't want to filter on a parameter, call with a value < 1
-	 * 
-	 * @param rawList
-	 *            the raw list of detector hits
-	 * @param sector
-	 *            the 1-based sector (<=0 if exclude from filtering)
-	 * @param superLayer
-	 *            the 1-based superlayer (<=0 if exclude from filtering)
-	 * @param layer
-	 *            the 1-based layer (<=0 if exclude from filtering)
-	 * @return a filtered list
-	 */
-	public static List<AugmentedDetectorHit> filter(List<AugmentedDetectorHit> rawList, int sector, int superLayer,
-			int layer) {
-
-		Vector<AugmentedDetectorHit> filteredHits = new Vector<>();
-		// convert to 0 based
-		sector--;
-		superLayer--;
-		layer--;
-
-		if (rawList != null) {
-			for (AugmentedDetectorHit aughit : rawList) {
-				DetectorHit hit = aughit._hit;
-				boolean accept = true;
-
-				if (accept && (sector >= 0)) {
-					accept = (sector == hit.getSectorId());
-				}
-				if (accept && (superLayer >= 0)) {
-					accept = (superLayer == hit.getSuperlayerId());
-				}
-				if (accept && (layer >= 0)) {
-					accept = (layer == hit.getLayerId());
-				}
-
-				if (accept) {
-					filteredHits.add(aughit);
-				}
-			}
-		}
-
-		return filteredHits;
-	}
-
-	/**
-	 * Get a list of augmented hits. We can add information to augmented hits,
-	 * such as whether this was a noise hit.
-	 * 
-	 * @param detectorHits
-	 *            the list to upgrade.
-	 * @return the corresponding list of augmented hits
-	 */
-	public static List<AugmentedDetectorHit> fromDetectorHits(List<DetectorHit> detectorHits) {
-		if (detectorHits == null) {
-			return null;
-		}
-
-		ArrayList<AugmentedDetectorHit> augHits = new ArrayList<>();
-		for (DetectorHit dh : detectorHits) {
-			augHits.add(new AugmentedDetectorHit(dh));
-		}
-
-		return augHits;
-	}
 
 	/**
 	 * Add hit feedback data to the feedback strings

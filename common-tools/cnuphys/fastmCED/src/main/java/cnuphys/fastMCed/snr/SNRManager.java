@@ -36,12 +36,15 @@ public class SNRManager  {
 
 	// private constructor
 	private SNRManager() {
+		//turn on (or off) SNR "composite" track finding
+		//default is off
+		NoiseReductionParameters.setLookForTracks(false);
 	}
 
 	/**
 	 * Public access to the singleton
 	 * 
-	 * @return the NoiseManager singleton
+	 * @return the SNRManager singleton
 	 */
 	public static SNRManager getInstance() {
 		if (instance == null) {
@@ -73,6 +76,10 @@ public class SNRManager  {
 		return _noisePackage.getParameters(sect0, supl0);
 	}
 	
+	public NoiseReductionParameters getCompositeParameters(int sect0) {
+		return _noisePackage.getCompositeParameters(sect0, 1);
+	}
+	
 	//add feedback string with common color
 	private void addFBStr(String s, List<String>feedbackStrings) {
 		feedbackStrings.add(_fbColor+s);
@@ -98,12 +105,19 @@ public class SNRManager  {
 	}
 	
 	/**
+	 * Clear the SNR data
+	 */
+	public void clear() {
+		_noisePackage.clear();
+		_noiseResults.clear();
+	}
+	
+	/**
 	 * Perform the SNR analysis
 	 * @param particleHits the input hit data
 	 */
 	public void analyzeSNR(List<ParticleHits> particleHits) {
-		_noisePackage.clear();
-		_noiseResults.clear();
+		clear();
 		
 		if ((particleHits == null) || particleHits.isEmpty()) {
 			return;
@@ -112,7 +126,7 @@ public class SNRManager  {
 		//total dc hit count
 		int dcCount = 0;
 		for (ParticleHits ph : particleHits) {
-			dcCount += ph.hitCount(DetectorId.DC);
+			dcCount += ph.totalHitCount(DetectorId.DC);
 		}
 		
 		if (dcCount < 1) {
@@ -126,7 +140,7 @@ public class SNRManager  {
 
 		int index = 0;
 		for (ParticleHits ph : particleHits) {
-			List<AugmentedDetectorHit> dcHits = ph.getHits(DetectorId.DC);
+			List<AugmentedDetectorHit> dcHits = ph.getAllHits(DetectorId.DC);
 			if ((dcHits != null) && !dcHits.isEmpty()) {
 				for (AugmentedDetectorHit aughit : dcHits) {
 					DetectorHit hit = aughit._hit;
@@ -146,7 +160,7 @@ public class SNRManager  {
 		index = 0;
 		boolean[] isNoise = _noiseResults.noise;
 		for (ParticleHits ph : particleHits) {
-			List<AugmentedDetectorHit> dcHits = ph.getHits(DetectorId.DC);
+			List<AugmentedDetectorHit> dcHits = ph.getAllHits(DetectorId.DC);
 			if ((dcHits != null) && !dcHits.isEmpty()) {
 				for (AugmentedDetectorHit aughit : dcHits) {
 					aughit.setNoise(isNoise[index]);

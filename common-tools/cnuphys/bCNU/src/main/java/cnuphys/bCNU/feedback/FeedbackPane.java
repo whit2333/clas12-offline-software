@@ -142,8 +142,12 @@ public class FeedbackPane extends TextPaneScrollPane {
 	 */
 	public void updateFeedback(List<String> feedbackStrings) {
 		clear();
-		for (String s : feedbackStrings) {
-			append(s);
+		try {
+			for (String s : feedbackStrings) {
+				append(s);
+			}
+		} catch (Exception e) {
+
 		}
 	}
 

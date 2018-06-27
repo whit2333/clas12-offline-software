@@ -28,7 +28,7 @@ public class Event44Consumer extends PhysicsEventConsumer {
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
-		if (PhysicsEventManager.getInstance().getEventNumber() == 44) {
+		if (PhysicsEventManager.getInstance().eventNumber() == 44) {
 			return StreamProcessStatus.FLAG;
 		}
 		else {

@@ -21,6 +21,8 @@ import cnuphys.fastMCed.streaming.StreamDialog;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
+import cnuphys.fastMCed.eventgen.filegen.LundFileEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 
 public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener, IStreamProcessor {
@@ -154,7 +156,8 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 //					System.err.println("RECENT FILE: [" + fn + "]");
 					File file = new File(fn);
 					
-					_physicsEventManager.openFile(file);
+					AEventGenerator generator = new LundFileEventGenerator(file);
+					_physicsEventManager.setEventGenerator(generator);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -202,9 +205,15 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 		fixMenuState();
 	}
 
+	/**
+	 * A new event generator is active
+	 * @param generator the now active generator
+	 */
 	@Override
-	public void openedNewLundFile(String path) {
-		updateRecentFiles(path);
+	public void newEventGenerator(final AEventGenerator generator) {
+		if ((generator != null) && (generator instanceof LundFileEventGenerator)) {
+			updateRecentFiles(((LundFileEventGenerator)generator).getFile().getPath());
+		}
 		fixMenuState();
 	}
 	
@@ -229,7 +238,7 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 
 	// fix the menus state
 	private void fixMenuState() {
-		boolean goodFile = (_physicsEventManager.getCurrentFile() != null);
+		boolean hasAnotherEvent = _physicsEventManager.moreEvents();
 		boolean streaming = StreamManager.getInstance().isStarted();
 	//	boolean paused = StreamManager.getInstance().isPaused();
 		boolean stopped = StreamManager.getInstance().isStopped();
@@ -238,8 +247,8 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 		_recentMenu.setEnabled(!dialogVis && stopped);
 		_openItem.setEnabled(!dialogVis && stopped);
 
-		_nextItem.setEnabled(goodFile && !streaming);
-		_streamItem.setEnabled(goodFile && !streaming);
+		_nextItem.setEnabled(hasAnotherEvent && !streaming);
+		_streamItem.setEnabled(hasAnotherEvent && !streaming);
 	}
 
 	@Override

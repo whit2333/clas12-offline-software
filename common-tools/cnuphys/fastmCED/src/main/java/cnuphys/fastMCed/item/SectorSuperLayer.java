@@ -83,6 +83,7 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	@Override
 	public void drawItem(Graphics g, IContainer container) {
 
+		//don't draw if streaming
 		if (StreamManager.getInstance().isStarted()) {
 			return;
 		}
@@ -110,9 +111,13 @@ public class SectorSuperLayer extends PolygonItem implements ISuperLayer {
 	@Override
 	public void getFeedbackStrings(IContainer container, Point screenPoint, Point2D.Double worldPoint,
 			List<String> feedbackStrings) {
-		_superlayerDrawer.getFeedbackStrings(container, screenPoint, worldPoint, feedbackStrings);
 		
+		//don't bother if streaming
+		if (StreamManager.getInstance().isStarted()) {
+			return;
+		}
 
+		_superlayerDrawer.getFeedbackStrings(container, screenPoint, worldPoint, feedbackStrings);
 	}
 
 	/**

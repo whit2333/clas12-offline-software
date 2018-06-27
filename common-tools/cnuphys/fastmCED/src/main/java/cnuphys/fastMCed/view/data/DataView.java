@@ -8,6 +8,7 @@ import org.jlab.geom.DetectorId;
 
 import cnuphys.bCNU.util.PropertySupport;
 import cnuphys.bCNU.view.BaseView;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
@@ -31,8 +32,12 @@ public class DataView extends BaseView implements
 		PhysicsEventManager.getInstance().addPhysicsListener(this, 1);
 	}
 
+	/**
+	 * A new event generator is active
+	 * @param generator the now active generator
+	 */
 	@Override
-	public void openedNewLundFile(String path) {
+	public void newEventGenerator(final AEventGenerator generator) {
 	}
 
 	@Override

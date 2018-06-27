@@ -21,7 +21,6 @@ import javax.swing.SwingUtilities;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
-import cnuphys.bCNU.dialog.ButtonPanel;
 import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.bCNU.graphics.GraphicsUtilities;
 import cnuphys.bCNU.graphics.ImageManager;
@@ -46,8 +45,8 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	// progress bar as events are streamed
 	private JProgressBar _progressBar;
 
-	// path to event file
-	private JLabel _pathLabel;
+	// generator label
+	private JLabel _generatorLabel;
 
 	// number of events total
 	private JLabel _totalLabel;
@@ -104,16 +103,16 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 		// path label
 
 		Box subBox = Box.createVerticalBox();
-		_pathLabel = new JLabel();
+		_generatorLabel = new JLabel();
 		_totalLabel = new JLabel();
 		_remainingLabel = new JLabel();
 		
 		fixNumRemaining();
 
-		subBox.add(DialogUtilities.paddedPanel(6, 6, _pathLabel));
+		subBox.add(DialogUtilities.paddedPanel(6, 6, _generatorLabel));
 		subBox.add(DialogUtilities.paddedPanel(6, 6, _totalLabel));
 		subBox.add(DialogUtilities.paddedPanel(6, 6, _remainingLabel));
-		subBox.setBorder(new CommonBorder("Event File"));
+		subBox.setBorder(new CommonBorder(""));
 		box.add(DialogUtilities.paddedPanel(6, 6, subBox));
 
 		// streaming panel
@@ -145,12 +144,12 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 	private void fixNumRemaining() {
 		_numRemaining = _eventManager.getNumRemainingEvents();
 		if (_numRemaining > 0) {
-			_pathLabel.setText(_eventManager.getCurrentSourceDescription());
+			_generatorLabel.setText(_eventManager.getGeneratorDescription());
 			_totalLabel.setText("Total number: "
 					+ _eventManager.getEventCount());
 			_remainingLabel.setText("Remaining: " + _numRemaining);
 		} else {
-			_pathLabel.setText("No event file or source.");
+			_generatorLabel.setText("No event generator.");
 			_totalLabel.setText("Total number: 0");
 			_remainingLabel.setText("Remaining: 0");
 		}
@@ -291,9 +290,9 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 							}
 
 						} else {
-							if (_eventManager.hasEvent()) {
-								boolean gotOne = _eventManager.nextEvent();
-								if (!gotOne) {
+							if (_eventManager.moreEvents()) {
+								PhysicsEvent event = _eventManager.nextEvent();
+								if (event == null) {
 									System.err.println("PhysicsEventManager nextEvent() failed.");
 									System.exit(1);
 								} else {

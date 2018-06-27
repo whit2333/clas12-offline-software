@@ -6,6 +6,7 @@ import java.util.Vector;
 import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.lund.TrajectoryRowData;
@@ -42,8 +43,13 @@ public class TrajectoryInfoView extends ATrajectoryInfoView {
 		}
 	}
 
+
+	/**
+	 * A new event generator is active
+	 * @param generator the now active generator
+	 */
 	@Override
-	public void openedNewLundFile(String path) {
+	public void newEventGenerator(final AEventGenerator generator) {
 	}
 
 }

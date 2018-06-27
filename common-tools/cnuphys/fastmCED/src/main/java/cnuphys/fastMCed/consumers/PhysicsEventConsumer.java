@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.streaming.IStreamProcessor;
@@ -11,6 +12,9 @@ import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 
 public abstract class PhysicsEventConsumer implements IPhysicsEventListener, IStreamProcessor {
+	
+	/** Flag indicating whether the consumer is active */
+	protected boolean _active = false;
 	
 	/**
 	 * The null constructor is the one called during discovery.
@@ -49,12 +53,11 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	public abstract StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits);
 
 	/**
-	 * A new Lund file has been opened via the FastMCed gui.<br>
-	 * The default implementation does nothing
-	 * @param path the full path to the file
+	 * A new event generator is active
+	 * @param generator the now active generator
 	 */
 	@Override
-	public void openedNewLundFile(String path) {
+	public void newEventGenerator(final AEventGenerator generator) {
 	}
 
 	/**
@@ -74,5 +77,23 @@ public abstract class PhysicsEventConsumer implements IPhysicsEventListener, ISt
 	 */
 	@Override
 	public abstract String flagExplanation();
+	
+	/**
+	 * Checks whether this consumer is active. Only active consumers
+	 * get new streaming events.
+	 * @return <code>true</code> if this consumer is active;
+	 */
+	public boolean isActive() {
+		return _active;
+	}
+	
+	/**
+	 * Sets whether this consumer is active. Only active consumers
+	 * get new streaming events.
+	 * @param active the active flag.
+	 */
+	public void setActive(boolean active) {
+		_active = active;
+	}
 
 }

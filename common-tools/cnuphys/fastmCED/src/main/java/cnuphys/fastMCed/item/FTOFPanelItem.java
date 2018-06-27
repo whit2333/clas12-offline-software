@@ -85,6 +85,8 @@ public class FTOFPanelItem extends PolygonItem {
 	public void drawItem(Graphics g, IContainer container) {
 		// TODO use dirty. If the item is not dirty, should be able to draw
 		// the _lastDrawnPolygon directly;
+		
+		//don't draw if streaming
 		if (StreamManager.getInstance().isStarted()) {
 			return;
 		}
@@ -248,6 +250,12 @@ public class FTOFPanelItem extends PolygonItem {
 	@Override
 	public void getFeedbackStrings(IContainer container, Point screenPoint, Point2D.Double worldPoint,
 			List<String> feedbackStrings) {
+		
+		//no feedback if streaming
+		if (StreamManager.getInstance().isStarted()) {
+			return;
+		}
+
 
 		// which paddle?
 

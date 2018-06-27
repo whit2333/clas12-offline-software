@@ -10,7 +10,7 @@ package cnuphys.lund;
 public class GeneratedParticleRecord {
 
 	// the charge (-1 for electron, etc.)
-	int _charge;
+	private int _charge;
 
 	// the vertex position in meters.
 	private double _xo, _yo, _zo;
@@ -49,6 +49,14 @@ public class GeneratedParticleRecord {
 		_momentum = momentum;
 		_theta = theta;
 		_phi = phi;
+	}
+	
+	/**
+	 * Get the integer charge
+	 * @return the integer charge
+	 */
+	public int getCharge() {
+		return _charge;
 	}
 
 	/**

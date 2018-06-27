@@ -31,6 +31,7 @@ import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.geometry.DCGeometry;
 import cnuphys.fastMCed.snr.SNRManager;
+import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.alldc.AllDCView;
 
@@ -157,9 +158,13 @@ public class AllDCSuperLayer extends RectangleItem {
 	@Override
 	public void drawItem(Graphics g, IContainer container) {
 
+		if (StreamManager.getInstance().isStarted()) {
+			return;
+		}
 
 		// System.err.println("All DC SuperLayer DIRTY: " + isDirty());
 		super.drawItem(g, container); // draws rectangular shell
+	
 
 		double left = _worldRectangle.x;
 		double top = _worldRectangle.y;
@@ -281,13 +286,13 @@ public class AllDCSuperLayer extends RectangleItem {
 		List<ParticleHits> hits = _eventManager.getParticleHits();
 
 		if (hits != null) {
-			for (ParticleHits particleHits : hits) {
+			for (ParticleHits particleHits : hits) { //essentially a loop over tracks
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _sector, _superLayer, 0);
+				List<AugmentedDetectorHit> augHits = particleHits.getHits(DetectorId.DC, _sector-1, _superLayer-1);
 
-				if (!filteredHits.isEmpty()) {
-					for (AugmentedDetectorHit hit : filteredHits) {
+				if (augHits != null) {
+					for (AugmentedDetectorHit hit : augHits) {
 
 						// NUMBERS COMING OUT OF DETECTOR HIT ARE 0-BASED
 
@@ -330,7 +335,7 @@ public class AllDCSuperLayer extends RectangleItem {
 
 		if (wire > NUM_WIRE) {
 			String msg = "Bad wire number in drawGemcDCHit " + wire
-					+ " event number " + _eventManager.getEventNumber();
+					+ " event number " + _eventManager.eventNumber();
 			Log.getInstance().warning(msg);
 			System.err.println(msg);
 			return;
@@ -378,6 +383,11 @@ public class AllDCSuperLayer extends RectangleItem {
 	@Override
 	public void getFeedbackStrings(IContainer container, Point screenPoint,
 			Point2D.Double worldPoint, List<String> feedbackStrings) {
+		
+		if (StreamManager.getInstance().isStarted()) {
+			return;
+		}
+
 		if (_worldRectangle.contains(worldPoint)) {
 
 			int layer = getLayer(worldPoint); // 1-based
@@ -437,36 +447,34 @@ public class AllDCSuperLayer extends RectangleItem {
 		
 		
 		List<ParticleHits> hits = _eventManager.getParticleHits();
-		int wire0 = wire-1;
+		int wire0 = wire - 1;
 
 		if (hits != null) {
 			for (ParticleHits particleHits : hits) {
 				LundId lid = particleHits.getLundId();
 
-				List<AugmentedDetectorHit> filteredHits = ParticleHits.filter(particleHits.getHits(DetectorId.DC), _sector, _superLayer, layer);
-				
-				for (AugmentedDetectorHit hit : filteredHits) {
-					if (hit.getComponentId() == wire0) {
-						
-						//might not even care if it is noise
-						if (hit.isNoise() && _view.hideNoise()) {
+				List<AugmentedDetectorHit> augHits = particleHits.getHits(DetectorId.DC, _sector - 1, _superLayer - 1);
+
+				if (augHits != null) {
+					for (AugmentedDetectorHit hit : augHits) {
+						if (hit.getComponentId() == wire0) {
+
+							// might not even care if it is noise
+							if (hit.isNoise() && _view.hideNoise()) {
+								break;
+							}
+
+							ParticleHits.addHitFeedback(hit, lid, feedbackStrings);
 							break;
 						}
-
-
-						ParticleHits.addHitFeedback(hit, lid, feedbackStrings);
-						break;
 					}
 				}
 			}
-			
+
 		}
 		
 		SNRManager.getInstance().addParametersToFeedback(_sector, _superLayer, feedbackStrings);
 		
-		
-		// some occupancy numbers
-
 //		feedbackStrings.add(DataSupport.prelimColor
 //				+ "Raw Superlayer Occ "
 //				+ DoubleFormat.doubleFormat(

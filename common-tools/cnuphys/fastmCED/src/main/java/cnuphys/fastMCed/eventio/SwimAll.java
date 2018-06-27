@@ -73,7 +73,7 @@ public class SwimAll implements ISwimAll {
 			double theta = Math.toDegrees(Math.acos(pzo / p));
 			double phi = Math.toDegrees(Math.atan2(pyo, pxo));
 
-			v.add(new TrajectoryRowData(index, lid, x, y, z, p, theta, phi, 0, "LUND File"));
+			v.add(new TrajectoryRowData(index, lid, x, y, z, p, theta, phi, 0, "FastMC"));
 		}
 
 		return v;

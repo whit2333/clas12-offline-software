@@ -9,22 +9,19 @@ import javax.swing.JFileChooser;
 import javax.swing.event.EventListenerList;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
 import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Path3D;
-import org.jlab.physics.io.LundReader;
-
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.util.Environment;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
+import cnuphys.fastMCed.eventgen.filegen.LundFileEventGenerator;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.frame.FastMCed;
 import cnuphys.fastMCed.geometry.GeometryManager;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamManager;
-import cnuphys.lund.LundFileSupport;
 import cnuphys.lund.LundId;
-import cnuphys.lund.LundSupport;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimming;
 
@@ -36,29 +33,15 @@ import cnuphys.swim.Swimming;
  */
 public class PhysicsEventManager {
 
-	// the event number
-	private int _eventNum = 0;
-
-	// event count
-	private int _eventCount;
-
-	// current generated event
-	private PhysicsEvent _currentEvent;
 
 	//particle hits corresponding to the current event.
 	//these are the results from the FastMC engine given the tracks
 	//found in Lund file event and swum by Swimmer
 	private Vector<ParticleHits> _currentParticleHits = new Vector<ParticleHits>();
 		
-	// Lund reader
-	private LundReader _lundReader;
-
-	// streaming?
-	// private boolean _streaming;
-
-	// current lund file
-	private File _currentFile;
-
+	//the current event generator
+    private AEventGenerator _eventGenerator;
+	
 	/** Last selected data file */
 	private static String dataFilePath = Environment.getInstance().getCurrentWorkingDirectory() + "/../../../data";
 
@@ -74,9 +57,6 @@ public class PhysicsEventManager {
 
 	// manager singleton
 	private static PhysicsEventManager instance;
-
-	// are we training?
-	private boolean _training = false;
 
 	// list of listeners. There are three lists. Those in index 0 are
 	// notified first. Then those in index 1. Finally those in index 2. The
@@ -101,6 +81,30 @@ public class PhysicsEventManager {
 		}
 		return instance;
 	}
+	
+	/**
+	 * Get the current event generator
+	 * @return the current event generator
+	 */
+	public AEventGenerator getEventGenerator() {
+		return _eventGenerator;
+	}
+	
+	/**
+	 * Set the event generator
+	 * @param generator the new event generator
+	 */
+	public void setEventGenerator(AEventGenerator generator) {
+		
+		//close the currnet
+		if (_eventGenerator != null) {
+			_eventGenerator.close();
+		}
+		
+		_eventGenerator = generator;
+		reset();
+		notifyEventListeners(_eventGenerator);
+	}
 
 	/**
 	 * Accessor for the all swimmer
@@ -117,87 +121,49 @@ public class PhysicsEventManager {
 	 * @return a collection of unique LundIds
 	 */
 	public Vector<LundId> uniqueLundIds() {
-
 		_uniqueLundIds.clear();
-
-		if ((_currentEvent != null) && (_currentEvent.count() > 0)) {
-			for (int index = 0; index < _currentEvent.count(); index++) {
-				Particle particle = _currentEvent.getParticle(index);
-				LundId lid = LundSupport.getInstance().get(particle.pid());
-				_uniqueLundIds.remove(lid);
-				_uniqueLundIds.add(lid);
-
-			}
+		if (_eventGenerator != null) {
+			_eventGenerator.uniqueLundIds(_uniqueLundIds);
 		}
-
 		return _uniqueLundIds;
-	}
-
-	/**
-	 * Check whether we are training
-	 * 
-	 * @return the training flag
-	 */
-	public boolean isTraining() {
-		return _training;
-	}
-
-	/**
-	 * Set whether we are training
-	 * 
-	 * @param training
-	 *            the new training flag
-	 */
-	public void setTraining(boolean training) {
-		_training = training;
 	}
 
 	/**
 	 * Reload the current event
 	 */
 	public void reloadCurrentEvent() {
-		if (_currentEvent != null) {
-			parseEvent(_currentEvent);
-		}
-	}
-
-	/**
-	 * Get the next event
-	 * 
-	 * @return <code>true</code> upon success
-	 */
-	public boolean nextEvent() {
-		boolean gotOne = _lundReader.next();
-
-		if (gotOne) {
-			_currentEvent = _lundReader.getEvent();
-			_eventNum++;
-			parseEvent(_currentEvent);
-		} else {
-			_currentEvent = null;
-			Toolkit.getDefaultToolkit().beep();
-		}
-		return gotOne;
-	}
-
-	/**
-	 * Get the DC hit count for a given particle
-	 * 
-	 * @param lundid
-	 *            the integer lund id
-	 * @return the number of dc hits for tht particle
-	 */
-	public int particleDCHitCount(int lundid) {
-		for (ParticleHits phits : _currentParticleHits) {
-			if (phits.lundId() == lundid) {
-				return phits.hitCount(DetectorId.DC);
+		if (_eventGenerator != null) {
+			PhysicsEvent event = _eventGenerator.getCurrentEvent();
+			if (event != null) {
+				parseEvent(event);
 			}
 		}
-		return 0;
 	}
 
-	// parse the event
-	// this gets the event first.
+	/**
+	 * Get the next event from the active generator.
+	 * @return the next event from the generator
+	 */
+	public PhysicsEvent nextEvent() {
+		
+		PhysicsEvent event = null;
+		
+		if (_eventGenerator != null) {
+			event = _eventGenerator.nextEvent();
+			if (event != null) {
+				parseEvent(event);
+			}
+			else {
+				Toolkit.getDefaultToolkit().beep();
+			}
+		}
+		
+		return event;
+	}
+
+
+	// Parse the event, which will convert the PhysicsEvent int
+	//detector hits and load them into _currentParticleHits
 	private void parseEvent(PhysicsEvent event) {
 		
 		_currentParticleHits.clear();
@@ -258,39 +224,30 @@ public class PhysicsEventManager {
 	}
 
 	/**
-	 * Get the current Lund File
-	 * 
-	 * @return the current Lund file.
-	 */
-	public File getCurrentFile() {
-		return _currentFile;
-	}
-
-	/**
-	 * Get the current event number
+	 * Get the current event number from the active generator
 	 * 
 	 * @return the current event number
 	 */
-	public int getEventNumber() {
-		return _eventNum;
+	public int eventNumber() {
+		return (_eventGenerator == null) ? 0 : _eventGenerator.eventNumber();
 	}
 
 	/**
-	 * Get the event count
+	 * Get the event count from the active generator
 	 * 
 	 * @return the current event count
 	 */
 	public int getEventCount() {
-		return _eventCount;
+		return (_eventGenerator == null) ? 0 : _eventGenerator.eventCount();
 	}
 
 	/**
 	 * Are there any more events?
 	 * 
-	 * @return <code>if we have not reaced the end of the file
+	 * @return <code>true</code> if we have not reached the end of the stream
 	 */
-	public boolean hasEvent() {
-		return (_eventNum < _eventCount);
+	public boolean moreEvents() {
+		return (getNumRemainingEvents() > 0);
 	}
 
 	/**
@@ -299,17 +256,15 @@ public class PhysicsEventManager {
 	 * @return the number of remaining events
 	 */
 	public int getNumRemainingEvents() {
-		return _eventCount - _eventNum;
+		return (_eventGenerator == null) ? 0 : _eventGenerator.eventsRemaining();
 	}
 
-	public String getCurrentSourceDescription() {
-		
-		if (_currentFile == null) {
-			return "lund file: none";
-		}
-		else {
-			return "lund file: " + _currentFile.getName() + " #events: " + _eventCount;
-		}
+	/**
+	 * Get a description of the active event generator
+	 * @return a description of the active event generator
+	 */
+	public String getGeneratorDescription() {
+		return (_eventGenerator == null) ? "none" : _eventGenerator.generatorDescription();
 	}
 
 	/**
@@ -323,12 +278,12 @@ public class PhysicsEventManager {
 	}
 
 	/**
-	 * Get the current generated event
+	 * Get the current eventfrom the active generator
 	 * 
 	 * @return the current generated event
 	 */
 	public PhysicsEvent getCurrentEvent() {
-		return _currentEvent;
+		return (_eventGenerator == null) ? null : _eventGenerator.getCurrentEvent();
 	}
 
 
@@ -337,52 +292,24 @@ public class PhysicsEventManager {
 	 * 
 	 * @return the lund file
 	 */
-	public File openFile() {
-		_currentFile = null;
-
+	public void openFile() {
 		JFileChooser chooser = new JFileChooser(dataFilePath);
 		chooser.setSelectedFile(null);
 		chooser.setFileFilter(_lundFileFilter);
 		int returnVal = chooser.showOpenDialog(null);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			openFile(chooser.getSelectedFile());
+			File file =  chooser.getSelectedFile();
+			dataFilePath = file.getParent();
+			setEventGenerator(new LundFileEventGenerator(file));
 		}
-
-		return _currentFile;
 	}
 
 	/**
 	 * Reset to the no data state
 	 */
 	public void reset() {
-		_eventNum = 0;
-		_currentEvent = null;
-		_currentFile = null;
 		_currentParticleHits.clear();
-	}
-
-	/**
-	 * Open a lund file
-	 * 
-	 * @param path
-	 *            the full path
-	 */
-	public void openFile(File file) {
-
-		reset();
-		_currentFile = file;
-
-		_lundReader = new LundReader();
-		dataFilePath = _currentFile.getParent();
-
-		_eventCount = LundFileSupport.getInstance().countEvents(file);
-		System.err.println("Event count: " + _eventCount);
-
-		_lundReader.addFile(_currentFile.getPath());
-		_lundReader.open();
-
-		PhysicsEventManager.getInstance().notifyEventListeners(_currentFile);
-
+		SNRManager.getInstance().clear();
 	}
 
 	/**
@@ -391,11 +318,11 @@ public class PhysicsEventManager {
 	 * @return <code>true</code> if any next event control should be enabled.
 	 */
 	public boolean isNextOK() {
-		return (_currentFile != null);
+		return (moreEvents());
 	}
 
-	// notify listeners that we have opened a file
-	public void notifyEventListeners(File file) {
+	// notify listeners that we have changed generators
+	public void notifyEventListeners(AEventGenerator newGenerator) {
 
 		Swimming.clearAllTrajectories();
 
@@ -408,7 +335,7 @@ public class PhysicsEventManager {
 				// listeners.
 				for (int i = listeners.length - 2; i >= 0; i -= 2) {
 					if (listeners[i] == IPhysicsEventListener.class) {
-						((IPhysicsEventListener) listeners[i + 1]).openedNewLundFile(file.getAbsolutePath());
+						((IPhysicsEventListener) listeners[i + 1]).newEventGenerator(newGenerator);
 					}
 				}
 			}

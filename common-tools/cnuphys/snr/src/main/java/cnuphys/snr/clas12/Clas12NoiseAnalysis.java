@@ -155,7 +155,7 @@ public class Clas12NoiseAnalysis {
 	 *            the parameters for that composite chamber/superlayer
 	 */
 	public void setCompositeParameters(int sector, int lrpm, NoiseReductionParameters params) {
-		_parameters[sector][lrpm] = params;
+		_compositeParameters[sector][lrpm] = params;
 	}
 
 	/**
@@ -215,6 +215,7 @@ public class Clas12NoiseAnalysis {
 				// prepare for second pass
 
 				if (NoiseReductionParameters.lookForTracks()) {
+					
 					boolean plus = (supl % 2) == 0;
 					int compositeLayer = supl / 2;
 
@@ -265,6 +266,7 @@ public class Clas12NoiseAnalysis {
 							_compositeParameters[sect][RIGHT_PLUS].getPackedData(compositeLayer).clear();
 						}
 
+						//this removes from the NORMAL superlayers was is now noise according to tack finding
 						_parameters[sect][supl].secondPass(LEFT,
 								_compositeParameters[sect][LEFT_PLUS].getPackedData(compositeLayer));
 						_parameters[sect][supl].secondPass(RIGHT,

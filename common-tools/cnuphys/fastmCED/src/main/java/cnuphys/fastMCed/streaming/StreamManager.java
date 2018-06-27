@@ -158,8 +158,10 @@ public class StreamManager {
 	 * @param state the stream state
 	 */
 	public void setStreamState(StreamReason state) {
+		if (_streamState == state) {
+			return;
+		}
 		_streamState = state;
-		notifyStreamListeners(state);
 		notifyStreamListeners(state);
 	}
 	

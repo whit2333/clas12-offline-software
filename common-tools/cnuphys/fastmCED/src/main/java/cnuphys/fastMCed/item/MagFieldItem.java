@@ -14,6 +14,7 @@ import cnuphys.bCNU.graphics.style.LineStyle;
 import cnuphys.bCNU.item.AItem;
 import cnuphys.bCNU.layer.LogicalLayer;
 import cnuphys.fastMCed.frame.FastMCed;
+import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.MagFieldDisplayArray;
 import cnuphys.fastMCed.view.sector.SectorView;
@@ -284,6 +285,12 @@ public class MagFieldItem extends AItem implements MagneticFieldChangeListener {
 	 */
 	@Override
 	public boolean shouldDraw(Graphics g, IContainer container) {
+		
+		//don't draw if streaming
+		if (StreamManager.getInstance().isStarted()) {
+			return false;
+		}
+
 		
 		if (fieldBoundary == null) {
 			return true;

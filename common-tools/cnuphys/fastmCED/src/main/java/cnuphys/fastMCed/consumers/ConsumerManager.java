@@ -1,7 +1,10 @@
 package cnuphys.fastMCed.consumers;
 
+import java.awt.ItemSelectable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.Hashtable;
@@ -19,6 +22,7 @@ import org.jlab.clas.physics.PhysicsEvent;
 import cnuphys.bCNU.log.Log;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.bCNU.util.PluginLoader;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
@@ -50,7 +54,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 			extensions);
 
 	//map consumers to menu tems
-	private Hashtable<PhysicsEventConsumer, JCheckBoxMenuItem> hash =  new Hashtable<>();
+	//private Hashtable<PhysicsEventConsumer, JCheckBoxMenuItem> hash =  new Hashtable<>();
 	
 	//where the PhysicsEventConsumer plugins are found
 	private File _consumerDir;
@@ -58,7 +62,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	//singleton
 	private static ConsumerManager instance;
 	
-	// the base class forconsumer plugins
+	// the base class for consumer plugins
 	protected Class<PhysicsEventConsumer> _consumerClaz;
 	
 	//load a consumer (a .class file) directly
@@ -74,6 +78,20 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	private ConsumerManager() {
 		String cwd = Environment.getInstance().getCurrentWorkingDirectory();
 		
+		//always add a test consumer 
+//		AcceptanceMapperConsumer accConsumer = new AcceptanceMapperConsumer();
+//		accConsumer.setActive(true);
+//		add(accConsumer);
+		
+		SNRSector1TestConsumer testConsumer = new SNRSector1TestConsumer();
+		testConsumer.setActive(true);
+		add(testConsumer);
+		
+		
+//		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
+//		add(testConsumer2);
+		
+		//now the plugins
 		_consumerDir = new File(cwd, "consumers");
 		String classPath = _consumerDir.getPath();
 		
@@ -87,22 +105,12 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		
 		System.err.println("Consumer plugin path: [" + classPath + "]");
 		Log.getInstance().info("Consumer plugin path: [" + classPath + "]");
-		
-//		if (_consumerDir.exists() && (_consumerDir.isDirectory())) {
-//			System.err.println("Found Consumers Directory");
-//		}
-//		else {
-//			System.err.println("Did not find Consumers Directory");
-//			_consumerDir = null;
-//			return;
-//		}
-		
+				
 		try {
 			_consumerClaz = (Class<PhysicsEventConsumer>) Class.forName("cnuphys.fastMCed.consumers.PhysicsEventConsumer");
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		System.err.println("Found PhysicsEventConsumer class");
 		
 		//let's try to load
 
@@ -133,13 +141,29 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		return instance;
 	}
 	
-	private JCheckBoxMenuItem createMenuItem(PhysicsEventConsumer consumer, boolean selected) {
-		JCheckBoxMenuItem item = new JCheckBoxMenuItem(consumer.getConsumerName(), selected);
+	//create the menu item
+	
+	private boolean firstItem = true;
+	private JCheckBoxMenuItem createMenuItem(final PhysicsEventConsumer consumer, boolean selected) {
 		
-		if (hash.size() == 0) {
+		ItemListener il = new ItemListener() {
+
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				JCheckBoxMenuItem item = (JCheckBoxMenuItem)e.getSource();
+				consumer.setActive(item.isSelected());
+			}
+			
+		};
+		
+		
+		JCheckBoxMenuItem item = new JCheckBoxMenuItem(consumer.getConsumerName(), selected);
+		item.addItemListener(il);
+		
+		if (firstItem) {
 			_menu.addSeparator();
+			firstItem = false;
 		}
-		hash.put(consumer, item);
 		return item;
 	}
 	
@@ -156,7 +180,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 			_menu.add(_loadItem);
 			
 			for (PhysicsEventConsumer consumer : this) {
-				_menu.add(createMenuItem(consumer, true));
+				_menu.add(createMenuItem(consumer, consumer.isActive()));
 			}
 		}
 		
@@ -164,22 +188,6 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		return _menu;
 	}
 	
-	
-	private boolean isActive(PhysicsEventConsumer consumer) {
-		if (consumer == null) {
-			System.err.println("null consumer in ConsumerManager.isActive()");
-			return false;
-		}
-		
-		JCheckBoxMenuItem item = hash.get(consumer);
-		
-		if (item == null) {
-			System.err.println("null item in ConsumerManager.isActive()");
-			return false;
-		}
-		
-		return item.isSelected();
-	}
 
 	@Override
 	public void streamingChange(StreamReason reason) {
@@ -191,7 +199,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		for (PhysicsEventConsumer consumer : this) {
-			if (isActive(consumer)) {
+			if (consumer.isActive()) {
 				StreamProcessStatus status = consumer.streamingPhysicsEvent(event, particleHits);
 				if (status == StreamProcessStatus.FLAG) {
 					System.err.println("FLAGGED");
@@ -211,10 +219,13 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 	}
 
 
-	@Override
-	public void openedNewLundFile(String path) {
+	/**
+	 * A new event generator is active
+	 * @param generator the now active generator
+	 */
+	public void newEventGenerator(final AEventGenerator generator) {
 		for (PhysicsEventConsumer consumer : this) {
-			consumer.openedNewLundFile(path);
+			consumer.newEventGenerator(generator);
 		}		
 	}
 

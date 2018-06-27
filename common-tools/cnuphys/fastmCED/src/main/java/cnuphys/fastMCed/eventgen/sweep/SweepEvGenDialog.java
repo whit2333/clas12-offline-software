@@ -1,4 +1,4 @@
-package cnuphys.fastMCed.eventgen.random;
+package cnuphys.fastMCed.eventgen.sweep;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Random;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -16,13 +15,13 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.dialog.DialogUtilities;
-import cnuphys.bCNU.dialog.VerticalFlowLayout;
 import cnuphys.bCNU.graphics.ImageManager;
 import cnuphys.fastMCed.eventgen.IEventSource;
 
@@ -32,26 +31,29 @@ import cnuphys.fastMCed.eventgen.IEventSource;
  * @author heddle
  *
  */
-public class RandomEvGenDialog extends JDialog implements ActionListener, IEventSource {
+public class SweepEvGenDialog extends JDialog implements ActionListener, IEventSource {
 
 	private static String OKSTR = "OK";
 	private static String CANCELSTR = "Cancel";
 	
-	//electron, proton, gamma
-	private static int lundIds[] = {11, 2212, 22, -11};
-
+	//steps for each variable
+	int steps[] = new int[6];
+	
 	// the reason the dialog closed.
 	private int reason;
 
-	//random number generator
-	private Random rand;
-	
 	// convenient access to south button panel
 	private JPanel buttonPanel;
 	
+	//total number of steps
+	private JLabel _totalLabel;
+	
 	//the particle panels
-	private ParticlePanel[] ppanels;
-
+	private ParticleSweepPanel ppanel;
+	
+	//to handle the indexing
+	private Odometer odometer;
+	
 	/**
 	 * Create a random event generator
 	 * 
@@ -59,8 +61,8 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	 *            the parent frame
 	 * @param maxNum the max number of particles
 	 */
-	public RandomEvGenDialog(JFrame parent, int maxNum, long seed) {
-		super(parent, "Random Event Generator", true);
+	public SweepEvGenDialog(JFrame parent) {
+		super(parent, "Sweep Event Generator", true);
 
 		// close is like a close
 		WindowAdapter wa = new WindowAdapter() {
@@ -73,24 +75,27 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		addWindowListener(wa);
 		setLayout(new BorderLayout(8, 8));
 		
-		//random generator
-		if (seed < 1) {
-			rand = new Random();
-		}
-		else {
-			rand = new Random(seed);
-		}
 
 		setIconImage(ImageManager.cnuIcon.getImage());
 		// add components
 		createSouthComponent(OKSTR, CANCELSTR);
-		createCenterComponent(maxNum);
+		createCenterComponent();
 
+		_totalLabel = new JLabel("Total number sweep steps:                  ");
+		add(_totalLabel, BorderLayout.NORTH);
+		
 		pack();
 
 		// center the dialog
 		DialogUtilities.centerDialog(this);
 
+		fix();
+	}
+
+	public void fix() {
+		if (_totalLabel != null) {
+			_totalLabel.setText("Total number sweep steps: " + totalSteps());
+		}
 	}
 
 	/**
@@ -102,6 +107,15 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	public int getReason() {
 		return reason;
 	}
+		
+	// the total number of steps for the sweep
+	public long totalSteps() {
+		
+		if (ppanel == null) {
+			return 0;
+		}
+		return ppanel.getSteps(steps);
+	}
 
 	/**
 	 * Override to create the component that goes in the center. Usually this is
@@ -110,17 +124,9 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	 * @return the component that is placed in the center
 	 */
 	
-	protected void createCenterComponent(int maxNum) {
-		JPanel panel = new JPanel();
-		
-		ppanels = new ParticlePanel[maxNum];
-		panel.setLayout(new VerticalFlowLayout());
-		
-		for (int i = 0; i < maxNum; i++) {
-			ppanels[i] = new ParticlePanel(i == 0, lundIds[i % lundIds.length], rand);
-			panel.add(ppanels[i]);
-		}
-		add(panel, BorderLayout.CENTER);
+	protected void createCenterComponent() {
+		ppanel = new ParticleSweepPanel(this, true, 11);
+		add(ppanel, BorderLayout.CENTER);
 	}
 
 	/**
@@ -164,19 +170,25 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	@Override
 	public PhysicsEvent getEvent() {
 		PhysicsEvent  event = new PhysicsEvent();
-		for (ParticlePanel panel : ppanels) {
-			if (panel.isActive()) {
-				Particle p = panel.createParticle();
-				event.addParticle(p);
-			}
+		
+		if (odometer == null) {
+			totalSteps();
+			odometer = new Odometer(steps[0], steps[1], steps[2], steps[3], steps[4], steps[5]);
 		}
+		else {
+			odometer.increment();
+		}
+		
+		
+		Particle p = ppanel.createParticle(odometer.x, odometer.y, odometer.z, odometer.p, odometer.theta, odometer.phi);
+		event.addParticle(p);
 		
 		return event;
 	}
 
 
 	public static void main(String arg[]) {
-		RandomEvGenDialog dialog = new RandomEvGenDialog(null, 4, -1L);
+		SweepEvGenDialog dialog = new SweepEvGenDialog(null);
 		
 		try {
 			EventQueue.invokeAndWait(new Runnable() {

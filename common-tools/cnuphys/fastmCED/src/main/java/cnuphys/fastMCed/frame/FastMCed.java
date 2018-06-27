@@ -41,6 +41,8 @@ import cnuphys.bCNU.view.ViewManager;
 import cnuphys.bCNU.view.VirtualView;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.consumers.ConsumerManager;
+import cnuphys.fastMCed.eventgen.AEventGenerator;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 import cnuphys.fastMCed.fastmc.FastMCMenuAddition;
 import cnuphys.fastMCed.fastmc.ParticleHits;
@@ -77,7 +79,7 @@ public class FastMCed extends BaseMDIApplication
 	private static FastMCed _instance;
 
 	// release (version) string
-	private static final String _release = "build 0.50";
+	private static final String _release = "build 0.52";
 	
 	// used for one time inits
 	private int _firstTime = 0;
@@ -87,6 +89,9 @@ public class FastMCed extends BaseMDIApplication
 
 	// event number label on menu bar
 	private static JLabel _eventNumberLabel;
+	
+	// generator
+	private static JLabel _generatorLabel;
 
 	// memory usage dialog
 	private MemoryUsageDialog _memoryUsage;
@@ -292,7 +297,8 @@ public class FastMCed extends BaseMDIApplication
 			_instance.createMenus();
 			_instance.placeViewsOnVirtualDesktop();
 
-			_instance._streamLabel= _instance.createLabel(" STREAM "  + StreamReason.STOPPED);
+			_instance._generatorLabel= _instance.createLabel(" GENERATOR  none");
+	     	_instance._streamLabel= _instance.createLabel(" STREAM "  + StreamReason.STOPPED);
 			_instance._eventNumberLabel= _instance.createLabel("  Event #                 ");
 			MagneticFields.getInstance().addMagneticFieldChangeListener(_instance);
 
@@ -322,6 +328,9 @@ public class FastMCed extends BaseMDIApplication
 
 		// the options menu
 		addToOptionMenu(mmgr.getOptionMenu());
+		
+		//the generator menu
+		mmgr.addMenu(GeneratorManager.getInstance().getMenu());
 		
 		//consumer menu
 		mmgr.addMenu(ConsumerManager.getInstance().getMenu());
@@ -365,18 +374,22 @@ public class FastMCed extends BaseMDIApplication
 	//fix the event number label
 	private void fixEventNumberLabel() {
 		
-		int evNum = PhysicsEventManager.getInstance().getEventNumber();
+		int evNum = PhysicsEventManager.getInstance().eventNumber();
 		int evCount = PhysicsEventManager.getInstance().getEventCount();
 		
 		_eventNumberLabel.setText("  Event #" + evNum + " of " + evCount);
 	}
 	
 	
-	//fix the stream state
+	//fix the stream state label
 	private void fixStreamLabel(StreamReason reason) {
 		_streamLabel.setText(" STREAM "  + reason);
 	}
 	
+	//fix the generator label
+	private void fixGeneratorLabel() {
+		_generatorLabel.setText(" GENERATOR "  + PhysicsEventManager.getInstance().getGeneratorDescription());
+	}
 
 	/**
 	 * public access to the singleton
@@ -437,10 +450,10 @@ public class FastMCed extends BaseMDIApplication
 			title = title.substring(0, index);
 		}
 
-		title += "   [Magnetic Field: " + MagneticFields.getInstance().getActiveFieldDescription();
+		title += "   [Field: " + MagneticFields.getInstance().getActiveFieldDescription();
 		title += "]";
 
-		title += " [lund file: " + PhysicsEventManager.getInstance().getCurrentSourceDescription() + "]";
+		title += " [Generator: " + PhysicsEventManager.getInstance().getGeneratorDescription() + "]";
 
 		setTitle(title);
 	}
@@ -496,9 +509,13 @@ public class FastMCed extends BaseMDIApplication
 	}
 	
 
+	/**
+	 * A new event generator is active
+	 * @param generator the now active generator
+	 */
 	@Override
-	public void openedNewLundFile(String path) {
-		System.err.println("Opened new Lund File [" + path + "]");
+	public void newEventGenerator(final AEventGenerator generator) {
+		fixGeneratorLabel();
 	}
 
 	@Override
@@ -608,6 +625,7 @@ public class FastMCed extends BaseMDIApplication
 		StreamManager.getInstance();
 		ConsumerManager.getInstance();
 		SNRManager.getInstance();
+		GeneratorManager.getInstance();
 
 		// now make the frame visible, in the AWT thread
 		EventQueue.invokeLater(new Runnable() {

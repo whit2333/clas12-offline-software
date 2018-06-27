@@ -107,6 +107,7 @@ public class DataTableModel extends DefaultTableModel {
 			HitAndID hitId = _data.get(row);
 			if (hitId != null) {
 
+				//everything in DetectorHit is zero based
 				DetectorHit hit = hitId.hit;
 
 				switch (col) {
@@ -158,7 +159,7 @@ public class DataTableModel extends DefaultTableModel {
 		if (plist != null) {
 			for (ParticleHits phits : plist) {
 
-				List<AugmentedDetectorHit> hitList = phits.getHits(_detectorId);
+				List<AugmentedDetectorHit> hitList = phits.getAllHits(_detectorId);
 
 				if (hitList != null) {
 					for (AugmentedDetectorHit aughit : hitList) {
