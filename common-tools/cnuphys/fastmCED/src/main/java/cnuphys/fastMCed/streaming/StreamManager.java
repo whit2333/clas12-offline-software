@@ -1,6 +1,5 @@
 package cnuphys.fastMCed.streaming;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import javax.swing.JOptionPane;

@@ -53,15 +53,52 @@ public class SNRManager  {
 		return instance;
 	}
 
-//	/**
-//	 * Get the noise array which is parallel to the other dc_dgtz arrays such as
-//	 * dgtz_sector etc.
-//	 * 
-//	 * @return the noise array
-//	 */
-//	public boolean[] getNoise() {
-//		return _noiseResults.noise;
-//	}
+	/**
+	 * see if SNR found a segment in every superlayer of given sector
+	 * @param sect0 zero based sector
+	 * @return <code>true</code> if segments found in all six superlayers
+	 */
+	public boolean segmentsInAllSuperlayers(int sect0) {
+		
+		for (int supl0 = 0; supl0 < 6; supl0++) {
+			if (!segmentInSuperlayer(sect0, supl0)) {
+				return false;
+			}
+		}	
+		return true;
+	}
+	
+	/**
+	 * See if SNR found a segment in the given sector and superlayer
+	 * @param sect0 zero based sector
+	 * @param supl0 zero based superlayer
+	 * @return <code>true</code> if segment found in given sector and superlayer
+	 */
+	public boolean segmentInSuperlayer(int sect0, int supl0) {
+		NoiseReductionParameters params = getParameters(sect0, supl0);
+		return !params.getRightSegments().isZero();
+	}
+	
+	/**
+	 * Get a hash key for the segments in the given sector
+	 * @param sect0 the zero based sector
+	 * @return hash key for the segments in the given sector
+	 */
+	public String hashKey(int sect0) {
+		StringBuilder sb = new StringBuilder(128);
+		
+		for (int supl0 = 0; supl0 < 6; supl0++) {
+			NoiseReductionParameters params = getParameters(sect0, supl0);
+			if (sb.length() > 0) {
+				sb.append("|");
+			}
+			sb.append(params.getRightSegments().hashKey());
+		}
+		
+		
+		return sb.toString();
+	}
+
 
 	/**
 	 * Get the parameters for a given 0-based superlayer

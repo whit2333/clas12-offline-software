@@ -7,6 +7,10 @@ public class ExtendedWord {
 
 	// Used for clarity. In JAVA, longs are 64 bits on all machines.
 	private static int WORDSIZE = 64;
+	
+	//for use in hask keys
+	private static final String HASH_DELIM = "$";
+	private static final int HASHRADIX = 36;
 
 	// Word with all bits on
 	private static final long ALLBITSON = 0xFFFFFFFFFFFFFFFFL;
@@ -424,8 +428,11 @@ public class ExtendedWord {
 		return work3.bitCount();
 	}
 	
-	private static final String HASH_DELIM = "$";
 
+	/**
+	 * Hash this ExtendedWord into a String
+	 * @return a String suitable as a hash or map key
+	 */
 	public String hashKey() {
 		StringBuilder sb = new StringBuilder(128);
 
@@ -434,7 +441,7 @@ public class ExtendedWord {
 				sb.append(HASH_DELIM);
 			}
 			if (word != 0) {
-				String hexStr = Long.toString(word, 16);
+				String hexStr = Long.toString(word, HASHRADIX);
 				sb.append(hexStr);
 			} else {
 				sb.append('0');
@@ -444,14 +451,18 @@ public class ExtendedWord {
 		return sb.toString();
 	}
 	
+	/**
+	 * Convert back to an ExtendedWord from a hash key
+	 * @param hash the key
+	 * @return the equivaleny ExtendedWord
+	 */
 	public static ExtendedWord fromHash(String hash) {
 		StringTokenizer t = new StringTokenizer(hash, HASH_DELIM);
 		int num = t.countTokens();
-		System.err.println("Number of tokens = " + num);
 		
 		long[] words = new long[num];
 		for (int i = 0; i < num; i++) {
-			words[i] = Long.valueOf(t.nextToken(), 16);
+			words[i] = Long.valueOf(t.nextToken(), HASHRADIX);
 		}
 		
 		return new ExtendedWord(words);

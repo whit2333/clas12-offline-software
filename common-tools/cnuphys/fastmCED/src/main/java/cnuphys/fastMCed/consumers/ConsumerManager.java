@@ -87,6 +87,10 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		testConsumer.setActive(true);
 		add(testConsumer);
 		
+		SNRShiftTestConsumer shiftConsumer = new SNRShiftTestConsumer();
+		shiftConsumer.setActive(true);
+		add(shiftConsumer);
+		
 		
 //		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
 //		add(testConsumer2);
@@ -184,16 +188,16 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 			}
 		}
 		
-		
 		return _menu;
 	}
-	
 
 	@Override
 	public void streamingChange(StreamReason reason) {
 		for (PhysicsEventConsumer consumer : this) {
-			consumer.streamingChange(reason);
-		}		
+			if (consumer.isActive()) {
+				consumer.streamingChange(reason);
+			}
+		}
 	}
 
 	@Override
@@ -218,22 +222,27 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		return _flagExplanation;
 	}
 
-
 	/**
 	 * A new event generator is active
-	 * @param generator the now active generator
+	 * 
+	 * @param generator
+	 *            the now active generator
 	 */
 	public void newEventGenerator(final AEventGenerator generator) {
 		for (PhysicsEventConsumer consumer : this) {
-			consumer.newEventGenerator(generator);
-		}		
+			if (consumer.isActive()) {
+				consumer.newEventGenerator(generator);
+			}
+		}
 	}
 
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		for (PhysicsEventConsumer consumer : this) {
-			consumer.newPhysicsEvent(event, particleHits);
-		}		
+			if (consumer.isActive()) {
+				consumer.newPhysicsEvent(event, particleHits);
+			}
+		}
 	}
 	
 	// get a property or environment variable

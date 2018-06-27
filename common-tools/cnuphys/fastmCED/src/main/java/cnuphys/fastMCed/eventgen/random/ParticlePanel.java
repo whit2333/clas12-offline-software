@@ -87,9 +87,9 @@ public class ParticlePanel extends JPanel implements ItemListener {
 	public JPanel addEastPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new VerticalFlowLayout());
-		_pPanel = new VariablePanel("P", 4, 11, "GeV/c");
-		_thetaPanel = new VariablePanel(UnicodeSupport.SMALL_THETA, 10, 40, "deg");
-		_phiPanel = new VariablePanel(UnicodeSupport.SMALL_PHI, -20, 20, "deg");
+		_pPanel = new VariablePanel("P", 1, 10, "GeV/c");
+		_thetaPanel = new VariablePanel(UnicodeSupport.SMALL_THETA, 5, 40, "deg");
+		_phiPanel = new VariablePanel(UnicodeSupport.SMALL_PHI, -22, 22, "deg");
 
 		panel.add(_pPanel);
 		panel.add(_thetaPanel);

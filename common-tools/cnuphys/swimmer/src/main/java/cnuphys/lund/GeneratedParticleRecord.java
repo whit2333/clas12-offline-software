@@ -1,5 +1,7 @@
 package cnuphys.lund;
 
+import java.util.StringTokenizer;
+
 /**
  * Holds the Lund ID, vertex, momentum, and the initial angles giving the
  * direction of the particle's momentum.
@@ -8,6 +10,12 @@ package cnuphys.lund;
  *
  */
 public class GeneratedParticleRecord {
+	
+	//for use in hask keys
+	private static final String HASH_DELIM = "$";
+	private static final int HASHRADIX = 36;
+	private static final double HASHFACT = 100.;
+
 
 	// the charge (-1 for electron, etc.)
 	private int _charge;
@@ -144,6 +152,80 @@ public class GeneratedParticleRecord {
 		return String.format(
 				"Q: %d Vertex: (%-8.5f, %-8.5f, %-8.5f) m  P: %-8.5f GeV/c Theta: %-8.5f deg  Phi: %-8.5f deg", _charge,
 				_xo, _yo, _zo, _momentum, _theta, _phi);
+	}
+	
+	/**
+	 * Records a reduced precision String version as a hash key
+	 * @param rpr the GeneratedParticleRecord
+	 * @return a reduced precision String version
+	 */
+	public String hashKey() {
+		return hashKey(this);
+	}
+	
+	/**
+	 * Records a reduced precision String version as a hash key
+	 * @param rpr the GeneratedParticleRecord
+	 * @return a reduced precision String version
+	 */
+	public static String hashKey(GeneratedParticleRecord  rpr) {
+		
+		StringBuilder sb = new StringBuilder(128);
+		sb.append(rpr._charge);
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._xo));
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._yo));
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._zo));
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._momentum));
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._theta));
+		sb.append(HASH_DELIM);
+		sb.append(valStr(rpr._phi));
+		
+		return sb.toString();
+	}
+	
+	private static final double TINY = 1.0e-4;
+	public static String valStr(double f) {
+		if (Math.abs(f) < TINY) {
+			return "0";
+		}
+		else {
+			long s = Math.round(HASHFACT*f);
+			String hs = Long.toString(s, HASHRADIX);
+			return hs;
+		}
+	}
+	
+	public static GeneratedParticleRecord fromHash(String hash) {
+		StringTokenizer t = new StringTokenizer(hash, HASH_DELIM);
+		int num = t.countTokens();
+		int charge = Integer.parseInt(t.nextToken());
+		double xo = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
+		double yo = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
+		double zo = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
+		double p = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
+		double theta = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
+		
+		String pstr = t.nextToken();
+		double phi = ((double)(Long.valueOf(pstr, HASHRADIX)))/HASHFACT;
+		
+		return new GeneratedParticleRecord(charge, xo, yo, zo, p, theta, phi);
+	}
+	
+	public static void main(String[] arg) {
+		GeneratedParticleRecord gpr = new GeneratedParticleRecord(-1, 1.0, 2.0, 3.00001, 5.6789, -45.6789, 359.99);
+		
+		String hash = gpr.hashKey();
+		System.err.println("HASH [" + hash + "]");
+		
+		GeneratedParticleRecord gprp = fromHash(hash);
+		
+		System.err.println("HASH [" + gprp.hashKey() + "]");
+		System.err.println("done");
 	}
 
 }
