@@ -45,6 +45,7 @@ public class SNRSector1TestConsumer extends PhysicsEventConsumer {
 
 			String hash = snr.hashKey(0);  //test if for sector 1 only
 			_dictionary.put(hash, gpr.hashKey());
+			
 		}
 		return StreamProcessStatus.CONTINUE;
 	}

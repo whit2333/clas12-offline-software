@@ -34,6 +34,15 @@ public class Clas12NoiseAnalysis {
 
 	// default num missing layers
 	private final int[] _defaultMissingLayers = { 2, 2, 2, 2, 2, 2 };
+	
+//	// default layers shifts
+//	private final int[][] _defaultLeftShifts = { { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 },
+//			{ 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 } };
+//
+//	// default layers shifts
+//	private final int[][] _defaultRightShifts = { { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 },
+//			{ 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 }, { 0, 1, 2, 2, 3, 3 } };
+
 
 	// default layers shifts
 	private final int[][] _defaultLeftShifts = { 
