@@ -380,7 +380,7 @@ public class CentralXYView extends CedXYView {
 		Point pmid = new Point();
 		Point2D.Double wporig = new Point2D.Double();
 		container.worldToLocal(porig, wporig);
-		g2.setFont(Fonts.tinyFont);
+		g2.setFont(Fonts.smallFont);
 		FontMetrics fm = getFontMetrics(g2.getFont());
 
 		if ((panel.getLayer() % 2) == 0) {
@@ -446,9 +446,7 @@ public class CentralXYView extends CedXYView {
 
 
 	/**
-	 * This adds the detector items. The AllDC view is not faithful to geometry.
-	 * All we really uses in the number of superlayers, number of layers, and
-	 * number of wires.
+	 * This adds the detector items. 
 	 */
 	@Override
 	protected void addItems() {

@@ -3,6 +3,7 @@ package cnuphys.fastMCed.eventgen.sweep;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -91,6 +92,14 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 
 		fix();
 	}
+	
+	@Override
+	public Insets getInsets() {
+		Insets def = super.getInsets();
+		return new Insets(def.top + 4, def.left + 4, def.bottom + 4,
+				def.right + 4);
+	}
+
 
 	public void fix() {
 		if (_totalLabel != null) {

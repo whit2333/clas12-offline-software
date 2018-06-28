@@ -34,11 +34,11 @@ public class ParticlePanel extends JPanel implements ItemListener {
 	private VariablePanel _thetaPanel;
 	private VariablePanel _phiPanel;
 	
-	//random generator
-	private Random _rand;
+	//random dialog
+	private RandomEvGenDialog _dialog;
 
-	public ParticlePanel(boolean use, int lundIntId, Random rand) {
-		_rand = rand;
+	public ParticlePanel(RandomEvGenDialog dialog, boolean use, int lundIntId) {
+		_dialog = dialog;
 		setLayout(new BorderLayout(20, 4));
 
 		add(addWestPanel(use, lundIntId), BorderLayout.WEST);
@@ -122,17 +122,20 @@ public class ParticlePanel extends JPanel implements ItemListener {
 	 * @return a particle to add to an event
 	 */
 	public Particle  createParticle() {
+		
+		Random rand = _dialog.getRandom();
 		int pid = _lundComboBox.getSelectedId().getId();
-		double p = _pPanel.randomValue(_rand);
-		double theta = Math.toRadians(_thetaPanel.randomValue(_rand));
-		double phi = Math.toRadians(_phiPanel.randomValue(_rand));
+		//TODO take into account pperp
+		double p = _pPanel.randomValue(rand);
+		double theta = Math.toRadians(_thetaPanel.randomValue(rand));
+		double phi = Math.toRadians(_phiPanel.randomValue(rand));
 		double pperp = p*Math.sin(theta);
 		double px = pperp*Math.cos(phi);
 		double py = pperp*Math.sin(phi);
 		double pz = p*Math.cos(theta);
-		double vx = _xoPanel.randomValue(_rand);
-		double vy = _yoPanel.randomValue(_rand);
-		double vz = _zoPanel.randomValue(_rand);
+		double vx = _xoPanel.randomValue(rand);
+		double vy = _yoPanel.randomValue(rand);
+		double vz = _zoPanel.randomValue(rand);
 		Particle part = new Particle(pid, px, py, pz, vx, vy, vz);
 		
 		return part;

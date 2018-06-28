@@ -3,6 +3,8 @@ package cnuphys.fastMCed.eventgen.random;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -16,7 +18,9 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
@@ -44,13 +48,19 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	private int reason;
 
 	//random number generator
-	private Random rand;
+	private Random _rand;
 	
 	// convenient access to south button panel
 	private JPanel buttonPanel;
 	
 	//the particle panels
 	private ParticlePanel[] ppanels;
+	
+	//seed and max p perp
+	private JTextField _seedTextField;
+	private JTextField _pperpTextField;
+	private long _defaultSeed = -1;
+	private double _defaultPperp = 2.5; //GeV/c;
 
 	/**
 	 * Create a random event generator
@@ -59,7 +69,7 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	 *            the parent frame
 	 * @param maxNum the max number of particles
 	 */
-	public RandomEvGenDialog(JFrame parent, int maxNum, long seed) {
+	public RandomEvGenDialog(JFrame parent, int maxNum) {
 		super(parent, "Random Event Generator", true);
 
 		// close is like a close
@@ -73,18 +83,12 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		addWindowListener(wa);
 		setLayout(new BorderLayout(8, 8));
 		
-		//random generator
-		if (seed < 1) {
-			rand = new Random();
-		}
-		else {
-			rand = new Random(seed);
-		}
 
 		setIconImage(ImageManager.cnuIcon.getImage());
 		// add components
 		createSouthComponent(OKSTR, CANCELSTR);
 		createCenterComponent(maxNum);
+		createNorthComponent();
 
 		pack();
 
@@ -92,6 +96,14 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		DialogUtilities.centerDialog(this);
 
 	}
+	
+	@Override
+	public Insets getInsets() {
+		Insets def = super.getInsets();
+		return new Insets(def.top + 4, def.left + 4, def.bottom + 4,
+				def.right + 4);
+	}
+
 
 	/**
 	 * Get the reason the dialog closed, either DialogUtilities.CANCEL_RESPONSE
@@ -102,6 +114,49 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	public int getReason() {
 		return reason;
 	}
+	
+	protected void createNorthComponent() {
+		JPanel panel = new JPanel();
+		
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
+		_seedTextField = new JTextField(""+_defaultSeed, 10);
+		_pperpTextField = new JTextField(""+_defaultPperp, 6);
+		
+		panel.add(new JLabel("Seed: "));
+		panel.add(_seedTextField);
+		panel.add(Box.createHorizontalStrut(30));
+		panel.add(new JLabel("<html> Max P&perp; (GeV/C): "));
+		panel.add(_pperpTextField);
+		
+		add(panel, BorderLayout.NORTH);
+	}
+	
+	/**
+	 * Get the random number seed
+	 * @return  the random number seed
+	 */
+	public long getSeed() {
+		try {
+			return Long.parseLong(_seedTextField.getText());
+		}
+		catch (Exception e) {
+			return  _defaultSeed;
+		}
+	}
+	
+	/**
+	 * Get the max p perp
+	 * @return  the max p perp in GeV/c
+	 */
+	public double getMaxPPerp() {
+		try {
+			return Double.parseDouble(_pperpTextField.getText());
+		}
+		catch (Exception e) {
+			return  _defaultPperp;
+		}
+	}
+
 
 	/**
 	 * Override to create the component that goes in the center. Usually this is
@@ -117,7 +172,7 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		panel.setLayout(new VerticalFlowLayout());
 		
 		for (int i = 0; i < maxNum; i++) {
-			ppanels[i] = new ParticlePanel(i == 0, lundIds[i % lundIds.length], rand);
+			ppanels[i] = new ParticlePanel(this, i == 0, lundIds[i % lundIds.length]);
 			panel.add(ppanels[i]);
 		}
 		add(panel, BorderLayout.CENTER);
@@ -149,6 +204,14 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 
 		add(buttonPanel, BorderLayout.SOUTH);
 	}
+	
+	/**
+	 * Get the random number generator
+	 * @return the random number generator
+	 */
+	public Random getRandom() {
+		return _rand;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -158,7 +221,22 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		reason = e.getActionCommand().equals(CANCELSTR) ? DialogUtilities.CANCEL_RESPONSE : DialogUtilities.OK_RESPONSE;
+		
+		
+		if (e.getActionCommand() == CANCELSTR) {
+			reason = DialogUtilities.CANCEL_RESPONSE;
+		}
+		else { 
+			reason = DialogUtilities.OK_RESPONSE;
+			long seed = getSeed();
+			if (seed < 1) {
+				_rand = new Random();
+			}
+			else {
+				_rand = new Random(seed);
+			}
+		}
+		
 		setVisible(false);
 	}
 	@Override
@@ -172,38 +250,6 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		}
 		
 		return event;
-	}
-
-
-	public static void main(String arg[]) {
-		RandomEvGenDialog dialog = new RandomEvGenDialog(null, 4, -1L);
-		
-		try {
-			EventQueue.invokeAndWait(new Runnable() {
-
-				@Override
-				public void run() {
-					dialog.setVisible(true);
-					
-					if (dialog.getReason() == DialogUtilities.OK_RESPONSE) {
-						System.err.println("OK");
-					}
-					else {
-						System.err.println("Cancelled");
-					}
-				
-					System.exit(1);
-				}
-
-			});
-		}
-		catch (InvocationTargetException e) {
-			e.printStackTrace();
-		}
-		catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
 	}
 
 }

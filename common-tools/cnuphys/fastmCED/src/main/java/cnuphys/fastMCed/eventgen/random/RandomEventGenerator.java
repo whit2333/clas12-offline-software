@@ -21,8 +21,12 @@ public class RandomEventGenerator extends AEventGenerator {
 		_eventSource = source;
 	}
 	
+	/**
+	 * A Generator for random events
+	 * @return a random event generator
+	 */
 	public static RandomEventGenerator createRandomGenerator() {
-		RandomEvGenDialog dialog = new RandomEvGenDialog(null, 4, -1L);
+		RandomEvGenDialog dialog = new RandomEvGenDialog(null, 4);
 		dialog.setVisible(true);
 		
 		if (dialog.getReason() == DialogUtilities.OK_RESPONSE) {
