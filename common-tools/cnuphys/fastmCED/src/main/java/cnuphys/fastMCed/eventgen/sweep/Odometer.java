@@ -10,7 +10,8 @@ public class Odometer {
 	private int _numTheta;
 	private int _numPhi;
 	
-	private long total;
+	private long totalCount;
+	private long index;
 	
 	
 	public int x;
@@ -27,8 +28,18 @@ public class Odometer {
 		_numP = numP;
 		_numTheta = numTheta;
 		_numPhi = numPhi;
+		totalCount = numX*numY*numZ*numP*numTheta*numPhi;
+		System.err.println("Odomoter total count = " + totalCount);
+		index = 0;
 	}
 	
+	public boolean rolledOver() {
+		return index >= totalCount;
+	}
+	
+	/**
+	 * Increment the odomemter
+	 */
 	public void increment() {
 		phi++;
 		if (phi == _numPhi) {
@@ -48,13 +59,13 @@ public class Odometer {
 							x++;
 							if (x == _numX) {
 								x = 0;
-								System.err.println("Warning: Odometer rolled over");
 							}
 						}
 					}
 				}
 			}
 		}
-	}
+		index++;
+	} //increment
 
 }

@@ -126,10 +126,20 @@ public class ParticlePanel extends JPanel implements ItemListener {
 		Random rand = _dialog.getRandom();
 		int pid = _lundComboBox.getSelectedId().getId();
 		//TODO take into account pperp
-		double p = _pPanel.randomValue(rand);
 		double theta = Math.toRadians(_thetaPanel.randomValue(rand));
+		
+		//take into account max pperp
+		//take into account max pperp
+		double altPMax = _dialog.getMaxPPerp()/(0.0001 + Math.sin(theta));
+		altPMax = Math.min(_pPanel.getMaximumValue(), altPMax);
+		double p = _pPanel.randomValue(altPMax, rand);
+
 		double phi = Math.toRadians(_phiPanel.randomValue(rand));
 		double pperp = p*Math.sin(theta);
+		
+		
+		
+		
 		double px = pperp*Math.cos(phi);
 		double py = pperp*Math.sin(phi);
 		double pz = p*Math.cos(theta);

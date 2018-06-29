@@ -79,6 +79,10 @@ public class StreamManager {
 	 */
 	public void notifyStreamListeners(PhysicsEvent event, List<ParticleHits> particleHits) {
 		
+		if (event == null) {
+			return;
+		}
+		
 		// Guaranteed to return a non-null array
 		Object[] listeners = _listeners.getListenerList();
 

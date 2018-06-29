@@ -35,11 +35,16 @@ public class SNRShiftTestConsumer extends PhysicsEventConsumer {
 		for (int supl0 = 0; supl0 < 6; supl0++) {
 			if (hholder.sectorUniqueLayerCount(0) > 34) {
 				if (hholder.superLayerUniqueLayerCount(0, supl0) > 4) {
-					if (!snr.segmentInSuperlayer(0, supl0)) {
-						_errStr = "Did not find segments in superlayer " + (supl0 + 1) + " as expected";
-						return StreamProcessStatus.FLAG;
+					
+					boolean rightSeg = snr.segmentInSuperlayer(0, supl0, SNRManager.RIGHT);
+					if (!rightSeg) {
+						boolean leftSeg = snr.segmentInSuperlayer(0, supl0, SNRManager.LEFT);
+						if (!leftSeg) {
+							_errStr = "Did not find L or R leaning segments in superlayer " + (supl0 + 1) + " as expected";
+							return StreamProcessStatus.FLAG;
+						}
 					}
-				}
+				} //superlayer has 4 unique layers with hits
 			}
 		}
 

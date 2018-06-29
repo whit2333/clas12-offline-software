@@ -154,7 +154,7 @@ public class PhysicsEventManager {
 				parseEvent(event);
 			}
 			else {
-				Toolkit.getDefaultToolkit().beep();
+	//			Toolkit.getDefaultToolkit().beep();
 			}
 		}
 		

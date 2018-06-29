@@ -63,10 +63,10 @@ public class FTOFGeometry {
 			return null;
 		}
 		
-		System.err.println("CALLING FOR FTOF HITS");
+//		System.err.println("CALLING FOR FTOF HITS");
 		List<DetectorHit> hits = _ftofDetector.getHits(path);
 		
-		System.err.println("Number of ftof hits: " + ((hits == null) ? 0 : hits.size()));
+//		System.err.println("Number of ftof hits: " + ((hits == null) ? 0 : hits.size()));
 		return hits;
 	}
 	

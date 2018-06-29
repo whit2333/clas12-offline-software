@@ -3,6 +3,7 @@ package cnuphys.fastMCed.eventgen.sweep;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -18,6 +19,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import org.jlab.clas.physics.Particle;
 import org.jlab.clas.physics.PhysicsEvent;
@@ -55,6 +57,11 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 	//to handle the indexing
 	private Odometer odometer;
 	
+	//seed and max p perp
+	private JTextField _pperpTextField;
+	private double _defaultPperp = 2.5; //GeV/c;
+
+	
 	/**
 	 * Create a random event generator
 	 * 
@@ -79,11 +86,10 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 
 		setIconImage(ImageManager.cnuIcon.getImage());
 		// add components
+		createNorthComponent();
 		createSouthComponent(OKSTR, CANCELSTR);
 		createCenterComponent();
 
-		_totalLabel = new JLabel("Total number sweep steps:                  ");
-		add(_totalLabel, BorderLayout.NORTH);
 		
 		pack();
 
@@ -98,6 +104,36 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 		Insets def = super.getInsets();
 		return new Insets(def.top + 4, def.left + 4, def.bottom + 4,
 				def.right + 4);
+	}
+
+	private void createNorthComponent() {
+		
+		JPanel panel = new JPanel();
+		
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
+		_pperpTextField = new JTextField(""+_defaultPperp, 6);
+		_totalLabel = new JLabel("Total number sweep steps:                  ");
+
+		panel.add(new JLabel("<html> Max P&perp; (GeV/C): "));
+		panel.add(_pperpTextField);
+	    panel.add(Box.createHorizontalStrut(50));
+		panel.add(_totalLabel);
+		
+		add(panel, BorderLayout.NORTH);
+
+	}
+	
+	/**
+	 * Get the max p perp
+	 * @return  the max p perp in GeV/c
+	 */
+	public double getMaxPPerp() {
+		try {
+			return Double.parseDouble(_pperpTextField.getText());
+		}
+		catch (Exception e) {
+			return  _defaultPperp;
+		}
 	}
 
 
@@ -176,9 +212,32 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 		reason = e.getActionCommand().equals(CANCELSTR) ? DialogUtilities.CANCEL_RESPONSE : DialogUtilities.OK_RESPONSE;
 		setVisible(false);
 	}
+	
 	@Override
 	public PhysicsEvent getEvent() {
-		PhysicsEvent  event = new PhysicsEvent();
+		PhysicsEvent event = null;
+		
+		while (!rolledOver() && (event == null)) {
+			event = getAnEvent();
+		}
+		return event;
+	}
+	
+	private boolean rolledOver() {
+		return ((odometer != null) && odometer.rolledOver());
+	}
+	
+	private boolean issuedWarning = false;
+	private PhysicsEvent getAnEvent() {
+		
+		if ((odometer != null) && odometer.rolledOver()) {
+			if (!issuedWarning) {
+				System.err.println("Sweep stream has finished and is now returning null.");
+				issuedWarning = true;
+			}
+			return null;
+		}
+		
 		
 		if (odometer == null) {
 			totalSteps();
@@ -188,7 +247,17 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 			odometer.increment();
 		}
 		
+		//take max pperp into account
+		//this my cause us to return a null event
 		
+		double theta = Math.toRadians(ppanel.getTheta(odometer.theta));
+		double altPMax = getMaxPPerp()/(0.0001 + Math.sin(theta));
+		if (ppanel.getMomentum(odometer.p) > altPMax) {
+			return null;
+		}
+
+		
+		PhysicsEvent  event = new PhysicsEvent();		
 		Particle p = ppanel.createParticle(odometer.x, odometer.y, odometer.z, odometer.p, odometer.theta, odometer.phi);
 		event.addParticle(p);
 		

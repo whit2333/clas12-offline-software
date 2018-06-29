@@ -2,20 +2,27 @@ package cnuphys.fastMCed.snr;
 
 import java.awt.Color;
 import java.util.List;
-import java.util.Vector;
+import java.util.StringTokenizer;
 
 import org.jlab.geom.DetectorHit;
 import org.jlab.geom.DetectorId;
-import org.jlab.io.base.DataEvent;
 
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.snr.ExtendedWord;
 import cnuphys.snr.NoiseReductionParameters;
 import cnuphys.snr.clas12.Clas12NoiseAnalysis;
 import cnuphys.snr.clas12.Clas12NoiseResult;
 
 
 public class SNRManager  {
+	
+	//bend direction
+	public static final int LEFT  = 0;
+	public static final int RIGHT = 1;
+	
+	//used for creating composite hash keys
+	private static final String HASHDELIM = "|";
 	
 	private static final String _fbColor = "$wheat$";
 
@@ -56,47 +63,82 @@ public class SNRManager  {
 	/**
 	 * see if SNR found a segment in every superlayer of given sector
 	 * @param sect0 zero based sector
+	 * @param direction
+	 *            should be LEFT or RIGHT
 	 * @return <code>true</code> if segments found in all six superlayers
 	 */
-	public boolean segmentsInAllSuperlayers(int sect0) {
+	public boolean segmentsInAllSuperlayers(int sect0, int direction) {
 		
 		for (int supl0 = 0; supl0 < 6; supl0++) {
-			if (!segmentInSuperlayer(sect0, supl0)) {
+			if (!segmentInSuperlayer(sect0, supl0, direction)) {
 				return false;
 			}
 		}	
 		return true;
 	}
-	
+
 	/**
 	 * See if SNR found a segment in the given sector and superlayer
-	 * @param sect0 zero based sector
-	 * @param supl0 zero based superlayer
+	 * 
+	 * @param sect0
+	 *            zero based sector
+	 * @param supl0
+	 *            zero based superlayer
+	 * @param direction
+	 *            should be LEFT or RIGHT
 	 * @return <code>true</code> if segment found in given sector and superlayer
 	 */
-	public boolean segmentInSuperlayer(int sect0, int supl0) {
+	public boolean segmentInSuperlayer(int sect0, int supl0, int direction) {
 		NoiseReductionParameters params = getParameters(sect0, supl0);
-		return !params.getRightSegments().isZero();
+
+		if (direction == LEFT) {
+			return !params.getLeftSegments().isZero();
+		} else {
+			return !params.getRightSegments().isZero();
+		}
 	}
-	
+
 	/**
 	 * Get a hash key for the segments in the given sector
-	 * @param sect0 the zero based sector
+	 * 
+	 * @param sect0
+	 *            the zero based sector
+	 * @param direction
+	 *            should be LEFT or RIGHT
 	 * @return hash key for the segments in the given sector
 	 */
-	public String hashKey(int sect0) {
+	public String hashKey(int sect0, int direction) {
 		StringBuilder sb = new StringBuilder(128);
-		
+
 		for (int supl0 = 0; supl0 < 6; supl0++) {
 			NoiseReductionParameters params = getParameters(sect0, supl0);
 			if (sb.length() > 0) {
-				sb.append("|");
+				sb.append(HASHDELIM);
 			}
-			sb.append(params.getRightSegments().hashKey());
+			if (direction == LEFT) {
+				sb.append(params.getLeftSegments().hashKey());
+			} else {
+				sb.append(params.getRightSegments().hashKey());
+			}
 		}
-		
-		
+
 		return sb.toString();
+	}
+	
+	/**
+	 * Convert a hash key created with hashKey above back into 
+	 * an array of ExtendedWord objects
+	 * @param hashKey a hash key created with the hashKey methhod
+	 * @param ewords the unhashed words that created the key
+	 */
+	public void fromHash(String hashKey, ExtendedWord[] ewords) {
+		StringTokenizer t = new StringTokenizer(hashKey, HASHDELIM);
+		int num = t.countTokens();
+		
+		for (int i = 0; i < num; i++) {
+			String ewordHash = t.nextToken();
+			ewords[i] = ExtendedWord.fromHash(ewordHash);
+		}
 	}
 
 

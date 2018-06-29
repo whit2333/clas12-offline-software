@@ -199,10 +199,9 @@ public class GeneratedParticleRecord {
 			return hs;
 		}
 	}
-	
+		
 	public static GeneratedParticleRecord fromHash(String hash) {
 		StringTokenizer t = new StringTokenizer(hash, HASH_DELIM);
-		int num = t.countTokens();
 		int charge = Integer.parseInt(t.nextToken());
 		double xo = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;
 		double yo = ((double)(Long.valueOf(t.nextToken(), HASHRADIX)))/HASHFACT;

@@ -145,5 +145,13 @@ public class ParticleSweepPanel extends JPanel implements ItemListener {
 		
 		return part;
 	}
+	
+	public double getMomentum(int pstep) {
+		return _pPanel.getValue(pstep);
+	}
+	
+	public double getTheta(int thetastep) {
+		return _thetaPanel.getValue(thetastep);
+	}
 
 }

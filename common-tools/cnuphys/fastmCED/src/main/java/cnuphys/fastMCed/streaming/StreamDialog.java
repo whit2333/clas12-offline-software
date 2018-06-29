@@ -291,13 +291,8 @@ public class StreamDialog extends JDialog implements IStreamProcessor {
 
 						} else {
 							if (_eventManager.moreEvents()) {
-								PhysicsEvent event = _eventManager.nextEvent();
-								if (event == null) {
-									System.err.println("PhysicsEventManager nextEvent() failed.");
-									System.exit(1);
-								} else {
-									count++;
-								}
+								_eventManager.nextEvent();
+								count++;
 							}
 
 							if (((count + 1) % modCount) == 0) {
