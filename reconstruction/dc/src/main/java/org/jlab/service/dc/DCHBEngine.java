@@ -356,7 +356,6 @@ public class DCHBEngine extends ReconstructionEngine {
         segments.addAll(psegments);
 
         List<Cross> pcrosses = crossMake.find_Crosses(segments, dcDetector);
-
         //
         CrossList pcrosslist = crossLister.candCrossLists(pcrosses, false, this.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null, swimmer);
 
@@ -511,8 +510,8 @@ public class DCHBEngine extends ReconstructionEngine {
         //String inputFile = args[0];
         //String outputFile = args[1];
         //String inputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305.hipo";
-        //String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/rec_out_mu-_testDCjar_hipo/mu_30nA_bg_out.ev.hipo";
-        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec.hipo";
+        //String inputFile="/Users/ziegler/Desktop/Work/validation/infiles/sidis_tm1_sm1.hipo";
+        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_rec.hipo";
         //System.err.println(" \n[PROCESSING FILE] : " + inputFile);
         
         DCHBEngine en = new DCHBEngine();
@@ -530,14 +529,15 @@ public class DCHBEngine extends ReconstructionEngine {
         //Writer
         
         //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGD.hipo";
-        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/electron_rec2.hipo";
+        //String outputFile="/Users/ziegler/Desktop/Work/validation/FMTDBUGsidis_tm1_sm1.hipo";
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_rec3.1.nofmtrefit.hipo";
         writer.open(outputFile);
         TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
         long t1 = 0;
         while (reader.hasEvent()) {
             
             counter++;
-            System.out.println("************************************************************* ");
+            //System.out.println("************************************************************* ");
             DataEvent event = reader.getNextEvent();
             if (counter > 0) {
                 t1 = System.currentTimeMillis();
@@ -549,7 +549,7 @@ public class DCHBEngine extends ReconstructionEngine {
             // Processing TB
             en2.processDataEvent(event);
             writer.writeEvent(event);
-            System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
+            //System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
            // event.show();
             if (event.getBank("RUN::config").getInt("event", 0) > 11) {
              //   break;

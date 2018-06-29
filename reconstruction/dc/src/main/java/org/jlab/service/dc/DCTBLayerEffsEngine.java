@@ -277,12 +277,13 @@ public class DCTBLayerEffsEngine extends ReconstructionEngine {
                     continue;
                 //match to FMT
                 List<Trajectory.TrajectoryStateVec> fMTTraj = TrackArray[i].FMTTrajectory(i+1, swimmer, TrackArray[i].get_Vtx0().x(), TrackArray[i].get_Vtx0().y(), TrackArray[i].get_Vtx0().z(), TrackArray[i].get_pAtOrig().x(), TrackArray[i].get_pAtOrig().y(), TrackArray[i].get_pAtOrig().z(), TrackArray[i].get_Q(), tSurf);
-                List<MeasVecs.MeasVec> matchDCTrack = match2FMT.matchDCTrack2FMTClusters(event, fMTTraj, 20);
-                if(matchDCTrack!=null && matchDCTrack.size()>2) {
-                    org.jlab.rec.fvt.track.fit.KFitter FMTKF 
-                            = new org.jlab.rec.fvt.track.fit.KFitter(TrackArray[i], matchDCTrack, swimmer);
-                    FMTKF.runFitter(TrackArray[i]);
-                }
+                List<ArrayList<ArrayList<MeasVecs.MeasVec>>> listofFMTMeas = match2FMT.getListOfMeasurements(event);
+                List<ArrayList<MeasVecs.MeasVec>> matchDCTrack = match2FMT.matchDCTrack2FMTClusters(listofFMTMeas, fMTTraj, 20);
+                //if(matchDCTrack!=null && matchDCTrack.size()>2) {
+                //    org.jlab.rec.fvt.track.fit.KFitter FMTKF 
+                //            = new org.jlab.rec.fvt.track.fit.KFitter(TrackArray[i], matchDCTrack, swimmer);
+                //    FMTKF.runFitter(TrackArray[i]);
+               // }
                 trkcands.add(TrackArray[i]);
             }
         }

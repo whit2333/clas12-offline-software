@@ -13,6 +13,7 @@ public class MeasVecs {
 
         public double z = Double.NaN; 
         public double centroid; 
+        public double seed; 
         public double error;
         public int layer;
         public int k;
@@ -29,17 +30,17 @@ public class MeasVecs {
 
     }
     
-    public MeasVec setMeasVec(int l, double cent) {
+    public MeasVec setMeasVec(int l, double cent, int seed, int size) {
                 
         MeasVec meas    = new MeasVec();
         double err      = (double) Constants.FVT_Pitch/Math.sqrt(12.); 
-        meas.error      = err*err;
+        meas.error      = err*err*size;
         meas.layer      = l+1;
         if(l>-1)
-            meas.z          = Constants.FVT_Zlayer[l]+Constants.hDrift/2;
+            meas.z      = Constants.FVT_Zlayer[l]+Constants.hDrift/2;
 
         meas.centroid   = cent;
-
+        meas.seed   = seed;
         return meas;
         
     }

@@ -18,7 +18,7 @@ public class StateVecs {
     public Map<Integer, StateVec> trackTraj = new HashMap<Integer, StateVec>();
     public Map<Integer, CovMat> trackCov = new HashMap<Integer, CovMat>();
 
-    private double stepSize = 1.; // step size 
+    private double stepSize = Constants.FVT_Pitch/2.; // step size 
     public StateVec StateVec;
     public CovMat CovMat;
     public Matrix F;

@@ -1,6 +1,7 @@
 package org.jlab.rec.fvt.track.fit;
 
 import Jama.Matrix; 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jlab.rec.dc.track.Track;
@@ -24,8 +25,8 @@ public class KFitter {
     
     
     public void init(double z0, List<MeasVecs.MeasVec> meas) {
-        
         mv.measurements = meas;
+        
         sv.Z = new double[mv.measurements.size()];
         sv.Z[0] = z0;
         for (int i = 1; i < mv.measurements.size(); i++) {
@@ -44,7 +45,7 @@ public class KFitter {
          //   return;
         //System.err.println(" C init");
         //this.printMatrix(sv.trackCov.get(0).covMat);
-        for (int i = 1; i <= totNumIter; i++) {
+        for (int i = 1; i <= 1; i++) {
             //if (i > 1) {
             //    sv.transport(sv.Z.length - 1, 0, sv.trackTraj.get(sv.Z.length - 1), sv.trackCov.get(sv.Z.length - 1)); //get new state vec at 1st measurement after propagating back from the last filtered state
            // }
@@ -60,8 +61,10 @@ public class KFitter {
                 //sv.trackTraj.add(k+1, sv.StateVec); 
                 //sv.trackCov.add(k+1, sv.CovMat);
                // this.printMatrix(sv.trackCov.get(k).covMat);
-               // System.out.println("-------------------------------------");
-                //System.out.println((k+1)+"] trans "+sv.trackTraj.get(k+1).x+","+sv.trackTraj.get(k+1).y+","+
+                //System.out.println("-------------- "+mv.measurements.size()+" -------------- measurements ------------------");
+                //System.out.println("from "+mv.measurements.get(k).z+":"+" sfrom "+sv.Z[k]+":"+(k)+"]  "+sv.trackTraj.get(k).x+","+sv.trackTraj.get(k).y+","+
+                //		sv.trackTraj.get(k).z+","+sv.trackTraj.get(k).tx+","+sv.trackTraj.get(k).ty+" Q "+sv.trackTraj.get(k).Q);
+                //System.out.println("to "+mv.measurements.get(k+1).z+":"+" sto "+sv.Z[k+1]+":"+(k+1)+"] "+sv.trackTraj.get(k+1).x+","+sv.trackTraj.get(k+1).y+","+
                 //		sv.trackTraj.get(k+1).z+","+sv.trackTraj.get(k+1).tx+","+sv.trackTraj.get(k+1).ty+" Q "+sv.trackTraj.get(k+1).Q); 
                 this.filter(k + 1);
                 //if(sv.trackCov.get(k+1)!=null && sv.trackCov.get(k+1).covMat!=null)
@@ -89,14 +92,15 @@ public class KFitter {
             //sv.setFittedTrackPars( trk, sv.trackTraj.get(1));
         }
         sv.setFittedTrackPars( trk, sv.trackTraj.get(sv.Z.length - 1));
+        calcFinalChisq();
     }
-    public double chi2 = 0;
-    public int NDF = 0;
+    public double chi2 ;
+    public int NDF;
 
     private void filter(int k) {
         //System.out.println(".............Trying to filter....."+(sv.trackTraj.get(k) == null)+
          //       " "+(sv.trackCov.get(k) == null) +" meas sz "+mv.measurements.get(k).size);
-        if (sv.trackTraj.get(k) != null && sv.trackCov.get(k) != null && mv.measurements.get(k).size>0) {
+        if (sv.trackTraj.get(k) != null && sv.trackCov.get(k) != null && mv.measurements.get(k)!=null) {
             
             double[] K = new double[5];
             double V = mv.measurements.get(k).error;
@@ -211,7 +215,7 @@ public class KFitter {
             y_filt  += 1.*K[1] * (m - h);
             tx_filt += 0.*K[2] * (m - h); 
             ty_filt += 0.*K[3] * (m - h);
-            Q_filt  += 1.*K[4] * (m - h);
+            Q_filt  += 0.*K[4] * (m - h);
             
 
             StateVec fVec = sv.new StateVec(sv.trackTraj.get(k).k);
@@ -268,6 +272,7 @@ public class KFitter {
                 double V = mv.measurements.get(k1 + 1).error; 
                 double f_h = mv.h(sv.trackTraj.get(k1 + 1));
                 double m = mv.measurements.get(k).centroid;
+                //System.out.println((m-f_h));
                  chi2 += (m - f_h) * (m - f_h) / V;
             }
         }

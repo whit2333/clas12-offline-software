@@ -360,7 +360,8 @@ public class Track extends Trajectory implements Comparable<Track>{
      * Basic track info
      */
     public void printInfo() {
-        System.out.println("Track "+this._Id+" Q= "+this._Q+" P= "+this._P);
+        System.out.println("Track "+this._Id+" Q= "+this._Q+" chi2= "+(float)this.get_FitChi2()+" Vtx "+this.get_Vtx0().toString()+
+                " P "+this.get_pAtOrig().toString());
     }
     @Override
     public int compareTo(Track arg) {

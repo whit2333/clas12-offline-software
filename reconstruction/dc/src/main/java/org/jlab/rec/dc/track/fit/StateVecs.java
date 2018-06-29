@@ -98,9 +98,6 @@ public class StateVecs {
         double tx = iVec.tx;
         double ty = iVec.ty;
         double Q = iVec.Q;
-
-        
-
         double s = 0;
 
         double z = Z[i];
