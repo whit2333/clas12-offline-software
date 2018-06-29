@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
+import org.jlab.io.hipo.HipoDataEvent;
+import org.jlab.jnp.hipo.data.HipoEvent;
+import org.jlab.jnp.hipo.data.HipoGroup;
 import org.jlab.rec.tof.cluster.Cluster;
 import org.jlab.rec.tof.hit.ftof.Hit;
 
@@ -27,7 +30,16 @@ public class RecoBankWriter {
             return null;
         }
 
-        DataBank bank = event.createBank("FTOF::rawhits", hitlist.size());
+        DataBank bank = null;
+        if(event.hasBank("FTOF::rawhits")) { 
+            HipoDataEvent de = (HipoDataEvent) event;
+            HipoEvent dde = de.getHipoEvent();
+            HipoGroup group = dde.getGroup("FTOF::rawhits");
+            dde.removeGroup("FTOF::rawhits");
+            //dde.writeGroup(group);
+        } 
+        bank=event.createBank("FTOF::rawhits", hitlist.size());
+        
         if (bank == null) {
             System.err
                     .println("COULD NOT CREATE A BANK!!!!!! for hitlist of size "
@@ -59,7 +71,7 @@ public class RecoBankWriter {
             bank.setFloat("time_right_unc", i, (float) hitlist.get(i)
                     .get_t2Unc());
         }
-
+        
         return bank;
 
     }
@@ -72,7 +84,16 @@ public class RecoBankWriter {
             return null;
         }
 
-        DataBank bank = event.createBank("FTOF::hits", hitlist.size());
+        DataBank bank = null;
+        if(event.hasBank("FTOF::hits")) { 
+            HipoDataEvent de = (HipoDataEvent) event;
+            HipoEvent dde = de.getHipoEvent();
+            HipoGroup group = dde.getGroup("FTOF::hits");
+            dde.removeGroup("FTOF::hits");
+            //dde.writeGroup(group);
+        } 
+        bank = event.createBank("FTOF::hits", hitlist.size());
+        
         if (bank == null) {
             System.err.println("COULD NOT CREATE A BANK!!!!!!");
             return null;
@@ -137,7 +158,16 @@ public class RecoBankWriter {
             return null;
         }
 
-        DataBank bank = event.createBank("FTOF::clusters", cluslist.size());
+        DataBank bank = null;
+        if(event.hasBank("FTOF::clusters")) {
+            HipoDataEvent de = (HipoDataEvent) event;
+            HipoEvent dde = de.getHipoEvent();
+            HipoGroup group = dde.getGroup("FTOF::clusters");
+            dde.removeGroup("FTOF::clusters");
+            //dde.writeGroup(group);
+        } 
+        bank = event.createBank("FTOF::clusters", cluslist.size());
+        
         if (bank == null) {
             System.err.println("COULD NOT CREATE A BANK!!!!!!");
             return null;
@@ -182,8 +212,17 @@ public class RecoBankWriter {
             return null;
         }
 
-        DataBank bank = event.createBank("FTOF::matchedclusters",
+        DataBank bank = null;
+        if(event.hasBank("FTOF::matchedclusters")) {
+            HipoDataEvent de = (HipoDataEvent) event;
+            HipoEvent dde = de.getHipoEvent();
+            HipoGroup group = dde.getGroup("FTOF::matchedclusters");
+            dde.removeGroup("FTOF::matchedclusters");
+            //dde.writeGroup(group);
+        }
+        bank = event.createBank("FTOF::matchedclusters",
                 matchedClusters.size());
+        
         if (bank == null) {
             System.err.println("COULD NOT CREATE A BANK!!!!!!");
             return null;

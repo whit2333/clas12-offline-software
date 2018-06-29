@@ -48,37 +48,58 @@ public class TrackReader {
     }
 
     public void fetch_Trks(DataEvent event) {
-
-        if (event.hasBank("TimeBasedTrkg::TBTracks") == false) {
+        if (event.hasBank("HitBasedTrkg::HBTracks") == false && event.hasBank("TimeBasedTrkg::TBTracks") == false) {
             // System.err.println("there is no DC bank ");
             _TrkLines = new ArrayList<Line3d>();
 
             return;
         }
 
-        DataBank bankDC = event.getBank("TimeBasedTrkg::TBTracks");
+        DataBank bankDC = null;
 
         // double[] fitChisq = bankDC.getDouble("fitChisq"); // use this to
         // select good tracks
-        int rows = bankDC.rows();
+        int rows =0;
 
-        double[] x = new double[rows]; // Region 3 cross x-position in the lab
+        double[] x ; // Region 3 cross x-position in the lab
         // (in cm = default unit)
-        double[] y = new double[rows]; // Region 3 cross y-position in the lab
-        double[] z = new double[rows]; // Region 3 cross z-position in the lab
-        double[] ux = new double[rows]; // Region 3 cross x-unit-dir in the lab
-        double[] uy = new double[rows]; // Region 3 cross y-unit-dir in the lab
-        double[] uz = new double[rows]; // Region 3 cross z-unit-dir in the lab
-        double[] p = new double[rows]; // pathlength of the track from origin to
+        double[] y ; // Region 3 cross y-position in the lab
+        double[] z ; // Region 3 cross z-position in the lab
+        double[] ux ; // Region 3 cross x-unit-dir in the lab
+        double[] uy ; // Region 3 cross y-unit-dir in the lab
+        double[] uz ; // Region 3 cross z-unit-dir in the lab
+        double[] p ; // pathlength of the track from origin to
         // DC R3
-        int[] tid = new int[rows]; // track id in HB bank
-        if (event.hasBank("TimeBasedTrkg::TBTracks") == true) {
+        int[] tid ; // track id in  bank
+        
+        double[] paths ;
+        
+        if (event.hasBank("TimeBasedTrkg::TBTracks") == true) { // if TBT is available use it
+            bankDC = event.getBank("TimeBasedTrkg::TBTracks");
+            rows = bankDC.rows();
+            
+        }
+        if (event.hasBank("TimeBasedTrkg::TBTracks") == false && event.hasBank("HitBasedTrkg::HBTracks")==true) { // if HBT is available but there is no TBT use HBT
+            bankDC = event.getBank("HitBasedTrkg::HBTracks");
+            //System.out.println("READING HIT-BASED BANK.........................");
+            rows = bankDC.rows();
+            
+        }
+        if(bankDC != null && rows>0) {
+            x = new double[rows]; 
+            y = new double[rows]; 
+            z = new double[rows]; 
+            ux = new double[rows]; 
+            uy = new double[rows]; 
+            uz = new double[rows]; 
+            p = new double[rows]; 
+            tid = new int[rows]; 
             // instanciates the list
             // each arraylist corresponds to the tracks for a given sector
             List<Line3d> trkLines = new ArrayList<Line3d>();
             // each array of paths likewise corresponds to the tracks for a
             // given sector
-            double[] paths = new double[rows];
+            paths = new double[rows];
 
             for (int i = 0; i < rows; i++) {
                 // if(fitChisq[i]>1)
