@@ -16,7 +16,6 @@ import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.base.ConstantProvider;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
-import org.jlab.io.hipo.HipoDataEvent;
 import org.jlab.io.hipo.HipoDataSource;
 import org.jlab.io.hipo.HipoDataSync;
 import org.jlab.rec.dc.Constants;
@@ -552,11 +551,11 @@ public class DCHBEngine extends ReconstructionEngine {
             //System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
            // event.show();
             if (event.getBank("RUN::config").getInt("event", 0) > 11) {
-             //   break;
+                break;
             }
             
             
-            // event.show();
+             event.show();
             //if(counter%100==0)
             
             //if(event.hasBank("HitBasedTrkg::HBTracks")) {

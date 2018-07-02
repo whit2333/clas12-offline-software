@@ -45,7 +45,7 @@ public class KFitter {
          //   return;
         //System.err.println(" C init");
         //this.printMatrix(sv.trackCov.get(0).covMat);
-        for (int i = 1; i <= 1; i++) {
+        for (int i = 1; i <= totNumIter; i++) {
             //if (i > 1) {
             //    sv.transport(sv.Z.length - 1, 0, sv.trackTraj.get(sv.Z.length - 1), sv.trackCov.get(sv.Z.length - 1)); //get new state vec at 1st measurement after propagating back from the last filtered state
            // }

@@ -741,6 +741,26 @@ public class RecoBankWriter {
             bank.setFloat("p0_x", i, (float) candlist.get(i).get_pAtOrig().x());
             bank.setFloat("p0_y", i, (float) candlist.get(i).get_pAtOrig().y());
             bank.setFloat("p0_z", i, (float) candlist.get(i).get_pAtOrig().z());
+            
+            if(bank.getDescriptor().hasEntry("Vtx0_x_fmt")==true){
+                bank.setFloat("Vtx0_x_fmt", i, (float) candlist.get(i).get_Vtx0FMT().x());
+            }
+            if(bank.getDescriptor().hasEntry("Vtx0_y_fmt")==true){
+                bank.setFloat("Vtx0_y_fmt", i, (float) candlist.get(i).get_Vtx0FMT().y());
+            }
+            if(bank.getDescriptor().hasEntry("Vtx0_z_fmt")==true){
+                bank.setFloat("Vtx0_z_fmt", i, (float) candlist.get(i).get_Vtx0FMT().z());
+            }
+            if(bank.getDescriptor().hasEntry("p0_x_fmt")==true){
+                bank.setFloat("p0_x_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().x());
+            }
+            if(bank.getDescriptor().hasEntry("p0_y_fmt")==true){
+                bank.setFloat("p0_y_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().y());
+            }
+            if(bank.getDescriptor().hasEntry("p0_z_fmt")==true){
+                bank.setFloat("p0_z_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().z());
+            }
+            
             if(candlist.get(i).size()==3) {
                 bank.setShort("Cross1_ID", i, (short) candlist.get(i).get(0).get_Id());
                 bank.setShort("Cross2_ID", i, (short) candlist.get(i).get(1).get_Id());
@@ -759,6 +779,7 @@ public class RecoBankWriter {
             bank.setFloat("chi2", i, (float) candlist.get(i).get_FitChi2());
             bank.setShort("ndf", i, (short) candlist.get(i).get_FitNDF());
         }
+        //bank.show();
         return bank;
 
     }

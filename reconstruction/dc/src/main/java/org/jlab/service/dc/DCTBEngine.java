@@ -266,7 +266,7 @@ public class DCTBEngine extends ReconstructionEngine {
                 //set the track parameters if the filter does not fail
                 TrackArray[i].set_P(1./Math.abs(kFit.finalStateVec.Q));
                 TrackArray[i].set_Q((int)Math.signum(kFit.finalStateVec.Q));
-                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector, swimmer);
+                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector, swimmer, false);
                 // candidate parameters are set from the state vector
                 TrackArray[i].set_FitChi2(kFit.chi2); 
                 TrackArray[i].set_FitNDF(kFit.NDF);
@@ -288,10 +288,10 @@ public class DCTBEngine extends ReconstructionEngine {
                         //System.out.println("before fmt refit ");FMTTrk.printInfo();
                         FMTKF.runFitter(FMTTrk);
                         //System.out.println("after fmt refit ");FMTTrk.printInfo();
-                        /*
+                        
                         KFitter kFit2 = new KFitter(FMTTrk, dcDetector, true, swimmer);
-                        kFit2.totNumIter=1;
-                        kFit2.useFilter=false;
+                        kFit2.totNumIter=2;
+                        //kFit2.useFilter=false;
                         kFit2.runFitter();
             
                         if(kFit2.setFitFailed==false && kFit2.finalStateVec!=null) {
@@ -301,7 +301,7 @@ public class DCTBEngine extends ReconstructionEngine {
                             //set the track parameters if the filter does not fail
                             FMTTrk.set_P(1./Math.abs(kFit2.finalStateVec.Q));
                             FMTTrk.set_Q((int)Math.signum(kFit2.finalStateVec.Q));
-                            trkcandFinder.setTrackPars(FMTTrk, new Trajectory(), trjFind, fn, kFit2.finalStateVec.z, dcDetector, swimmer);
+                            trkcandFinder.setTrackPars(FMTTrk, new Trajectory(), trjFind, fn, kFit2.finalStateVec.z, dcDetector, swimmer, true);
                             // candidate parameters are set from the state vector
                             FMTTrk.set_FitChi2(kFit2.chi2); 
                             FMTTrk.set_FitNDF(kFit2.NDF);
@@ -311,12 +311,12 @@ public class DCTBEngine extends ReconstructionEngine {
                         }
                         //System.out.println("after KF refit chi "+kFit.chi2+"--> "+kFit2.chi2);FMTTrk.printInfo();
                         //if(kFit2.chi2<kFit.chi2)
-
-                        */
-                            FMTTracks.add(FMTTrk);
-                    } trkcands.addAll(FMTTracks);
+                        FMTTracks.add(FMTTrk);
+                    } 
+                    trkcands.addAll(FMTTracks);
+                } else {
+                    trkcands.add(TrackArray[i]);
                 }
-                //trkcands.add(TrackArray[i]);
             }
         }
         

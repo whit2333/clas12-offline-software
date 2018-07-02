@@ -38,8 +38,8 @@ public class Track extends Trajectory implements Comparable<Track>{
     private double _totPathLen;
     private Point3D _trakOrig;
     private Vector3D _pOrig;
-    private Point3D _Vtx0_TiltedCS;
-    private Vector3D _pAtOrig_TiltedCS;
+    private Point3D _trakOrigFMT;
+    private Vector3D _pOrigFMT;
     private String _trking;
     private int _FitNDF;
     private double _fitChisq;
@@ -244,6 +244,34 @@ public class Track extends Trajectory implements Comparable<Track>{
         return _pOrig;
     }
 
+    /**
+     * 
+     * @param trakOrigFMT track vertex position at the distance of closest approach to the beam axis (0,0)
+     */
+    public void set_Vtx0FMT(Point3D trakOrigFMT) {
+        _trakOrigFMT = trakOrigFMT;
+    }
+    /**
+     * 
+     * @return track vertex position at the distance of closest approach to the beam axis (0,0)
+     */
+    public Point3D get_Vtx0FMT() {
+        return _trakOrigFMT;
+    }
+    /**
+     * 
+     * @param pOrigFMT track 3-momentum at the distance of closest approach to the beam axis (0,0)
+     */
+    public void set_pAtOrigFMT(Vector3D pOrigFMT) {
+        _pOrigFMT = pOrigFMT;
+    }
+    /**
+     * 
+     * @return track 3-momentum at the distance of closest approach to the beam axis (0,0)
+     */
+    public Vector3D get_pAtOrigFMT() {
+        return _pOrigFMT;
+    }
     /**
      * Method to assign a string indicated if the stage of tracking is hit-based or time-based
      * @param trking
