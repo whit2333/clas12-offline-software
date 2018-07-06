@@ -14,6 +14,7 @@ import org.jlab.clas.physics.Particle;
 
 import cnuphys.bCNU.dialog.VerticalFlowLayout;
 import cnuphys.bCNU.util.UnicodeSupport;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.lund.LundComboBox;
 
 public class ParticlePanel extends JPanel implements ItemListener {
@@ -87,14 +88,15 @@ public class ParticlePanel extends JPanel implements ItemListener {
 	public JPanel addEastPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new VerticalFlowLayout());
-		_pPanel = new VariablePanel("P", 1, 10, "GeV/c");
-		_thetaPanel = new VariablePanel(UnicodeSupport.SMALL_THETA, 5, 40, "deg");
-		_phiPanel = new VariablePanel(UnicodeSupport.SMALL_PHI, -22, 22, "deg");
+		_pPanel = new VariablePanel("P", GeneratorManager.getPMin(), GeneratorManager.getPMax(), "GeV/c");
+		_thetaPanel = new VariablePanel(UnicodeSupport.SMALL_THETA, GeneratorManager.getThetaMin(),
+				GeneratorManager.getThetaMax(), "deg");
+		_phiPanel = new VariablePanel(UnicodeSupport.SMALL_PHI, GeneratorManager.getPhiMin(),
+				GeneratorManager.getPhiMax(), "deg");
 
 		panel.add(_pPanel);
 		panel.add(_thetaPanel);
 		panel.add(_phiPanel);
-
 
 		return panel;
 	}

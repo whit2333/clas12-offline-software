@@ -1,129 +1,163 @@
 package cnuphys.fastMCed.consumers;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
+import java.io.File;
 import java.util.List;
-import java.util.Map;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
-import cnuphys.bCNU.util.SerialIO;
+import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventgen.random.RandomEventGenerator;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
-import cnuphys.fastMCed.snr.ReducedParticleRecord;
 import cnuphys.fastMCed.snr.SNRDictionary;
 import cnuphys.fastMCed.snr.SNRManager;
-import cnuphys.fastMCed.snr.SegmentSet;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.lund.GeneratedParticleRecord;
-import cnuphys.snr.ExtendedWord;
-import cnuphys.snr.NoiseReductionParameters;
+import cnuphys.magfield.MagneticFields;
+import cnuphys.magfield.Solenoid;
+import cnuphys.magfield.Torus;
 
 public class SNRSector1TestConsumerV2 extends PhysicsEventConsumer {
 
 	private SNRManager snr = SNRManager.getInstance();
-	private NoiseReductionParameters params[] = new NoiseReductionParameters[6];
-	private ExtendedWord rightSeg[] = new ExtendedWord[6];
 
 	private String errStr = "???";
-	private ArrayList<SegmentSet> roads = new ArrayList<SegmentSet>();
+
+	private SNRDictionary _dictionary;
+
+	private long totalFoundTime;
+	int numFound;
+	
+	private long totalMissedTime;
+	int numMissed;
+
+	int numTrialFound = 100000;
+	int numTrialMissed = 100;
+	
+	int streamNFound;
+	int streamNMissed;
 
 	@Override
 	public String getConsumerName() {
-		// TODO Auto-generated method stub
-		return "SNR Sector 1 Test V2";
+		return "SNR Speed Test";
 	}
 
 	@Override
 	public void streamingChange(StreamReason reason) {
 		if (reason == StreamReason.STOPPED) {
-			byte[] bytes = SerialIO.serialWrite(roads);
-			System.err.println("Num roads " + roads.size());
-			System.err.println("serialization size: " + bytes.length);
+			double ntot = streamNMissed + streamNFound;
+			if (ntot > 1) {
+				System.err.println("percentage of missed = " + (100. * ((double) streamNMissed)) / ntot);
+			}
+		}
+	}
+
+	private void loadOrCreateDictionary() {
+		double torusScale = 0;
+		double solenoidScale = 0;
+		boolean useTorus = MagneticFields.getInstance().hasTorus();
+		boolean useSolenoid = MagneticFields.getInstance().hasSolenoid();
+		if (useTorus) {
+			Torus torus = MagneticFields.getInstance().getTorus();
+			torusScale = (torus == null) ? 0 : torus.getScaleFactor();
+		}
+		if (useSolenoid) {
+			Solenoid solenoid = MagneticFields.getInstance().getSolenoid();
+			solenoidScale = (solenoid == null) ? 0 : solenoid.getScaleFactor();
+		}
+		String fileName = SNRDictionary.getFileName(useTorus, torusScale, useSolenoid, solenoidScale);
+
+		String dirPath = Environment.getInstance().getHomeDirectory() + "/dictionaries";
+
+		File file = new File(dirPath, fileName);
+		System.err.println("Dictionary file: [" + file.getPath() + "]");
+		if (file.exists()) {
+			System.err.println("Found dictionary file");
+			_dictionary = SNRDictionary.read(dirPath, fileName);
+
+			System.err.println("Number of keys: " + _dictionary.size());
+		}
+
+		if (_dictionary == null) {
+			_dictionary = new SNRDictionary(useTorus, torusScale, useSolenoid, solenoidScale);
 		}
 	}
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
-		boolean good = true;
-		for (int supl0 = 0; supl0 < 6; supl0++) {
-			params[supl0] = snr.getParameters(0, supl0);
-			rightSeg[supl0] = params[supl0].getRightSegments();
-			if (rightSeg[supl0].isZero()) {
-				good = false;
-				break;
+		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
+			String hash = snr.hashKey(0, SNRManager.RIGHT); 
+
+			// see if this key is in the dictionary. If it is we'll get
+			//  a hash of a GeneratedParticleRec back
+			String gprHash = _dictionary.get(hash);
+
+
+			if (gprHash != null) { //match
+				streamNFound++;
 			}
-		}
+			else {
+				String nearestKey = _dictionary.nearestKey(hash);
+				gprHash = _dictionary.get(nearestKey);
 
-		if (good) {
-			GeneratedParticleRecord gpr = particleHits.get(0).getGeneratedParticleRecord();
-			SegmentSet sset = new SegmentSet(rightSeg[0], rightSeg[1], rightSeg[2], rightSeg[3], rightSeg[4],
-					rightSeg[5]);
-
-			int index = Collections.binarySearch(roads, sset);
-
-			if (roads.isEmpty()) {
-				sset.setReducedParticleRecord(new ReducedParticleRecord(gpr));
-				roads.add(sset);
-			} else {
-
-				if (index >= 0) { // duplicate
-					// System.err.println("duplicate index");
-				} else {
-					index = -(index + 1); // now the insertion point.
-					sset.setReducedParticleRecord(new ReducedParticleRecord(gpr));
-					roads.add(index, sset);
-				}
+				streamNMissed++;
 			}
-
 		}
 		return StreamProcessStatus.CONTINUE;
 	}
 
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
-		if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
 
-			boolean good = true;
-			for (int supl0 = 0; supl0 < 6; supl0++) {
-				params[supl0] = snr.getParameters(0, supl0);
-				rightSeg[supl0] = params[supl0].getRightSegments();
-				if (rightSeg[supl0].isZero()) {
-					good = false;
-					break;
-				}
-			}
+		if (_dictionary == null) {
+			loadOrCreateDictionary();
+		}
 
-			if (good) {
-				GeneratedParticleRecord gpr = particleHits.get(0).getGeneratedParticleRecord();
-				SegmentSet sset = new SegmentSet(rightSeg[0], rightSeg[1], rightSeg[2], rightSeg[3], rightSeg[4],
-						rightSeg[5]);
-				int index = Collections.binarySearch(roads, sset);
-				if (index >= 0) { // found match
-					System.err.println("found match");
-					ReducedParticleRecord rpr = roads.get(index).getReducedParticleRecord();
-					System.err.println(String.format("%d (%-6.2f, %-6.2f, %-6.2f) (%-6.2f, %-6.2f, %-6.2f) ",
-							rpr.charge, rpr.xo, rpr.yo, rpr.zo, rpr.p, rpr.theta, rpr.phi));
+		if ((_dictionary != null) && !_dictionary.isEmpty()) {
+			if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
+
+				//test is for sector 1 right leaners only
+				if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
+					String hash = snr.hashKey(0, SNRManager.RIGHT); 
+
+					// see if this key is in the dictionary. If it is we'll get
+					//  a hash of a GeneratedParticleRec back
+					String gprHash = _dictionary.get(hash);
+
+					if (gprHash != null) { //match
+						
+						System.err.println("Found Time Test");
+						long startTime = System.currentTimeMillis();
+						for (int i = 0; i < numTrialFound; i++) {
+							hash = snr.hashKey(0, SNRManager.RIGHT); 
+							gprHash = _dictionary.get(hash);
+							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
+						}
+						totalFoundTime += (System.currentTimeMillis() - startTime);
+						numFound += numTrialFound;
+						double avgTimeFound = ((double)totalFoundTime)/numFound;
+						System.err.println("Done found time test. Average time = " + avgTimeFound + " ms");
+						
+						
+					} else {  //no match
+						System.err.println("Missed Time Test");
+						long startTime = System.currentTimeMillis();
+						for (int i = 0; i < numTrialMissed; i++) {
+							String nearestKey = _dictionary.nearestKey(hash);
+							gprHash = _dictionary.get(nearestKey);
+							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
+						}
+						totalMissedTime += (System.currentTimeMillis() - startTime);
+						numMissed += numTrialMissed;
+						double avgTimeMissed = ((double)totalMissedTime)/numMissed;
+						System.err.println("Done missed time test. Average time = " + avgTimeMissed + " ms");
 
 
-				} else {
-					index = -(index + 1); // now the insertion point.
-					index = index - 1; // nearest entry
-					if (index < 0) {
-						index = 0;
 					}
-					System.err.println("found closest");
-					ReducedParticleRecord rpr = roads.get(index).getReducedParticleRecord();
-					System.err.println(String.format("%d (%-6.2f, %-6.2f, %-6.2f) (%-6.2f, %-6.2f, %-6.2f) ",
-							rpr.charge, rpr.xo, rpr.yo, rpr.zo, rpr.p, rpr.theta, rpr.phi));
-
 				}
 
-			}
-
+			} // random generator
 		}
 	}
 
@@ -132,4 +166,5 @@ public class SNRSector1TestConsumerV2 extends PhysicsEventConsumer {
 		return errStr;
 	}
 
+	// }
 }

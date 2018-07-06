@@ -1,6 +1,5 @@
 package cnuphys.fastMCed.eventio;
 
-import java.awt.Toolkit;
 import java.io.File;
 import java.util.List;
 import java.util.Vector;
@@ -10,11 +9,11 @@ import javax.swing.event.EventListenerList;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.jlab.clas.physics.PhysicsEvent;
-import org.jlab.geom.DetectorId;
 import org.jlab.geom.prim.Path3D;
 import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventgen.AEventGenerator;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.fastMCed.eventgen.filegen.LundFileEventGenerator;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.fastMCed.frame.FastMCed;
@@ -64,6 +63,10 @@ public class PhysicsEventManager {
 
 	// someone who can swim all particles in the current event
 	private ISwimAll _allSwimmer;
+	
+	//cache the lund file generator
+	LundFileEventGenerator _lundFileGenerator;
+
 
 	// private constructor for manager
 	private PhysicsEventManager() {
@@ -91,12 +94,28 @@ public class PhysicsEventManager {
 	}
 	
 	/**
+	 * The file generator gets cached so that it can be restored
+	 * @return the cached file generator
+	 */
+	public LundFileEventGenerator getFileEventGenerator() {
+		return _lundFileGenerator;
+	}
+	
+	/**
+	 * Set the lund file generator
+	 * @param generator the lund file generator
+	 */
+	public void setFileEventGenerator(LundFileEventGenerator generator) {
+		_lundFileGenerator = generator;
+	}
+	
+	/**
 	 * Set the event generator
 	 * @param generator the new event generator
 	 */
 	public void setEventGenerator(AEventGenerator generator) {
-		
-		//close the currnet
+				
+		//close the current
 		if (_eventGenerator != null) {
 			_eventGenerator.close();
 		}
@@ -300,9 +319,12 @@ public class PhysicsEventManager {
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file =  chooser.getSelectedFile();
 			dataFilePath = file.getParent();
-			setEventGenerator(new LundFileEventGenerator(file));
+			GeneratorManager.getInstance().setFileGeneratorSelected();
+			_lundFileGenerator = new LundFileEventGenerator(file);
+			setEventGenerator(_lundFileGenerator);
 		}
 	}
+	
 
 	/**
 	 * Reset to the no data state

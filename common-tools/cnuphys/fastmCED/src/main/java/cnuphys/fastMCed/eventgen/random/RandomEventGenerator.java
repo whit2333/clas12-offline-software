@@ -8,6 +8,9 @@ import cnuphys.fastMCed.eventgen.IEventSource;
 
 public class RandomEventGenerator extends AEventGenerator {
 	
+	
+	
+	
 	//dialog used to generate random event event after it is closed
 	private IEventSource _eventSource;
 	

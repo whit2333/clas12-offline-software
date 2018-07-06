@@ -26,6 +26,7 @@ import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.bCNU.graphics.ImageManager;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.fastMCed.eventgen.IEventSource;
 
 /**
@@ -59,7 +60,6 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 	
 	//seed and max p perp
 	private JTextField _pperpTextField;
-	private double _defaultPperp = 2.5; //GeV/c;
 
 	
 	/**
@@ -111,7 +111,7 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 		JPanel panel = new JPanel();
 		
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
-		_pperpTextField = new JTextField(""+_defaultPperp, 6);
+		_pperpTextField = new JTextField("" + GeneratorManager.getPPerpMax(), 6);
 		_totalLabel = new JLabel("Total number sweep steps:                  ");
 
 		panel.add(new JLabel("<html> Max P&perp; (GeV/C): "));
@@ -129,10 +129,13 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 	 */
 	public double getMaxPPerp() {
 		try {
-			return Double.parseDouble(_pperpTextField.getText());
+			double pperpMax = Double.parseDouble(_pperpTextField.getText());
+			GeneratorManager.setPPerpMax(pperpMax);
+			return pperpMax;
 		}
 		catch (Exception e) {
-			return  _defaultPperp;
+			_pperpTextField.setText("" + GeneratorManager.getPPerpMax());
+			return  GeneratorManager.getPPerpMax();
 		}
 	}
 

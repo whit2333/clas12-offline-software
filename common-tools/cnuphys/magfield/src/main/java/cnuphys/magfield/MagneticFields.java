@@ -1412,7 +1412,14 @@ public class MagneticFields {
 		if (_activeField != null) {
 			if (_activeField instanceof Torus) {
 				return true;
-			} else if (_activeField instanceof CompositeField) {
+			} 
+			else if (_activeField instanceof TorusProbe) {
+				return true;
+			}
+			else if (_activeField instanceof CompositeProbe) {
+				return ((CompositeProbe) _activeField).hasTorus();
+			}
+			else if (_activeField instanceof CompositeField) {
 				return ((CompositeField) _activeField).hasTorus();
 			}
 		}
@@ -1434,7 +1441,7 @@ public class MagneticFields {
 				return true;
 			}
 			else if (_activeField instanceof CompositeProbe) {
-				return true;
+				return ((CompositeProbe) _activeField).hasSolenoid();
 			}
 			else if (_activeField instanceof CompositeField) {
 				return ((CompositeField) _activeField).hasSolenoid();

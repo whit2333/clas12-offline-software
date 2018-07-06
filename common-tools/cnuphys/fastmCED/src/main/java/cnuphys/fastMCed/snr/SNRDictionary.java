@@ -1,16 +1,92 @@
 package cnuphys.fastMCed.snr;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
+import cnuphys.bCNU.util.SerialIO;
 import cnuphys.snr.ExtendedWord;
 
 public class SNRDictionary extends HashMap<String, String> implements Serializable {
+		
+	private boolean _useTorus = true;
+	private boolean _useSolenoid = false;
+	
+	private double _solenoidScale = 1.0;
+	private double _torusScale = -1.0;
 
-	// good capacity 393241
+	public static final int GOODSIZE = 393241;
 
-	public SNRDictionary(int size) {
+	/**
+	 * Create a dictionary for a mag field setting
+	 * @param useTorus whether we are using the torus
+	 * @param torusScale the torus scale factor
+	 * @param useSolenoid whether we are using the solenoid
+	 * @param solenoidScale the solenoid scale factor
+	 */
+	public SNRDictionary(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale) {
+		this(useTorus, torusScale, useSolenoid, solenoidScale, GOODSIZE);
+	}
+	
+	/**
+	 * Create a dictionary for a mag field setting
+	 * @param useTorus whether we are using the torus
+	 * @param torusScale the torus scale factor
+	 * @param useSolenoid whether we are using the solenoid
+	 * @param solenoidScale the solenoid scale factor
+	 * @param size the hash map size
+	 */
+	public SNRDictionary(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale, int size) {
 		super(size);
+		_useTorus = useTorus;
+		_torusScale = torusScale;
+		_useSolenoid = useSolenoid;
+		_solenoidScale = solenoidScale;
+	}
+	
+	public File write(String dirPath) {
+		String fn = getFileName(_useTorus, _torusScale, _useSolenoid, _solenoidScale);
+		File file = new File(dirPath, fn);
+		if (file.exists()) {
+			file.delete();
+		}
+		SerialIO.serialWrite(this, file.getPath());
+		return file;
+	}
+
+	public static SNRDictionary read(String dirPath, String fileName) {
+
+		SNRDictionary dictionary = null;
+		File file = new File(dirPath, fileName);
+
+		if (file.exists()) {
+			try {
+				dictionary = (SNRDictionary) (SerialIO.serialRead(file.getPath()));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		return dictionary;
+	}
+
+	
+	//get the file name based on mag field settings
+	public static String getFileName(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale) {
+		
+		boolean incTorus = (useTorus && (Math.abs(torusScale) > 0.001));
+		boolean incSolenoid = (useSolenoid && (Math.abs(solenoidScale) > 0.001));
+		
+		if (!incTorus && !incSolenoid) {
+			return "nofield.dct";
+		}
+		String tStr = incTorus ? String.format("T%4.2f", torusScale) : "";
+		String sStr = incSolenoid ? String.format("S%4.2f", solenoidScale) : "";
+		String sep = (incTorus && incSolenoid) ? "_" : "";
+		
+		String fn = tStr + sep + sStr + ".dct";
+		fn = fn.replace(" ", "");
+		return fn;
 	}
 
 	/**

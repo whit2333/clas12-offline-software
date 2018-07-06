@@ -92,8 +92,9 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 //		add(shiftConsumer);
 		
 		
-//		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
-//		add(testConsumer2);
+		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
+		testConsumer2.setActive(true);
+		add(testConsumer2);
 		
 		//now the plugins
 		_consumerDir = new File(cwd, "consumers");

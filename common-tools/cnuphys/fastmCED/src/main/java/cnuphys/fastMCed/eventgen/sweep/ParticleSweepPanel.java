@@ -12,6 +12,7 @@ import org.jlab.clas.physics.Particle;
 
 import cnuphys.bCNU.dialog.VerticalFlowLayout;
 import cnuphys.bCNU.util.UnicodeSupport;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.lund.LundComboBox;
 
 public class ParticleSweepPanel extends JPanel implements ItemListener {
@@ -94,19 +95,21 @@ public class ParticleSweepPanel extends JPanel implements ItemListener {
 	public JPanel addEastPanel() {
 		JPanel panel = new JPanel();
 		panel.setLayout(new VerticalFlowLayout());
-		_pPanel = new VariableSweepPanel(_dialog, "P", 1, 11, 0.1, "GeV/c");
-		_thetaPanel = new VariableSweepPanel(_dialog, UnicodeSupport.SMALL_THETA, 5, 40, 0.25, "deg");
-		_phiPanel = new VariableSweepPanel(_dialog, UnicodeSupport.SMALL_PHI, -20, 20, 0.25, "deg");
+		_pPanel = new VariableSweepPanel(_dialog, "P", GeneratorManager.getPMin(), GeneratorManager.getPMax(), 0.1,
+				"GeV/c");
+		_thetaPanel = new VariableSweepPanel(_dialog, UnicodeSupport.SMALL_THETA, GeneratorManager.getThetaMin(),
+				GeneratorManager.getThetaMax(), 0.25, "deg");
+		_phiPanel = new VariableSweepPanel(_dialog, UnicodeSupport.SMALL_PHI, GeneratorManager.getPhiMin(),
+				GeneratorManager.getPhiMax(), 0.25, "deg");
 
 		panel.add(_pPanel);
 		panel.add(_thetaPanel);
 		panel.add(_phiPanel);
 
-
 		return panel;
 	}
 	
-	//fix sectability
+	//fix selectability
 	private void fixState() {
 		boolean active = true;
 		_lundComboBox.setEnabled(active);
@@ -153,5 +156,5 @@ public class ParticleSweepPanel extends JPanel implements ItemListener {
 	public double getTheta(int thetastep) {
 		return _thetaPanel.getValue(thetastep);
 	}
-
+	
 }

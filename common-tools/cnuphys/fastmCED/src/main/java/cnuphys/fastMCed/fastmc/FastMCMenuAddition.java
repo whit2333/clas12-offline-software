@@ -22,6 +22,7 @@ import cnuphys.fastMCed.streaming.StreamManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.fastMCed.eventgen.AEventGenerator;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.fastMCed.eventgen.filegen.LundFileEventGenerator;
 import cnuphys.fastMCed.eventio.IPhysicsEventListener;
 
@@ -95,7 +96,7 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 				// make sure the file still exists
 				File file = new File(fn);
 				if (file.exists()) {
-					addMenu(fn, false);
+					addRecentFileMenu(fn, false);
 				}
 			}
 		}
@@ -130,11 +131,11 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 				recentFiles);
 
 		// add to menu
-		addMenu(path, true);
+		addRecentFileMenu(path, true);
 	}
 
 	// use to open recent files
-	private void addMenu(String path, boolean atTop) {
+	private void addRecentFileMenu(String path, boolean atTop) {
 
 		// if it is in the hash, remove from has and from menu
 		if (_menuItems != null) {
@@ -156,7 +157,9 @@ public class FastMCMenuAddition implements ActionListener, IPhysicsEventListener
 //					System.err.println("RECENT FILE: [" + fn + "]");
 					File file = new File(fn);
 					
-					AEventGenerator generator = new LundFileEventGenerator(file);
+					LundFileEventGenerator generator = new LundFileEventGenerator(file);
+					GeneratorManager.getInstance().setFileGeneratorSelected();
+					_physicsEventManager.setFileEventGenerator(generator);
 					_physicsEventManager.setEventGenerator(generator);
 				} catch (Exception e) {
 					e.printStackTrace();

@@ -4,7 +4,6 @@ import org.jlab.clas.physics.PhysicsEvent;
 
 import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.fastMCed.eventgen.AEventGenerator;
-import cnuphys.fastMCed.eventgen.IEventSource;
 
 public class SweepEventGenerator extends AEventGenerator {
 	

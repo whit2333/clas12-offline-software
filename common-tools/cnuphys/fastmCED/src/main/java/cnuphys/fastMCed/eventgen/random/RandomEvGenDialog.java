@@ -26,6 +26,7 @@ import org.jlab.clas.physics.PhysicsEvent;
 import cnuphys.bCNU.dialog.DialogUtilities;
 import cnuphys.bCNU.dialog.VerticalFlowLayout;
 import cnuphys.bCNU.graphics.ImageManager;
+import cnuphys.fastMCed.eventgen.GeneratorManager;
 import cnuphys.fastMCed.eventgen.IEventSource;
 
 /**
@@ -58,7 +59,6 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	private JTextField _seedTextField;
 	private JTextField _pperpTextField;
 	private long _defaultSeed = -1;
-	private double _defaultPperp = 2.5; //GeV/c;
 
 	/**
 	 * Create a random event generator
@@ -118,7 +118,7 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 		
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 0));
 		_seedTextField = new JTextField(""+_defaultSeed, 10);
-		_pperpTextField = new JTextField(""+_defaultPperp, 6);
+		_pperpTextField = new JTextField(""+GeneratorManager.getPPerpMax(), 6);
 		
 		panel.add(new JLabel("Seed: "));
 		panel.add(_seedTextField);
@@ -148,10 +148,13 @@ public class RandomEvGenDialog extends JDialog implements ActionListener, IEvent
 	 */
 	public double getMaxPPerp() {
 		try {
-			return Double.parseDouble(_pperpTextField.getText());
+			double pperpMax = Double.parseDouble(_pperpTextField.getText());
+			GeneratorManager.setPPerpMax(pperpMax);
+			return pperpMax;
 		}
 		catch (Exception e) {
-			return  _defaultPperp;
+			_pperpTextField.setText("" + GeneratorManager.getPPerpMax());
+			return  GeneratorManager.getPPerpMax();
 		}
 	}
 
