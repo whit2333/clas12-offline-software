@@ -89,7 +89,7 @@ public class PlotFieldDialog extends APlotDialog implements ActionListener {
 	 *            the usual meaning
 	 */
 	public PlotFieldDialog(JFrame parent, boolean modal) {
-		super(parent, "Magnetic Field Plotter", modal);
+		super(parent, "Magnetic Field Plotter", modal, null);
 		setIconImage(ImageManager.cnuIcon.getImage());
 		_canvas.setPreferredSize(new Dimension(600, 600));
 		pack();

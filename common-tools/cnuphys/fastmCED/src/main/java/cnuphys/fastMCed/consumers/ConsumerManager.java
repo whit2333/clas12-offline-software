@@ -84,7 +84,7 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 //		add(accConsumer);
 		
 		SNRSector1TestConsumer testConsumer = new SNRSector1TestConsumer();
-		testConsumer.setActive(true);
+		testConsumer.setActive(false);
 		add(testConsumer);
 		
 //		SNRShiftTestConsumer shiftConsumer = new SNRShiftTestConsumer();
@@ -93,8 +93,13 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		
 		
 		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
-		testConsumer2.setActive(true);
+		testConsumer2.setActive(false);
 		add(testConsumer2);
+		
+		SNRResolutionConsumer resConsumer = new SNRResolutionConsumer();
+		resConsumer.setActive(true);
+		add(resConsumer);
+
 		
 		//now the plugins
 		_consumerDir = new File(cwd, "consumers");

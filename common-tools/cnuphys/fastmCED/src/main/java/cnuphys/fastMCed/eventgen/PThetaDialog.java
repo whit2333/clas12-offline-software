@@ -33,7 +33,7 @@ public class PThetaDialog extends APlotDialog {
 	 *            the usual meaning
 	 */
 	public PThetaDialog(JFrame parent, boolean modal, SNRDictionary dictionary) {
-		super(parent, "P-" + UnicodeSupport.SMALL_THETA + " Scatter Plot", modal);
+		super(parent, "P-" + UnicodeSupport.SMALL_THETA + " Scatter Plot", modal, null);
 		_dictionary = dictionary;
 		setIconImage(ImageManager.cnuIcon.getImage());
 		_canvas.setPreferredSize(new Dimension(600, 600));

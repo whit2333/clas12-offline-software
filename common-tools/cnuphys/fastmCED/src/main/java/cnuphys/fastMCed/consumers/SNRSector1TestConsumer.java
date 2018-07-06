@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.jlab.clas.physics.PhysicsEvent;
 
-import cnuphys.bCNU.magneticfield.swim.ISwimAll;
 import cnuphys.bCNU.util.Environment;
 import cnuphys.fastMCed.eventgen.random.RandomEventGenerator;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
@@ -17,18 +16,8 @@ import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.lund.GeneratedParticleRecord;
 import cnuphys.lund.TrajectoryRowData;
-import cnuphys.lund.TrajectoryTableModel;
-import cnuphys.magfield.MagneticFields;
-import cnuphys.magfield.Solenoid;
-import cnuphys.magfield.Torus;
 
-public class SNRSector1TestConsumer extends PhysicsEventConsumer {
-
-	private SNRManager snr = SNRManager.getInstance();
-
-	private String errStr = "???";
-
-	private SNRDictionary _dictionary;
+public class SNRSector1TestConsumer extends ASNRConsumer {
 
 	private Dictionary3DPlot _plot3D;
 
@@ -53,37 +42,6 @@ public class SNRSector1TestConsumer extends PhysicsEventConsumer {
 		}
 	}
 
-	private void loadOrCreateDictionary() {
-		double torusScale = 0;
-		double solenoidScale = 0;
-		boolean useTorus = MagneticFields.getInstance().hasTorus();
-		boolean useSolenoid = MagneticFields.getInstance().hasSolenoid();
-		if (useTorus) {
-			Torus torus = MagneticFields.getInstance().getTorus();
-			torusScale = (torus == null) ? 0 : torus.getScaleFactor();
-		}
-		if (useSolenoid) {
-			Solenoid solenoid = MagneticFields.getInstance().getSolenoid();
-			solenoidScale = (solenoid == null) ? 0 : solenoid.getScaleFactor();
-		}
-		String fileName = SNRDictionary.getFileName(useTorus, torusScale, useSolenoid, solenoidScale);
-
-		String dirPath = Environment.getInstance().getHomeDirectory() + "/dictionaries";
-
-		File file = new File(dirPath, fileName);
-		System.err.println("Dictionary file: [" + file.getPath() + "]");
-		if (file.exists()) {
-			System.err.println("Found dictionary file");
-			_dictionary = SNRDictionary.read(dirPath, fileName);
-
-			System.err.println("Number of keys: " + _dictionary.size());
-			_plot3D = Dictionary3DPlot.plotDictionary(_dictionary);
-		}
-
-		if (_dictionary == null) {
-			_dictionary = new SNRDictionary(useTorus, torusScale, useSolenoid, solenoidScale);
-		}
-	}
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
@@ -93,6 +51,7 @@ public class SNRSector1TestConsumer extends PhysicsEventConsumer {
 
 			if (_dictionary == null) {
 				loadOrCreateDictionary();
+				_plot3D = Dictionary3DPlot.plotDictionary(_dictionary);
 			}
 
 			//test is for sector 1 right leaners only
@@ -120,6 +79,7 @@ public class SNRSector1TestConsumer extends PhysicsEventConsumer {
 
 		if (_dictionary == null) {
 			loadOrCreateDictionary();
+			_plot3D = Dictionary3DPlot.plotDictionary(_dictionary);
 		}
 
 		if ((_dictionary != null) && !_dictionary.isEmpty()) {
@@ -159,18 +119,6 @@ public class SNRSector1TestConsumer extends PhysicsEventConsumer {
 
 			} // random generator
 		}
-	}
-
-	@Override
-	public String flagExplanation() {
-		return errStr;
-	}
-	
-	private TrajectoryRowData getTruth() {
-		ISwimAll allSwimmer = PhysicsEventManager.getInstance().getAllSwimmer();
-		
-		TrajectoryRowData trajData = allSwimmer.getRowData().firstElement();
-		return trajData;
 	}
 
 	// private void makeScatterPlot() {
