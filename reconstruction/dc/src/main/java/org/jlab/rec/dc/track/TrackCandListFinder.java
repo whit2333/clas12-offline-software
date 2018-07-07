@@ -191,7 +191,38 @@ public class TrackCandListFinder {
                 this.getStraightTrack(cand);
                 if(cand.get_pAtOrig()!=null) {
                     cand.set_Id(cands.size()+1);
-                    this.matchHits(traj.get_Trajectory(), cand, DcDetector, dcSwim);
+                    // the state vector at the region 1 cross
+                    StateVec VecAtReg1MiddlePlane = new StateVec(cand.get(0).get_Point().x(),cand.get(0).get_Point().y(),
+                                    cand.get(0).get_Dir().x()/cand.get(0).get_Dir().z(), cand.get(0).get_Dir().y()/cand.get(0).get_Dir().z());
+                    cand.set_StateVecAtReg1MiddlePlane(VecAtReg1MiddlePlane); 	
+                    // initialize the fitter with the candidate track
+                    KFitter kFit = new KFitter(cand, DcDetector, false, dcSwim);
+                    kFit.totNumIter=2;
+                    kFit.runFitter();
+                    if(kFit.finalStateVec==null)
+                        continue;
+                    // initialize the state vector corresponding to the last measurement site
+                    StateVec fn = new StateVec();
+                    
+                    //System.out.println(" fit failed due to chi2 "+kFit.setFitFailed+" p "+1./Math.abs(kFit.finalStateVec.Q));
+                    if(kFit.setFitFailed==false && kFit.finalStateVec!=null) {
+                        // set the state vector at the last measurement site
+                        fn.set(kFit.finalStateVec.x, kFit.finalStateVec.y, kFit.finalStateVec.tx, kFit.finalStateVec.ty); 
+                        //set the track parameters if the filter does not fail
+                        cand.set_P(1./Math.abs(kFit.finalStateVec.Q));
+                        cand.set_Q((int)Math.signum(kFit.finalStateVec.Q));
+                        this.setTrackPars(cand, traj, trjFind, fn, kFit.finalStateVec.z, DcDetector, dcSwim, false);
+                        // candidate parameters are set from the state vector
+                        cand.set_FitChi2(kFit.chi2);
+                        cand.set_FitNDF(kFit.NDF);
+                        cand.set_FitConvergenceStatus(kFit.ConvStatus);
+                        cand.set_Id(cands.size()+1);
+                        cand.set_CovMat(kFit.finalCovMat.covMat);
+                        cand.set_Trajectory(kFit.kfStateVecsAlongTrajectory);
+                        // add candidate to list of tracks
+                        cands.add(cand); 
+                    }
+                    //this.matchHits(traj.get_Trajectory(), cand, DcDetector);
                     cands.add(cand); 
                 }
             } else {
@@ -326,6 +357,7 @@ public class TrackCandListFinder {
                             cand.set_Q(q);
                             // momentum correction using the swam trajectory iBdl
                             cand.set_P(p); 
+                        
                             // the state vector at the region 1 cross
                             StateVec VecAtReg1MiddlePlane = new StateVec(cand.get(0).get_Point().x(),cand.get(0).get_Point().y(),
                                             cand.get(0).get_Dir().x()/cand.get(0).get_Dir().z(), cand.get(0).get_Dir().y()/cand.get(0).get_Dir().z());
@@ -375,6 +407,7 @@ public class TrackCandListFinder {
                                 cand.set_FitConvergenceStatus(kFit.ConvStatus);
                                 cand.set_Id(cands.size()+1);
                                 cand.set_CovMat(kFit.finalCovMat.covMat);
+                                cand.set_Trajectory(kFit.kfStateVecsAlongTrajectory);
                                 // add candidate to list of tracks
                                 cands.add(cand); 
 
@@ -546,10 +579,10 @@ public class TrackCandListFinder {
         double pyOr = -VecAtTarIn[4];
         double pzOr = -VecAtTarIn[5];
 
-        if(traj!=null && trjFind!=null) {
-                traj.set_Trajectory(trjFind.getStateVecsAlongTrajectory(cand.get_Sector(), xOr, yOr, pxOr/pzOr, pyOr/pzOr, cand.get_P(),cand.get_Q(), getDcDetector));
-                cand.set_Trajectory(traj.get_Trajectory());
-        }
+        //if(traj!=null && trjFind!=null) { 
+        //        traj.set_Trajectory(trjFind.getStateVecsAlongTrajectory(xOr, yOr, zOr, pxOr/pzOr, pyOr/pzOr, cand.get_P(),cand.get_Q(), getDcDetector));
+        //        cand.set_Trajectory(traj.get_Trajectory());
+        //}
         //cand.set_Vtx0_TiltedCS(trakOrigTiltSec);
         //cand.set_pAtOrig_TiltedCS(pAtOrigTiltSec.toVector3D());
 
@@ -607,8 +640,6 @@ public class TrackCandListFinder {
         } else {
             cand.set_Vtx0(new Point3D(xOrFix,yOrFix, zOrFix));
             cand.set_pAtOrig(new Vector3D(pxOrFix, pyOrFix, pzOrFix));
-            cand.set_Vtx0FMT(new Point3D(xOrFix,yOrFix, zOrFix));
-            cand.set_pAtOrigFMT(new Vector3D(pxOrFix, pyOrFix, pzOrFix));
         }
         double[] VecAtHtccSurf = dcSwim.SwimToSphere(175);
         double xInner  = VecAtHtccSurf[0];
@@ -702,41 +733,36 @@ public class TrackCandListFinder {
 
 
 public void matchHits(List<StateVec> stateVecAtPlanesList, Track trk, DCGeant4Factory DcDetector, DCSwimmer dcSwim) {
-    int planeIdNum=0;
+    
     if(stateVecAtPlanesList==null)
         return;
+    dcSwim.SetSwimParameters(trk.get_Vtx0().x(), trk.get_Vtx0().y(), trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q());
+    double PathToFirstMeas = dcSwim.SwimToPlane(trk.get_Sector(), stateVecAtPlanesList.get(0).getZ())[6];
     for(StateVec st : stateVecAtPlanesList) {
         if(st==null)
             return;
-        double Xtrk = st.x();
-        double Ytrk = st.y();
-        float[] bf = new float[3];
-        planeIdNum++;
+        
         for(Cross c : trk) { 
-            for(FittedHit h1 : c.get_Segment1()) { 
-                    if(planeIdNum== (h1.get_Superlayer()-1)*6+h1.get_Layer() ) {
-                        h1.setAssociatedStateVec(st); 
-                        double Xhit = h1.XatY(DcDetector, Ytrk);
-                        h1.set_TrkResid(Xhit-Xtrk) ;
-                        bf[0]=(float) 0.;bf[1]=(float) 0.;bf[2]=(float) 0.;
-                        dcSwim.Bfield(h1.get_Sector(), st.x(), st.y(), h1.get_Z(), bf);
-                        h1.setB(Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]));
-                        h1.setSignalPropagTimeAlongWire(DcDetector);
-                        h1.setSignalTimeOfFlight(); 
-                    }
-            }
-            for(FittedHit h2 : c.get_Segment2()) {
-                    if(planeIdNum== (h2.get_Superlayer()-1)*6+h2.get_Layer() ) {
-                        h2.setAssociatedStateVec(st);
-                        double Xhit = h2.XatY(DcDetector, Ytrk);
-                        h2.set_TrkResid(Xhit-Xtrk) ;
-                        bf[0]=(float) 0.;bf[1]=(float) 0.;bf[2]=(float) 0.;
-                        dcSwim.Bfield(h2.get_Sector(), st.x(), st.y(), h2.get_Z(), bf);
-                        h2.setB(Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]));
-                        h2.setSignalPropagTimeAlongWire(DcDetector);
-                        h2.setSignalTimeOfFlight();
-                    }
-            }
+                for(FittedHit h1 : c.get_Segment1()) { 
+                        if(Math.abs(st.getZ()-h1.get_Z())<0.1 ) {
+                            h1.setAssociatedStateVec(st); 
+                            h1.set_TrkResid(h1.get_X()-st.getProjector()) ; 
+                            h1.setB(st.getB());
+                            h1.calc_SignalPropagAlongWire(st.x(), st.y(), DcDetector);
+                            h1.setSignalPropagTimeAlongWire(DcDetector);
+                            h1.setSignalTimeOfFlight(PathToFirstMeas); 
+                        }
+                }
+                for(FittedHit h1 : c.get_Segment2()) {
+                        if(Math.abs(st.getZ()-h1.get_Z())<0.1 ) {
+                            h1.setAssociatedStateVec(st); 
+                            h1.set_TrkResid(h1.get_X()-st.getProjector()) ; 
+                            h1.setB(st.getB());
+                            h1.calc_SignalPropagAlongWire(st.x(), st.y(), DcDetector);
+                            h1.setSignalPropagTimeAlongWire(DcDetector);
+                            h1.setSignalTimeOfFlight(PathToFirstMeas); 
+                        }
+                }
         }
     }
 }

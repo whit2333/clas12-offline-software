@@ -410,6 +410,8 @@ public class RecoBankWriter {
             if (hitlist.get(i).get_Id() == -1) {
                 continue;
             }
+            if(hitlist.get(i).get_TrkResid()==999)
+                hitlist.get(i).set_AssociatedTBTrackID(-1);
             bank.setShort("id", i, (short) hitlist.get(i).get_Id());
             bank.setShort("status", i, (short) hitlist.get(i).get_QualityFac());
             bank.setByte("superlayer", i, (byte) hitlist.get(i).get_Superlayer());
@@ -423,8 +425,17 @@ public class RecoBankWriter {
             
             // checks the existing schema to fill the time
             //System.out.println(" has entry "+bank.getDescriptor().hasEntry("time"));
+            /*
+            correctedTime = (this.get_Time() - this.get_DeltaTimeBeta());
+            */
             if(bank.getDescriptor().hasEntry("time")==true){
-               bank.setFloat("time", i, (float) hitlist.get(i).get_Time());      
+               bank.setFloat("time", i, (float) (hitlist.get(i).get_Time() - hitlist.get(i).get_DeltaTimeBeta()));      
+            }
+            if(bank.getDescriptor().hasEntry("tBeta")==true){
+               bank.setFloat("tBeta", i, (float) hitlist.get(i).get_DeltaTimeBeta());      
+            }
+            if(bank.getDescriptor().hasEntry("fitResidual")==true){
+               bank.setFloat("fitResidual", i, (float) hitlist.get(i).get_TrkResid());      
             }
             if(bank.getDescriptor().hasEntry("fitResidual")==true){
                bank.setFloat("fitResidual", i, (float) hitlist.get(i).get_TrkResid());      
@@ -442,8 +453,10 @@ public class RecoBankWriter {
             bank.setFloat("TProp", i, (float) hitlist.get(i).getTProp());
             bank.setFloat("TFlight", i, (float) hitlist.get(i).getTFlight());
             bank.setFloat("T0", i, (float) hitlist.get(i).getT0());
-            bank.setFloat("TStart", i, (float) hitlist.get(i).getTStart());
-            
+            bank.setFloat("TStart", i, (float) hitlist.get(i).getTStart()); 
+            if(bank.getDescriptor().hasEntry("beta")==true){
+               bank.setFloat("beta", i, (float) hitlist.get(i).get_Beta());      
+            }
             if(hitlist.get(i).get_AssociatedTBTrackID()>-1 && event.hasBank("MC::Particle")==false) {
                 if(hitlist.get(i).getSignalPropagTimeAlongWire()==0 || hitlist.get(i).get_AssociatedTBTrackID()<1) {
                     bank.setFloat("TProp", i, (float) hitlist.get(i).getTProp()); //old value if track fit failed
@@ -742,22 +755,22 @@ public class RecoBankWriter {
             bank.setFloat("p0_y", i, (float) candlist.get(i).get_pAtOrig().y());
             bank.setFloat("p0_z", i, (float) candlist.get(i).get_pAtOrig().z());
             
-            if(bank.getDescriptor().hasEntry("Vtx0_x_fmt")==true){
+            if(bank.getDescriptor().hasEntry("Vtx0_x_fmt")==true && candlist.get(i).get_Vtx0FMT()!=null){
                 bank.setFloat("Vtx0_x_fmt", i, (float) candlist.get(i).get_Vtx0FMT().x());
             }
-            if(bank.getDescriptor().hasEntry("Vtx0_y_fmt")==true){
+            if(bank.getDescriptor().hasEntry("Vtx0_y_fmt")==true  && candlist.get(i).get_Vtx0FMT()!=null){
                 bank.setFloat("Vtx0_y_fmt", i, (float) candlist.get(i).get_Vtx0FMT().y());
             }
-            if(bank.getDescriptor().hasEntry("Vtx0_z_fmt")==true){
+            if(bank.getDescriptor().hasEntry("Vtx0_z_fmt")==true  && candlist.get(i).get_Vtx0FMT()!=null){
                 bank.setFloat("Vtx0_z_fmt", i, (float) candlist.get(i).get_Vtx0FMT().z());
             }
-            if(bank.getDescriptor().hasEntry("p0_x_fmt")==true){
+            if(bank.getDescriptor().hasEntry("p0_x_fmt")==true && candlist.get(i).get_pAtOrigFMT()!=null){
                 bank.setFloat("p0_x_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().x());
             }
-            if(bank.getDescriptor().hasEntry("p0_y_fmt")==true){
+            if(bank.getDescriptor().hasEntry("p0_y_fmt")==true && candlist.get(i).get_pAtOrigFMT()!=null){
                 bank.setFloat("p0_y_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().y());
             }
-            if(bank.getDescriptor().hasEntry("p0_z_fmt")==true){
+            if(bank.getDescriptor().hasEntry("p0_z_fmt")==true && candlist.get(i).get_pAtOrigFMT()!=null){
                 bank.setFloat("p0_z_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().z());
             }
             
@@ -806,6 +819,7 @@ public class RecoBankWriter {
                 bank.setFloat("ty", i1, (float) ((float) tracks.get(i).trajectory.get(j).getpY()/tracks.get(i).get_P()));
                 bank.setFloat("tz", i1, (float) ((float) tracks.get(i).trajectory.get(j).getpZ()/tracks.get(i).get_P()));
                 bank.setFloat("L", i1, (float) tracks.get(i).trajectory.get(j).getPathLen());
+                bank.setFloat("B", i1, (float) tracks.get(i).trajectory.get(j).getFMTOcc());
                 i1++;
             }
         }

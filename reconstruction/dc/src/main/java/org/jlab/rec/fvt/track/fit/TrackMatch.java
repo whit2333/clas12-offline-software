@@ -6,9 +6,7 @@
 package org.jlab.rec.fvt.track.fit;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.rec.dc.trajectory.Trajectory;
@@ -19,6 +17,7 @@ import org.jlab.rec.dc.trajectory.Trajectory;
 public class TrackMatch {
     
     public List<ArrayList<ArrayList<MeasVecs.MeasVec>>> getListOfMeasurements(DataEvent event) {
+        //System.out.println(" NEW EVENT READING FMT");
         if (event.hasBank("FMTRec::Clusters") == false) {
             return null;
         }
@@ -41,11 +40,12 @@ public class TrackMatch {
             int size = bank.getShort("size", i); 
             listOfMeas.get(sector-1).get(layer-1).add(mv.setMeasVec(layer-1, (double) bank.getFloat("centroid", i), bank.getInt("seedStrip", i), size));
         }
+        //System.out.println("number of clusters "+bank.rows());
         return listOfMeas;
     }
     private MeasVecs mv = new MeasVecs();
     public List<ArrayList<MeasVecs.MeasVec>> matchDCTrack2FMTClusters(List<ArrayList<ArrayList<MeasVecs.MeasVec>>> listOfMeasurements, 
-            List<Trajectory.TrajectoryStateVec> fMTTraj, int stripsOff) {
+            List<Trajectory.TrajectoryStateVec> fMTTraj, int stripsOff, org.jlab.rec.fmt.Geometry fmtDetector) {
         List<ArrayList<MeasVecs.MeasVec>> measurements = new ArrayList<ArrayList<MeasVecs.MeasVec>>();
         if (listOfMeasurements == null || fMTTraj ==null) {
             return null;
@@ -60,6 +60,7 @@ public class TrackMatch {
             if(listOfMeasurements.get(sector-1).get(l).size()>1)
                 L[l]=listOfMeasurements.get(sector-1).get(l).size();
         }
+        int index=0;
         for(int l1 =0; l1<L[0]; l1++) {
             for(int l2 =0; l2<L[1]; l2++) {
                 for(int l3 =0; l3<L[2]; l3++) {
@@ -74,22 +75,22 @@ public class TrackMatch {
 //                                        measList.add(listOfMeasurements.get(sector-1).get(analLy).get(l1));
 //                                }
                                 measList.add(mv.setMeasVec(-1, (double) 0, 0, 1));
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 0, l1, stripsOff);
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 1, l2, stripsOff);
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 2, l3, stripsOff);
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 3, l4, stripsOff);
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 4, l5, stripsOff);
-                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 5, l6, stripsOff);
-                                if(measList.size()>=2)
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 0, l1, stripsOff, fmtDetector);
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 1, l2, stripsOff, fmtDetector);
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 2, l3, stripsOff, fmtDetector);
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 3, l4, stripsOff, fmtDetector);
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 4, l5, stripsOff, fmtDetector);
+                                this.AddMeasToList(measList, listOfMeasurements.get(sector-1), fMTTraj, 5, l6, stripsOff, fmtDetector);
+                                if(measList.size()>2) {
                                     measurements.add(measList);
+                                }
                             }
                         }
                     }
                 }
             }
         }
-                
-        
+       
         return measurements;
     }
     /**
@@ -125,37 +126,16 @@ public class TrackMatch {
 		}
 		return 6;
         }
-    public int findNearestStrip(double x, double y, int layer) {
-        
-        int ClosestStrip = -1;
-        
-        if(Math.sqrt(x*x+y*y)<Constants.FVT_Rmax && Math.sqrt(x*x+y*y)>Constants.FVT_Beamhole) {
-	
-            double x_loc = x*Math.cos(Constants.FVT_Alpha[layer-1])+y*Math.sin(Constants.FVT_Alpha[layer-1]);
-            double y_loc = y*Math.cos(Constants.FVT_Alpha[layer-1])-x*Math.sin(Constants.FVT_Alpha[layer-1]);
-            if(y_loc>-(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc < (Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)){ 
-                if (x_loc<=0) 
-                    ClosestStrip = (int) Math.floor(((Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)-y_loc)/Constants.FVT_Pitch) + 1;
-                if (x_loc>0) 
-                    ClosestStrip = (int) (Math.floor((y_loc+(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.))/Constants.FVT_Pitch) + 1 
-                          + Constants.FVT_Halfstrips +0.5*( Constants.FVT_Nstrips-2.*Constants.FVT_Halfstrips)); 
-            } else if(y_loc <= -(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc > -Constants.FVT_Rmax){ 
-                ClosestStrip = (int) Math.floor(((Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)-y_loc)/Constants.FVT_Pitch) + 1; 
-            }
-            else if(y_loc >= (Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc < Constants.FVT_Rmax){ 
-                ClosestStrip = (int) (Math.floor((y_loc+(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.))/Constants.FVT_Pitch) + 1 
-                      + Constants.FVT_Halfstrips+0.5*( Constants.FVT_Nstrips-2.*Constants.FVT_Halfstrips));  
-            }
-        } 
-        return ClosestStrip;
-    }
+   
 
-    private void AddMeasToList(ArrayList<MeasVecs.MeasVec> measList, ArrayList<ArrayList<MeasVecs.MeasVec>> listOfMeasurements, List<Trajectory.TrajectoryStateVec> fMTTraj, int analLy, int l1, int stripsOff) {
+    private void AddMeasToList(ArrayList<MeasVecs.MeasVec> measList, ArrayList<ArrayList<MeasVecs.MeasVec>> listOfMeasurements, List<Trajectory.TrajectoryStateVec> fMTTraj, int analLy, int l1, 
+            int stripsOff, org.jlab.rec.fmt.Geometry fmtDetector) {
       
         if(listOfMeasurements.get(analLy).size()>0) {
-            if(Math.abs(this.findNearestStrip(fMTTraj.get(analLy).getX(), fMTTraj.get(analLy).getY(), analLy+1)-
-                    listOfMeasurements.get(analLy).get(l1).seed)<stripsOff)
+            if(Math.abs(fmtDetector.getClosestStrip(fMTTraj.get(analLy).getX(), fMTTraj.get(analLy).getY(), analLy+1)-
+                    listOfMeasurements.get(analLy).get(l1).seed)<=stripsOff)
                 measList.add(listOfMeasurements.get(analLy).get(l1));
         }
     }
+    
 }

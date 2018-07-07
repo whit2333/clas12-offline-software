@@ -33,11 +33,11 @@ public class MeasVecs {
     public MeasVec setMeasVec(int l, double cent, int seed, int size) {
                 
         MeasVec meas    = new MeasVec();
-        double err      = (double) Constants.FVT_Pitch/Math.sqrt(12.); 
+        double err      = (double) org.jlab.rec.fmt.Constants.FVT_Pitch/Math.sqrt(12.); 
         meas.error      = err*err*size;
         meas.layer      = l+1;
         if(l>-1)
-            meas.z      = Constants.FVT_Zlayer[l]+Constants.hDrift/2;
+            meas.z      = org.jlab.rec.fmt.Constants.FVT_Zlayer[l]+org.jlab.rec.fmt.Constants.hDrift/2;
 
         meas.centroid   = cent;
         meas.seed   = seed;
@@ -58,26 +58,26 @@ public class MeasVecs {
         
         //return this.getCentroidEstimate(layer, stateVec.x, stateVec.y);
         //return (double) this.getClosestStrip(stateVec.x, stateVec.y, layer);
-        return stateVec.y*Math.cos(Constants.FVT_Alpha[layer-1])-stateVec.x*Math.sin(Constants.FVT_Alpha[layer-1]);
+        return stateVec.y*Math.cos(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1])-stateVec.x*Math.sin(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]);
        //return stateVec.transportTroughDriftGap(0.99, this);
     }
 
     public int getClosestStrip(double x, double y, int layer) {
         int closestStrip = 0;
-        if(Math.sqrt(x*x+y*y)<Constants.FVT_Rmax && Math.sqrt(x*x+y*y)>Constants.FVT_Beamhole) {
+        if(Math.sqrt(x*x+y*y)<org.jlab.rec.fmt.Constants.FVT_Rmax && Math.sqrt(x*x+y*y)>org.jlab.rec.fmt.Constants.FVT_Beamhole) {
 	
-            double x_loc =  x*Math.cos(Constants.FVT_Alpha[layer-1])+ y*Math.sin(Constants.FVT_Alpha[layer-1]);
-            double y_loc =  y*Math.cos(Constants.FVT_Alpha[layer-1])- x*Math.sin(Constants.FVT_Alpha[layer-1]);
+            double x_loc =  x*Math.cos(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1])+ y*Math.sin(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]);
+            double y_loc =  y*Math.cos(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1])- x*Math.sin(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]);
 
-            if(y_loc>-(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc < (Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)){ 
-              if (x_loc<=0) closestStrip = (int) (Math.floor(((Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)-y_loc)/Constants.FVT_Pitch) + 1 );
-              if (x_loc>0) closestStrip =  (int) ((Math.floor((y_loc+(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.))/Constants.FVT_Pitch) + 1 ) + Constants.FVT_Halfstrips +0.5*( Constants.FVT_Nstrips-2.*Constants.FVT_Halfstrips));
+            if(y_loc>-(org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.) && y_loc < (org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.)){ 
+              if (x_loc<=0) closestStrip = (int) (Math.floor(((org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.)-y_loc)/org.jlab.rec.fmt.Constants.FVT_Pitch) + 1 );
+              if (x_loc>0) closestStrip =  (int) ((Math.floor((y_loc+(org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.))/org.jlab.rec.fmt.Constants.FVT_Pitch) + 1 ) + org.jlab.rec.fmt.Constants.FVT_Halfstrips +0.5*( org.jlab.rec.fmt.Constants.FVT_Nstrips-2.*org.jlab.rec.fmt.Constants.FVT_Halfstrips));
             }
-            else if(y_loc <= -(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc > -Constants.FVT_Rmax){ 
-              closestStrip =  (int) (Math.floor(((Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.)-y_loc)/Constants.FVT_Pitch) +1 ); 
+            else if(y_loc <= -(org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.) && y_loc > -org.jlab.rec.fmt.Constants.FVT_Rmax){ 
+              closestStrip =  (int) (Math.floor(((org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.)-y_loc)/org.jlab.rec.fmt.Constants.FVT_Pitch) +1 ); 
             }
-            else if(y_loc >= (Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.) && y_loc < Constants.FVT_Rmax){ 
-              closestStrip = (int) (Math.floor((y_loc+(Constants.FVT_Halfstrips*Constants.FVT_Pitch/2.))/Constants.FVT_Pitch) + 1 + Constants.FVT_Halfstrips+0.5*( Constants.FVT_Nstrips-2.*Constants.FVT_Halfstrips));  
+            else if(y_loc >= (org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.) && y_loc < org.jlab.rec.fmt.Constants.FVT_Rmax){ 
+              closestStrip = (int) (Math.floor((y_loc+(org.jlab.rec.fmt.Constants.FVT_Halfstrips*org.jlab.rec.fmt.Constants.FVT_Pitch/2.))/org.jlab.rec.fmt.Constants.FVT_Pitch) + 1 + org.jlab.rec.fmt.Constants.FVT_Halfstrips+0.5*( org.jlab.rec.fmt.Constants.FVT_Nstrips-2.*org.jlab.rec.fmt.Constants.FVT_Halfstrips));  
             }
         } 
         return closestStrip;
@@ -85,22 +85,22 @@ public class MeasVecs {
     
     public double getWeightEstimate(int strip, int layer, double x, double y) {
         double sigmaDrift = 0.01;
-        double strip_y = Constants.FVT_stripsYlocref[strip-1];
-        double strip_x = Constants.FVT_stripsXlocref[strip-1];
+        double strip_y = org.jlab.rec.fmt.Constants.FVT_stripsYlocref[strip-1];
+        double strip_x = org.jlab.rec.fmt.Constants.FVT_stripsXlocref[strip-1];
      
         
-        double strip_length = Constants.FVT_stripslength[strip-1];
-        double sigma = sigmaDrift*Constants.hDrift;
-        double wght=(Erf.erf((strip_y+Constants.FVT_Pitch/2.-y)/sigma/Math.sqrt(2))-Erf.erf((strip_y-Constants.FVT_Pitch/2.-y)/sigma/Math.sqrt(2)))*(Erf.erf((strip_x+strip_length/2.-x)/sigma/Math.sqrt(2))-Erf.erf((strip_x-strip_length/2.-x)/sigma/Math.sqrt(2)))/2./2.;
+        double strip_length = org.jlab.rec.fmt.Constants.FVT_stripslength[strip-1];
+        double sigma = sigmaDrift*org.jlab.rec.fmt.Constants.hDrift;
+        double wght=(Erf.erf((strip_y+org.jlab.rec.fmt.Constants.FVT_Pitch/2.-y)/sigma/Math.sqrt(2))-Erf.erf((strip_y-org.jlab.rec.fmt.Constants.FVT_Pitch/2.-y)/sigma/Math.sqrt(2)))*(Erf.erf((strip_x+strip_length/2.-x)/sigma/Math.sqrt(2))-Erf.erf((strip_x-strip_length/2.-x)/sigma/Math.sqrt(2)))/2./2.;
         if (wght<0) wght=-wght;
         return wght;
     }
     
     public double getCentroidEstimate(int layer, double x, double y) {
         if(this.getClosestStrip(x, y, layer)>1) {
-            return Constants.FVT_stripsYlocref[this.getClosestStrip(x, y, layer)-1];
+            return org.jlab.rec.fmt.Constants.FVT_stripsYlocref[this.getClosestStrip(x, y, layer)-1];
         } else {
-            return y*Math.cos(Constants.FVT_Alpha[layer-1])- x*Math.sin(Constants.FVT_Alpha[layer-1]);
+            return y*Math.cos(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1])- x*Math.sin(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]);
 
         }
     
@@ -167,7 +167,7 @@ public class MeasVecs {
         
         //return this.getCentroidEstimate(layer, stateVec.x, stateVec.y);
         //return (double) this.getClosestStrip(stateVec.x, stateVec.y, layer);
-        double[] H = new double[]{-Math.sin(Constants.FVT_Alpha[layer-1]), Math.cos(Constants.FVT_Alpha[layer-1]), 0, 0, 0};
+        double[] H = new double[]{-Math.sin(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]), Math.cos(org.jlab.rec.fmt.Constants.FVT_Alpha[layer-1]), 0, 0, 0};
         //for(int i = 0; i<H.length; i++)
         //    System.out.println("H["+i+"] = "+H[i]);
         

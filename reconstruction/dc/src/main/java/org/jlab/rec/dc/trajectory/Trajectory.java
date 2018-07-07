@@ -207,11 +207,11 @@ public class Trajectory extends ArrayList<Cross> {
             this._pathLen = _pathLen;
         }
 
-        public double getiBdl() {
+        public double getFMTOcc() {
             return _B;
         }
 
-        public void setiBdl(double _B) {
+        public void setFMTOcc(double _B) {
             this._B = _B;
         }
 
@@ -273,7 +273,8 @@ public class Trajectory extends ArrayList<Cross> {
                 dcSwim.SetSwimParameters(trkPars[0], trkPars[1], trkPars[2], trkPars[3], trkPars[4], trkPars[5], q);
             }
             trkPars = dcSwim.SwimToPlaneBoundary(ts.getDetectorPlanes().get(is).get(j).get_d(), new Vector3D(ts.getDetectorPlanes().get(is).get(j).get_nx(),
-            ts.getDetectorPlanes().get(is).get(j).get_ny(),ts.getDetectorPlanes().get(is).get(j).get_nz()),1);
+            ts.getDetectorPlanes().get(is).get(j).get_ny(),ts.getDetectorPlanes().get(is).get(j+1).get_nz()),1);
+            
             if(trkPars==null)
                 return null;
             

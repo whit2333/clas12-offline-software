@@ -18,7 +18,7 @@ public class StateVecs {
     public Map<Integer, StateVec> trackTraj = new HashMap<Integer, StateVec>();
     public Map<Integer, CovMat> trackCov = new HashMap<Integer, CovMat>();
 
-    private double stepSize = Constants.FVT_Pitch/2.; // step size 
+    private double stepSize = org.jlab.rec.fmt.Constants.FVT_Pitch/2.; // step size 
     public StateVec StateVec;
     public CovMat CovMat;
     public Matrix F;
@@ -144,10 +144,10 @@ public class StateVecs {
         double py = stateVec.ty * pz;
         double t_ov_X0 = 0;
 
-        if(stateVec.z>Constants.FVT_Z1stlayer) {
+        if(stateVec.z>org.jlab.rec.fmt.Constants.FVT_Zlayer[0]) {
             
             double gap = Z[stateVec.k+1]-Z[stateVec.k];
-            t_ov_X0 = gap / Constants.get_X0()[9];
+            t_ov_X0 = gap / org.jlab.rec.fmt.Constants.get_X0()[9];
             
             double mass = 0.13957018;
             double mass_e = 0.000510998;
@@ -325,16 +325,16 @@ public class StateVecs {
             double py = ty * pz;
             double t_ov_X0 = 0;
             
-            if(Math.signum(Z[f] - Z[i]) >0 && z>Constants.FVT_Z1stlayer) {
-                t_ov_X0 =  s / Constants.get_X0()[9];
+            if(Math.signum(Z[f] - Z[i]) >0 && z>org.jlab.rec.fmt.Constants.FVT_Zlayer[0]) {
+                t_ov_X0 =  s / org.jlab.rec.fmt.Constants.get_X0()[9];
 
-                double detMat_Z_ov_A_timesThickn = Math.signum(Z[f] - Z[i]) * s * Constants.getEFF_Z_OVER_A()[9];
-                for(int i1 = 1; i1<Constants.get_RELPOS().length; i1++) {
-                    if(z>Constants.FVT_Z1stlayer && Math.abs(z-Z[f])>Constants.get_RELPOS()[i1-1] && Math.abs(z-Z[f])<Constants.get_RELPOS()[i1]) {
-                        t_ov_X0 = s / Constants.get_X0()[i1]; //path length in radiation length units = t/X0 [true path length/ X0] ; Ar radiation length = 14 cm
-                        detMat_Z_ov_A_timesThickn = Math.signum(Z[f] - Z[i]) * s * Constants.getEFF_Z_OVER_A()[i1];
+                double detMat_Z_ov_A_timesThickn = Math.signum(Z[f] - Z[i]) * s * org.jlab.rec.fmt.Constants.getEFF_Z_OVER_A()[9];
+                for(int i1 = 1; i1<org.jlab.rec.fmt.Constants.get_RELPOS().length; i1++) {
+                    if(z>org.jlab.rec.fmt.Constants.FVT_Zlayer[0] && Math.abs(z-Z[f])>org.jlab.rec.fmt.Constants.get_RELPOS()[i1-1] && Math.abs(z-Z[f])<org.jlab.rec.fmt.Constants.get_RELPOS()[i1]) {
+                        t_ov_X0 = s / org.jlab.rec.fmt.Constants.get_X0()[i1]; //path length in radiation length units = t/X0 [true path length/ X0] ; Ar radiation length = 14 cm
+                        detMat_Z_ov_A_timesThickn = Math.signum(Z[f] - Z[i]) * s * org.jlab.rec.fmt.Constants.getEFF_Z_OVER_A()[i1];
                     } else {
-                        t_ov_X0 = s / Constants.get_X0()[9];
+                        t_ov_X0 = s / org.jlab.rec.fmt.Constants.get_X0()[9];
                     }
                 }
 
@@ -443,16 +443,16 @@ public class StateVecs {
         
         public double transportTroughDriftGap(double FracDriftGap, MeasVecs mv) {
             double Zi = this.z;
-            double Zf = Zi + Constants.hDrift*FracDriftGap;
+            double Zf = Zi + org.jlab.rec.fmt.Constants.hDrift*FracDriftGap;
             double stepSiz = 0.01;
             double[] b_f;  
 
             int nstepsInDriftGap = 0;
             double h =0; 
 
-            int nSteps = (int) (Math.abs((Constants.hDrift*FracDriftGap) / stepSiz) + 1);
+            int nSteps = (int) (Math.abs((org.jlab.rec.fmt.Constants.hDrift*FracDriftGap) / stepSiz) + 1);
 
-            double s  = (Constants.hDrift*FracDriftGap) / (double) nSteps;
+            double s  = (org.jlab.rec.fmt.Constants.hDrift*FracDriftGap) / (double) nSteps;
             double z_atPlane = Zi;
             double x_atPlane = this.x;
             double y_atPlane = this.y;
@@ -461,9 +461,9 @@ public class StateVecs {
             double Q_atPlane = this.Q;  
            //System.out.println(" state vec "+k +" at "+x+", "+y);
             int strip = mv.getClosestStrip(x_atPlane, y_atPlane, this.k);
-            if(h> 0 && h<Constants.FVT_Nstrips) {            
+            if(h> 0 && h<org.jlab.rec.fmt.Constants.FVT_Nstrips) {            
                 nstepsInDriftGap =1;
-                h = Constants.FVT_stripsYlocref[strip-1];
+                h = org.jlab.rec.fmt.Constants.FVT_stripsYlocref[strip-1];
             } else {
                 nstepsInDriftGap = 0;
                 h = 0;
@@ -492,9 +492,9 @@ public class StateVecs {
                 z_atPlane += s;
 
                 int closestStrip = mv.getClosestStrip(x_atPlane, y_atPlane, this.k);
-                if(closestStrip> 0 && closestStrip<Constants.FVT_Nstrips) {            
+                if(closestStrip> 0 && closestStrip<org.jlab.rec.fmt.Constants.FVT_Nstrips) {            
                     nstepsInDriftGap++;
-                    h+=Constants.FVT_stripsYlocref[closestStrip-1];
+                    h+=org.jlab.rec.fmt.Constants.FVT_stripsYlocref[closestStrip-1];
                     //System.out.println(" Z "+Zi+" Z' "+z_atPlane+" s "+s+" strip  "+closestStrip+" h "+h/nstepsInDriftGap);
                 } else {
                     //System.out.println(x_atPlane+" ,  "+y_atPlane+" ,  "+z_atPlane);
