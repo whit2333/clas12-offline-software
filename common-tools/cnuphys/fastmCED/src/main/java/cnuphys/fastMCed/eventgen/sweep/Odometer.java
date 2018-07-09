@@ -14,12 +14,12 @@ public class Odometer {
 	private long index;
 	
 	
-	public int x;
-	public int y;
-	public int z;
-	public int p;
-	public int theta;
-	public int phi;
+	public int xStep;
+	public int yStep;
+	public int zStep;
+	public int pStep;
+	public int thetaStep;
+	public int phiStep;
 	
 	public Odometer(int numX, int numY, int numZ, int numP, int numTheta, int numPhi) {
 		_numX = numX;
@@ -41,24 +41,24 @@ public class Odometer {
 	 * Increment the odomemter
 	 */
 	public void increment() {
-		phi++;
-		if (phi == _numPhi) {
-			phi = 0;
-			theta++;
-			if (theta == _numTheta) {
-				theta = 0;
-				p++;
-				if (p == _numP) {
-					p = 0;
-					z++;
-					if (z == _numZ) {
-						z = 0;
-						y++;
-						if (y == _numY) {
-							y = 0;
-							x++;
-							if (x == _numX) {
-								x = 0;
+		phiStep++;
+		if (phiStep == _numPhi) {
+			phiStep = 0;
+			thetaStep++;
+			if (thetaStep == _numTheta) {
+				thetaStep = 0;
+				pStep++;
+				if (pStep == _numP) {
+					pStep = 0;
+					zStep++;
+					if (zStep == _numZ) {
+						zStep = 0;
+						yStep++;
+						if (yStep == _numY) {
+							yStep = 0;
+							xStep++;
+							if (xStep == _numX) {
+								xStep = 0;
 							}
 						}
 					}

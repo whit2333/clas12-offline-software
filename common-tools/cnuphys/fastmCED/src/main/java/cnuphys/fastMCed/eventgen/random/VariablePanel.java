@@ -148,11 +148,14 @@ public class VariablePanel extends JPanel implements FocusListener, KeyListener 
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
-		checkMinTextChange();
-		checkMaxTextChange();
+	public void keyReleased(KeyEvent kev) {
+		if (kev.getKeyCode() == KeyEvent.VK_ENTER) {
+
+			checkMinTextChange();
+			checkMaxTextChange();
+		}
 	}
-	
+
 	/**
 	 * Get the minimum value
 	 * @return the minimum value

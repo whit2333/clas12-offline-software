@@ -16,6 +16,22 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 	private double _torusScale = -1.0;
 
 	public static final int GOODSIZE = 393241;
+	
+	//NOT thread safe
+	private static ExtendedWord _w1 = new ExtendedWord(112);
+	private static ExtendedWord _w2 = new ExtendedWord(112);
+	private static ExtendedWord _w3 = new ExtendedWord(112);
+
+	private static ExtendedWord _ewords1[] = new ExtendedWord[6];
+	private static ExtendedWord _ewords2[] = new ExtendedWord[6];
+	
+	static {
+		for (int i = 0; i < 6; i++) {
+			_ewords1[i] = new ExtendedWord(112);
+			_ewords2[i] = new ExtendedWord(112);
+		}
+	}
+
 
 	/**
 	 * Create a dictionary for a mag field setting
@@ -95,7 +111,7 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 	 * 
 	 * @param testHash
 	 *            a hash that is not in the dictionary, so we'd like to find the
-	 *            closest as out guess.
+	 *            closest as our guess.
 	 * @return the nearest key
 	 */
 	public String nearestKey(String testHash) {
@@ -110,19 +126,25 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 			testWord[i] = new ExtendedWord(112);
 			valWord[i] = new ExtendedWord(112);
 		}
-		SNRManager.getInstance().fromHash(testHash, testWord);
+		String testSummary = SNRManager.getInstance().fromHashKey(testHash, testWord);
 
 		int maxCommonBits = 0;
 		String nearestKey = null;
 
+		// Arggh. Have to search all the keys
 		for (String hashKey : keySet()) {
-			SNRManager.getInstance().fromHash(hashKey, valWord);
-			int cb = commonBits(testWord, valWord, w1, w2, w3);
+			String summaryStr = SNRManager.getInstance().getSummaryString(hashKey);
 
-			if (cb > maxCommonBits) {
-				maxCommonBits = cb;
-				nearestKey = hashKey;
-			}
+			// first test if the summary strings match
+			if (testSummary.equals(summaryStr)) {
+				SNRManager.getInstance().fromHashKey(hashKey, valWord);
+				int cb = commonBits(testWord, valWord, w1, w2, w3);
+
+				if (cb > maxCommonBits) {
+					maxCommonBits = cb;
+					nearestKey = hashKey;
+				}
+			} //matching summaries
 		}
 
 		return nearestKey;
@@ -139,28 +161,18 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 	}
 	
 	/**
-	 * Count the number of common bits in the bit patterns represented by these two hask keys.
+	 * Count the number of common bits in the bit patterns represented by these two hash keys.
 	 * An expensive operation. Use sparingly.
 	 * @param hashKey1 one hash key
 	 * @param hashKey2 the other hash key
 	 * @return the number of common bits (max value = 6 EW x 2 Long per EW x 64 = 768)
 	 */
 	public static int commonBits(String hashKey1, String hashKey2) {
-		ExtendedWord w1 = new ExtendedWord(112);
-		ExtendedWord w2 = new ExtendedWord(112);
-		ExtendedWord w3 = new ExtendedWord(112);
 
-		ExtendedWord ewords1[] = new ExtendedWord[6];
-		ExtendedWord ewords2[] = new ExtendedWord[6];
+		SNRManager.getInstance().fromHashKey(hashKey1, _ewords1);
+		SNRManager.getInstance().fromHashKey(hashKey2, _ewords2);
 
-		for (int i = 0; i < 6; i++) {
-			ewords1[i] = new ExtendedWord(112);
-			ewords2[i] = new ExtendedWord(112);
-		}
-		SNRManager.getInstance().fromHash(hashKey1, ewords1);
-		SNRManager.getInstance().fromHash(hashKey2, ewords2);
-
-		return commonBits(ewords1, ewords2, w1, w2, w3);
+		return commonBits(_ewords1, _ewords2, _w1, _w2, _w3);
 	}
 
 }

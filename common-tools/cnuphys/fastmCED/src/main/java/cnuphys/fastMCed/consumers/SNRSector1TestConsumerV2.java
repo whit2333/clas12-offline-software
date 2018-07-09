@@ -1,6 +1,7 @@
 package cnuphys.fastMCed.consumers;
 
-import java.io.File;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadMXBean;
 import java.util.List;
 
 import org.jlab.clas.physics.PhysicsEvent;
@@ -14,6 +15,8 @@ import cnuphys.fastMCed.streaming.StreamReason;
 import cnuphys.lund.GeneratedParticleRecord;
 
 public class SNRSector1TestConsumerV2 extends ASNRConsumer {
+
+	ThreadMXBean mxbean = ManagementFactory.getThreadMXBean();
 
 	private long totalFoundTime;
 	int numFound;
@@ -45,6 +48,11 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
+		
+		if (_dictionary == null) {
+			loadOrCreateDictionary();
+		}
+
 		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
 			String hash = snr.hashKey(0, SNRManager.RIGHT); 
 
@@ -87,30 +95,35 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 					if (gprHash != null) { //match
 						
 						System.err.println("Found Time Test");
-						long startTime = System.currentTimeMillis();
+
+						long startTime = mxbean.getCurrentThreadUserTime(); //ns
+						
+						
+						
+						
 						for (int i = 0; i < numTrialFound; i++) {
 							hash = snr.hashKey(0, SNRManager.RIGHT); 
 							gprHash = _dictionary.get(hash);
 							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
 						}
-						totalFoundTime += (System.currentTimeMillis() - startTime);
+						totalFoundTime += (mxbean.getCurrentThreadUserTime() - startTime);
 						numFound += numTrialFound;
 						double avgTimeFound = ((double)totalFoundTime)/numFound;
-						System.err.println("Done found time test. Average time = " + avgTimeFound + " ms");
+						System.err.println("Done found time test. Average time = " + (avgTimeFound/1000000) + " ms");
 						
 						
 					} else {  //no match
 						System.err.println("Missed Time Test");
-						long startTime = System.currentTimeMillis();
+						long startTime = mxbean.getCurrentThreadUserTime();
 						for (int i = 0; i < numTrialMissed; i++) {
 							String nearestKey = _dictionary.nearestKey(hash);
 							gprHash = _dictionary.get(nearestKey);
 							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
 						}
-						totalMissedTime += (System.currentTimeMillis() - startTime);
+						totalMissedTime += (mxbean.getCurrentThreadUserTime() - startTime);
 						numMissed += numTrialMissed;
 						double avgTimeMissed = ((double)totalMissedTime)/numMissed;
-						System.err.println("Done missed time test. Average time = " + avgTimeMissed + " ms");
+						System.err.println("Done missed time test. Average time = " + (avgTimeMissed/1000000) + " ms");
 
 
 					}

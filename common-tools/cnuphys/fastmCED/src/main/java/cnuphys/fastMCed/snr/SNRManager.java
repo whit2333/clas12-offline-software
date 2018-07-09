@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import org.jlab.geom.DetectorHit;
 import org.jlab.geom.DetectorId;
 
+import cnuphys.bCNU.util.Bits;
 import cnuphys.fastMCed.fastmc.AugmentedDetectorHit;
 import cnuphys.fastMCed.fastmc.ParticleHits;
 import cnuphys.snr.ExtendedWord;
@@ -23,6 +24,7 @@ public class SNRManager  {
 	
 	//used for creating composite hash keys
 	private static final String HASHDELIM = "|";
+	private static final int HASHRADIX = 36;
 	
 	private static final String _fbColor = "$wheat$";
 
@@ -97,10 +99,57 @@ public class SNRManager  {
 			return !params.getRightSegments().isZero();
 		}
 	}
+	
+	/**
+	 * Get, from the data, a summary word that will have 12 meaningful bits.
+	 * A bit set if the corresponding long (two longs per extended word,
+	 * six extended words per sector) has ANY segment candidates. This
+	 * will be to speed up finding the nearest key id an exact match is not found.
+	 * @param sect0
+	 *            the zero based sector
+	 * @param direction
+	 *            should be LEFT or RIGHT
+	 * @return a summary word that will have 12 meaningful bits.
+	 */
+	public String summaryWord(int sect0, int direction) {
+		short word = 0;
+		ExtendedWord segments;
+
+		short bit = 0;
+		for (int supl0 = 0; supl0 < 6; supl0++) {
+			NoiseReductionParameters params = getParameters(sect0, supl0);
+			if (direction == LEFT) {
+				segments = params.getLeftSegments();
+			}
+			else {
+				segments = params.getRightSegments();
+			}
+			
+			long words[] = segments.getWords();
+			if (words[0] != 0) {
+				word = setBitAtLocation(word, bit);
+			}
+			
+			bit++;
+			if (words[1] != 0) {
+				word = setBitAtLocation(word, bit);
+			}
+
+			bit++;
+		}
+
+		return Long.toString(word, HASHRADIX);
+	}
+	
+	//used to set the bit in the summary word
+	private short setBitAtLocation(short bits, short bitIndex) {
+		bits |= (1 << bitIndex);
+		return bits;
+	}
 
 	/**
 	 * Get a hash key for the segments in the given sector
-	 * 
+	 * This encodes all the segment info plus a summary key
 	 * @param sect0
 	 *            the zero based sector
 	 * @param direction
@@ -108,18 +157,33 @@ public class SNRManager  {
 	 * @return hash key for the segments in the given sector
 	 */
 	public String hashKey(int sect0, int direction) {
-		StringBuilder sb = new StringBuilder(128);
+		
+		// The summary word that will have 12 meaningful bits.
+		// A bit is set if the corresponding long (two longs per extended word,
+		// or "segments" six extended words per sector) has ANY segment candidates.
+		// This will be to speed up the process of finding the nearest key 
+		// if an exact match is not found.
 
+		StringBuilder sb = new StringBuilder(256);
+
+		ExtendedWord segments;
+
+		//start with the summary word
+		sb.append(summaryWord(sect0, direction));
+		
 		for (int supl0 = 0; supl0 < 6; supl0++) {
 			NoiseReductionParameters params = getParameters(sect0, supl0);
-			if (sb.length() > 0) {
-				sb.append(HASHDELIM);
-			}
+			
+			//the tokenizer delitter
+			sb.append(HASHDELIM);
+			
 			if (direction == LEFT) {
-				sb.append(params.getLeftSegments().hashKey());
+				segments = params.getLeftSegments();
 			} else {
-				sb.append(params.getRightSegments().hashKey());
+				segments = params.getRightSegments();
 			}
+			sb.append(segments.hashKey());
+			
 		}
 
 		return sb.toString();
@@ -127,18 +191,47 @@ public class SNRManager  {
 	
 	/**
 	 * Convert a hash key created with hashKey above back into 
-	 * an array of ExtendedWord objects
-	 * @param hashKey a hash key created with the hashKey methhod
+	 * an array of ExtendedWord objects plus the quick check summary word.
+	 * @param hashKey a hash key created with the hashKey method
 	 * @param ewords the unhashed words that created the key
+	 * @return the encoded 12-bit summary word
 	 */
-	public void fromHash(String hashKey, ExtendedWord[] ewords) {
+	public String fromHashKey(String hashKey, ExtendedWord[] ewords) {
 		StringTokenizer t = new StringTokenizer(hashKey, HASHDELIM);
-		int num = t.countTokens();
 		
-		for (int i = 0; i < num; i++) {
+//		int num = t.countTokens();
+//		
+//		if (num != 7) {
+//			System.err.println("Wrong number of tokens in SNRManager fromHash. Num: " + num);
+//		}
+
+		
+		// There should be seven tokens. 
+		// The summary word followed by six extended words.
+		
+		String summaryString = t.nextToken();
+		
+		//the six extended words, one per superlayer
+		for (int i = 0; i < 6; i++) {
 			String ewordHash = t.nextToken();
 			ewords[i] = ExtendedWord.fromHash(ewordHash);
 		}
+		
+		return summaryString;
+	}
+	
+	/**
+	 * Get, from the hash key, a summary word that will have 12 meaningful bits.
+	 * A bit set if the corresponding long (two longs per extended word,
+	 * six extended words per sector) has ANY segment candidates. This
+	 * will be to speed up finding the nearest key id an exact match is not found.
+     * The summary string is the first token
+	 * @param hashKey the hash key
+	 * @return the summary string
+	 */
+	public String getSummaryString(String hashKey) {
+		StringTokenizer t = new StringTokenizer(hashKey, HASHDELIM);
+		return t.nextToken();
 	}
 
 

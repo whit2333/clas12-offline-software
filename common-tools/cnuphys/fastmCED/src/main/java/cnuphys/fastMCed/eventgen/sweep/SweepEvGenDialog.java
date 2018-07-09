@@ -253,15 +253,20 @@ public class SweepEvGenDialog extends JDialog implements ActionListener, IEventS
 		//take max pperp into account
 		//this my cause us to return a null event
 		
-		double theta = Math.toRadians(ppanel.getTheta(odometer.theta));
+		double theta = Math.toRadians(ppanel.getTheta(odometer.thetaStep));
 		double altPMax = getMaxPPerp()/(0.0001 + Math.sin(theta));
-		if (ppanel.getMomentum(odometer.p) > altPMax) {
+		
+//		System.err.println("P: " + ppanel.getMomentum(odometer.pStep));
+		if (ppanel.getMomentum(odometer.pStep) > altPMax) {
+//			System.err.println("NOPE P: " + ppanel.getMomentum(odometer.pStep) + "    Pmax: "+ altPMax + 
+//					"  mapPPerp: " + getMaxPPerp() +  "   theta:  " + ppanel.getTheta(odometer.thetaStep));
 			return null;
 		}
 
 		
-		PhysicsEvent  event = new PhysicsEvent();		
-		Particle p = ppanel.createParticle(odometer.x, odometer.y, odometer.z, odometer.p, odometer.theta, odometer.phi);
+		PhysicsEvent event = new PhysicsEvent();
+		Particle p = ppanel.createParticle(odometer.xStep, odometer.yStep, odometer.zStep, odometer.pStep,
+				odometer.thetaStep, odometer.phiStep);
 		event.addParticle(p);
 		
 		return event;

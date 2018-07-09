@@ -159,7 +159,10 @@ public class VariableSweepPanel  extends JPanel implements FocusListener, KeyLis
 		try {
 			String newText = _minValTF.getText();
 			if (newText == null) {
-				newText = "";
+				return;
+			}
+			if (newText.length() < 1) {
+				return;
 			}
 
 			if (oldMinText.compareTo(newText) != 0) {
@@ -183,8 +186,12 @@ public class VariableSweepPanel  extends JPanel implements FocusListener, KeyLis
 		try {
 			String newText = _maxValTF.getText();
 			if (newText == null) {
-				newText = "";
+				return;
 			}
+			if (newText.length() < 1) {
+				return;
+			}
+			
 
 			if (oldMaxText.compareTo(newText) != 0) {
 
@@ -210,7 +217,10 @@ public class VariableSweepPanel  extends JPanel implements FocusListener, KeyLis
 		try {
 			String newText = _stepTF.getText();
 			if (newText == null) {
-				newText = "";
+				return;
+			}
+			if (newText.length() < 1) {
+				return;
 			}
 
 			if (oldStepText.compareTo(newText) != 0) {
@@ -252,12 +262,14 @@ public class VariableSweepPanel  extends JPanel implements FocusListener, KeyLis
 	}
 
 	@Override
-	public void keyReleased(KeyEvent e) {
-		checkMinTextChange();
-		checkMaxTextChange();
-		checkStepTextChange();
+	public void keyReleased(KeyEvent kev) {
+		if (kev.getKeyCode() == KeyEvent.VK_ENTER) {
+			checkMinTextChange();
+			checkMaxTextChange();
+			checkStepTextChange();
+		}
 	}
-	
+
 	/**
 	 * Get the minimum value
 	 * @return the minimum value
