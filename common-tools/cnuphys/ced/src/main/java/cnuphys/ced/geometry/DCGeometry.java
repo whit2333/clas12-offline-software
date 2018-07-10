@@ -612,19 +612,6 @@ public class DCGeometry {
 		wp[wpIndex] = p;
 	}
 
-	// private static void expand(Point2D.Double wp0, Point2D.Double wp1, double
-	// factor) {
-	// double delx = factor * (wp1.x - wp0.x);
-	// double dely = factor * (wp1.y - wp0.y);
-	//
-	// double x0 = wp0.x;
-	// double y0 = wp0.y;
-	//
-	// wp0.x = wp1.x - delx;
-	// wp0.y = wp1.y - dely;
-	// wp1.x = x0 + delx;
-	// wp1.y = y0 + dely;
-	// }
 
 	// extend a point
 	private static void extPoint(Point2D.Double p0, Point2D.Double p1, Point2D.Double ext) {
