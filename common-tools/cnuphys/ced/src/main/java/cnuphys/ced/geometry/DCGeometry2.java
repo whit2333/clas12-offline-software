@@ -28,6 +28,11 @@ public class DCGeometry2 {
 	private static double _wireRightX[][][] = new double[6][6][112]; 
 	private static double _wireRightY[][][] = new double[6][6][112]; 
 	private static double _wireRightZ[][][] = new double[6][6][112]; 
+	
+	private static double _wireMidX[][][] = new double[6][6][112]; 
+	private static double _wireMidY[][][] = new double[6][6][112]; 
+	private static double _wireMidZ[][][] = new double[6][6][112]; 
+
 
 	public static DCGeant4Factory dcDetector;
 
@@ -46,7 +51,7 @@ public class DCGeometry2 {
 	private static void loadWirePositions() {
 		for  (int supl0 = 0; supl0 < 6; supl0++) {
 			for  (int lay0 = 0; lay0 < 6; lay0++) {
-				for  (int wire0 = 0; wire0 < 6; wire0++) {
+				for  (int wire0 = 0; wire0 < 112; wire0++) {
 					Vector3d v = dcDetector.getWireLeftend(supl0, lay0, wire0);
 					tiltedToSector(v);
 					
@@ -60,6 +65,13 @@ public class DCGeometry2 {
 					_wireRightX[supl0][lay0][wire0] = v.x;
 					_wireRightY[supl0][lay0][wire0] = v.y;
 					_wireRightZ[supl0][lay0][wire0] = v.z;
+					
+					v = dcDetector.getWireMidpoint(supl0, lay0, wire0);
+					tiltedToSector(v);
+
+					_wireMidX[supl0][lay0][wire0] = v.x;
+					_wireMidY[supl0][lay0][wire0] = v.y;
+					_wireMidZ[supl0][lay0][wire0] = v.z;
 					
 
 				}
@@ -82,9 +94,18 @@ public class DCGeometry2 {
 		initialize("default");
 		
 		//wire 000
-		System.out.println(String.format("(%-7.4f, %-7.4f, %-7.4f) (%-7.4f, %-7.4f, %-7.4f)", 
+		System.out.println(String.format(
+				" end: (%-7.4f, %-7.4f, %-7.4f) end: (%-7.4f, %-7.4f, %-7.4f) mid: (%-7.4f, %-7.4f, %-7.4f)",
 				_wireLeftX[0][0][0], _wireLeftY[0][0][0], _wireLeftZ[0][0][0],
-				_wireRightX[0][0][0], _wireRightY[0][0][0], _wireRightZ[0][0][0]));
+				_wireRightX[0][0][0], _wireRightY[0][0][0], _wireRightZ[0][0][0],
+				_wireMidX[0][0][0], _wireMidY[0][0][0], _wireMidZ[0][0][0]));
+		
+		System.out.println(String.format(
+				" end: (%-7.4f, %-7.4f, %-7.4f) end: (%-7.4f, %-7.4f, %-7.4f) mid: (%-7.4f, %-7.4f, %-7.4f)",
+				_wireLeftX[0][0][65], _wireLeftY[0][0][65], _wireLeftZ[0][0][65],
+				_wireRightX[0][0][65], _wireRightY[0][0][65], _wireRightZ[0][0][65],
+				_wireMidX[0][0][65], _wireMidY[0][0][65], _wireMidZ[0][0][65]));
+
 		
 		
 		System.out.println("Done.");

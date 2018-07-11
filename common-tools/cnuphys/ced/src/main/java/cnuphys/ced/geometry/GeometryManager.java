@@ -477,8 +477,12 @@ public class GeometryManager {
 	}
 	
 	/**
-	 * 
-	 * @return if the projected polygon intersects the plane
+	 * See if the projected polygon intersects a plane
+	 * @param geoObj
+	 * @param projectionPlane
+	 * @param startIndex
+	 * @param count
+	 * @return <code>true</code> if the projected polygon intersects the plane
 	 */
 	public static boolean doesProjectedPolyIntersect(AbstractComponent geoObj, 
 			Plane3D projectionPlane, 
@@ -627,6 +631,43 @@ public class GeometryManager {
 			}
 		}
 		return path;
+	}
+	
+	/**
+	 * Get the rotation matrix from an axis specified by unit vector components
+	 * and an angle.
+	 * @param ux the x component of the unit vector giving the axis direction
+	 * @param uy the y component of the unit vector giving the axis direction
+	 * @param uz the z component of the unit vector giving the axis direction
+	 * @param theta the angle in degrees
+	 * @param rotMat space for the rotation matrix
+	 */
+	public void rotationMatrixFromAxisAndAngle(double ux, double uy, double uz, double theta, double[][] rotMat) {
+		double ang = Math.toRadians(theta);
+		double cos = Math.cos(ang);
+		double sin = Math.sin(ang);
+		double omc = 1. - cos;
+		double uxuy = ux*uy;
+		double uxuz = ux*uz;
+		double uyuz = uy*uz;
+		double uxsq = ux*ux;
+		double uysq = uy*uy;
+		double uzsq = uz*uz;
+		double uxsin = ux*sin;
+		double uysin = uy*sin;
+		double uzsin = uz*sin;
+		
+		rotMat[0][0] = cos + uxsq*omc;
+		rotMat[0][1] = uxuy*omc - uzsin;
+		rotMat[0][2] = uxuz*omc + uysin;
+		
+		rotMat[1][0] = uxuy*omc + uzsin;
+		rotMat[1][1] = cos + uysq*omc;
+		rotMat[1][2] = uyuz*omc - uxsin;
+
+		rotMat[2][0] = uxuz*omc - uysin;
+		rotMat[2][1] = uyuz*omc + uxsin;
+		rotMat[2][2] = cos + uzsq*omc;
 	}
 
 }

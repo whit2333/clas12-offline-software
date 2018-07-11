@@ -21,8 +21,6 @@ public class DCGeometry {
 	private static DCDetector _dcDetector;
 	private static DCSector sector0;
 
-	private static double shortestWire;
-	private static double longestWire;
 	private static double minWireX;
 	private static double maxWireX;
 	private static double minWireY;
@@ -34,6 +32,8 @@ public class DCGeometry {
 	/**
 	 * These are the drift chamber wires from the geometry service. The indices
 	 * are 0-based: [superlayer 0:5][layer 0:5][wire 0:111]
+	 * NOTE: a DriftChamberWire is actually the full hexagonal volume. Its getLine
+	 * method returns the line of the sense wire.
 	 */
 	private static DriftChamberWire wires[][][];
 
@@ -53,8 +53,6 @@ public class DCGeometry {
 
 		sector0 = _dcDetector.getSector(0);
 
-		shortestWire = Double.POSITIVE_INFINITY;
-		longestWire = Double.NEGATIVE_INFINITY;
 		minWireX = Double.POSITIVE_INFINITY;
 		maxWireX = Double.NEGATIVE_INFINITY;
 		minWireY = Double.POSITIVE_INFINITY;
@@ -72,6 +70,7 @@ public class DCGeometry {
 
 				for (int w = 0; w < 112; w++) {
 					DriftChamberWire dcw = dcLayer.getComponent(w);
+					
 					wires[suplay][lay][w] = dcw;
 
 					Line3D line = dcw.getLine();
@@ -85,8 +84,6 @@ public class DCGeometry {
 					double wireLen = dcw.getLength();
 					// double wireLen = line.length();
 
-					shortestWire = Math.min(shortestWire, wireLen);
-					longestWire = Math.max(longestWire, wireLen);
 					minWireX = Math.min(minWireX, xx0);
 					minWireX = Math.min(minWireX, xx1);
 					maxWireX = Math.max(maxWireX, xx0);
@@ -103,19 +100,6 @@ public class DCGeometry {
 				}
 			}
 		}
-
-		// Log.getInstance().info("Shortest Wire: " + shortestWire);
-		// Log.getInstance().info("Longest Wire: " + longestWire);
-		// System.err.println("shortest wire: " + shortestWire);
-		// System.err.println("longest wire: " + longestWire);
-		// System.err.println("minX: " + minWireX);
-		// System.err.println("maxX: " + maxWireX);
-		// System.err.println("minY: " + minWireY);
-		// System.err.println("maxY: " + maxWireY);
-		// System.err.println("minZ: " + minWireZ);
-		// System.err.println("maxZ: " + maxWireZ);
-		//
-		// System.err.println("Done initing DC Geometry");
 
 	}
 
@@ -161,24 +145,6 @@ public class DCGeometry {
 			coords[k + 2] = (float) v6.z();
 		}
 
-	}
-
-	/**
-	 * Get the length of the shortest wire in cm
-	 * 
-	 * @return the length of the shortest wire in cm
-	 */
-	public static double getShortestWire() {
-		return shortestWire;
-	}
-
-	/**
-	 * Get the length of the longest wire in cm
-	 * 
-	 * @return the length of the longest wire in cm
-	 */
-	public static double getLongestWire() {
-		return longestWire;
 	}
 
 	/**
@@ -629,6 +595,15 @@ public class DCGeometry {
 	public static void main(String arg[]) {
 		initialize();
 		System.out.println(wires[0][0][0].getLine().origin() + "   " + wires[0][0][0].getLine().end() + "  MID: " + wires[0][0][0].getMidpoint());
+		
+//		System.out.println(wires[0][0][65].getLine().origin() + "   " + wires[0][0][65].getLine().end() + "  MID: " + wires[0][0][65].getMidpoint());
+
+		
+		DriftChamberWire dcw = wires[0][0][0];
+		System.out.println("num vol edges: " + dcw.getNumVolumeEdges());
+		for (int i = 0; i < dcw.getNumVolumeEdges(); i++) {
+			System.out.println(dcw.getVolumeEdge(i));
+		}
 	}
 
 }
