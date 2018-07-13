@@ -591,19 +591,42 @@ public class DCGeometry {
 		ext.y = p0.y + (p0.y - p1.y);
 	}
 	
+	public static void printWire(int superlayer, int layer, int wire) {
+				
+				DriftChamberWire dcw = wires[superlayer][layer][wire];
+				double x1 = dcw.getLine().origin().x();
+				double y1 = dcw.getLine().origin().y();
+				double z1 = dcw.getLine().origin().z();
+				
+				double x2 = dcw.getLine().end().x();
+				double y2 = dcw.getLine().end().y();
+				double z2 = dcw.getLine().end().z();
+				
+				double xm = dcw.getMidpoint().x();
+				double ym = dcw.getMidpoint().y();
+				double zm = dcw.getMidpoint().z();
+
+
+				
+				System.out.println(String.format(
+				"OLD  end (%-4.1f, %-4.1f, %-4.1f) end (%-4.1f, %-4.1f, %-4.1f) mid (%-4.1f, %-4.1f, %-4.1f)",
+				x1, y1, z1, x2, y2, z2,
+				xm, ym, zm));
+				
+	}
+
 	
 	public static void main(String arg[]) {
 		initialize();
-		System.out.println(wires[0][0][0].getLine().origin() + "   " + wires[0][0][0].getLine().end() + "  MID: " + wires[0][0][0].getMidpoint());
-		
-//		System.out.println(wires[0][0][65].getLine().origin() + "   " + wires[0][0][65].getLine().end() + "  MID: " + wires[0][0][65].getMidpoint());
+
+		printWire(0, 0, 65);
 
 		
-		DriftChamberWire dcw = wires[0][0][0];
-		System.out.println("num vol edges: " + dcw.getNumVolumeEdges());
-		for (int i = 0; i < dcw.getNumVolumeEdges(); i++) {
-			System.out.println(dcw.getVolumeEdge(i));
-		}
+//		DriftChamberWire dcw = wires[0][0][0];
+//		System.out.println("num vol edges: " + dcw.getNumVolumeEdges());
+//		for (int i = 0; i < dcw.getNumVolumeEdges(); i++) {
+//			System.out.println(dcw.getVolumeEdge(i));
+//		}
 	}
 
 }

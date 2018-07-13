@@ -225,21 +225,4 @@ public class Dictionary3DPlot extends JDialog implements ActionListener {
 		setVisible(false);
 	}
 	
-	
-	public static void main(String arg[]) {
-		
-		// close is like a close
-		WindowAdapter wa = new WindowAdapter() {
-			@Override
-			public void windowClosing(WindowEvent we) {
-				System.exit(1);
-			}
-		};
-
-		SNRDictionary dictionary = new SNRDictionary(true, -1, true, 1);
-		Dictionary3DPlot.plotDictionary(dictionary);
-		
-		instance.addWindowListener(wa);
-	}
-
 }

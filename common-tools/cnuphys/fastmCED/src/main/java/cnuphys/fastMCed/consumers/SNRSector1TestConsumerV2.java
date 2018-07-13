@@ -9,6 +9,7 @@ import org.jlab.clas.physics.PhysicsEvent;
 import cnuphys.fastMCed.eventgen.random.RandomEventGenerator;
 import cnuphys.fastMCed.eventio.PhysicsEventManager;
 import cnuphys.fastMCed.fastmc.ParticleHits;
+import cnuphys.fastMCed.snr.SNRDictionary;
 import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.streaming.StreamProcessStatus;
 import cnuphys.fastMCed.streaming.StreamReason;
@@ -49,8 +50,8 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 		
-		if (_dictionary == null) {
-			loadOrCreateDictionary();
+		if (_inDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
 		}
 
 		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
@@ -58,15 +59,15 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 
 			// see if this key is in the dictionary. If it is we'll get
 			//  a hash of a GeneratedParticleRec back
-			String gprHash = _dictionary.get(hash);
+			String gprHash = _inDictionary.get(hash);
 
 
 			if (gprHash != null) { //match
 				streamNFound++;
 			}
 			else {
-				String nearestKey = _dictionary.nearestKey(hash);
-				gprHash = _dictionary.get(nearestKey);
+				String nearestKey = _inDictionary.nearestKey(hash);
+				gprHash = _inDictionary.get(nearestKey);
 
 				streamNMissed++;
 			}
@@ -77,11 +78,11 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 
-		if (_dictionary == null) {
-			loadOrCreateDictionary();
+		if (_inDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
 		}
 
-		if ((_dictionary != null) && !_dictionary.isEmpty()) {
+		if ((_inDictionary != null) && !_inDictionary.isEmpty()) {
 			if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
 
 				//test is for sector 1 right leaners only
@@ -90,7 +91,7 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 
 					// see if this key is in the dictionary. If it is we'll get
 					//  a hash of a GeneratedParticleRec back
-					String gprHash = _dictionary.get(hash);
+					String gprHash = _inDictionary.get(hash);
 
 					if (gprHash != null) { //match
 						
@@ -103,7 +104,7 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 						
 						for (int i = 0; i < numTrialFound; i++) {
 							hash = snr.hashKey(0, SNRManager.RIGHT); 
-							gprHash = _dictionary.get(hash);
+							gprHash = _inDictionary.get(hash);
 							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
 						}
 						totalFoundTime += (mxbean.getCurrentThreadUserTime() - startTime);
@@ -116,8 +117,8 @@ public class SNRSector1TestConsumerV2 extends ASNRConsumer {
 						System.err.println("Missed Time Test");
 						long startTime = mxbean.getCurrentThreadUserTime();
 						for (int i = 0; i < numTrialMissed; i++) {
-							String nearestKey = _dictionary.nearestKey(hash);
-							gprHash = _dictionary.get(nearestKey);
+							String nearestKey = _inDictionary.nearestKey(hash);
+							gprHash = _inDictionary.get(nearestKey);
 							GeneratedParticleRecord rpr = GeneratedParticleRecord.fromHash(gprHash);
 						}
 						totalMissedTime += (mxbean.getCurrentThreadUserTime() - startTime);

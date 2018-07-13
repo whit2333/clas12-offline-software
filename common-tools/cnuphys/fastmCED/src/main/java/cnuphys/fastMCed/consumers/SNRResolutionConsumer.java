@@ -98,29 +98,29 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
 			GeneratedParticleRecord gpr = particleHits.get(0).getGeneratedParticleRecord();
 
-			if (_dictionary == null) {
-				loadOrCreateDictionary();
+			if (_inDictionary == null) {
+				loadOrCreateDictionary(SNRDictionary.IN_BENDER);
 				pHisto.setVisible(true);
 				pabsHisto.setVisible(true);
 				thetaHisto.setVisible(true);
 				phiHisto.setVisible(true);
 			}
 
-			if ((_dictionary != null) && !_dictionary.isEmpty()) {
+			if ((_inDictionary != null) && !_inDictionary.isEmpty()) {
 				if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
 
 					GeneratedParticleRecord rpr;
 
 					// test is for sector 1 right leaners only
 					String hash = snr.hashKey(0, SNRManager.RIGHT);
-					String gprHash = _dictionary.get(hash);
+					String gprHash = _inDictionary.get(hash);
 
 					// if not there, add
 					if (gprHash == null) {
 						// System.err.println("Added to dictionary");
 
 						gprHash = gpr.hashKey();
-						_dictionary.put(hash, gprHash);
+						_inDictionary.put(hash, gprHash);
 
 					}
 					
@@ -155,12 +155,12 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 
-		if (_dictionary == null) {
-			loadOrCreateDictionary();
+		if (_inDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
 			pHisto.setVisible(true);
 		}
 
-		if ((_dictionary != null) && !_dictionary.isEmpty()) {
+		if ((_inDictionary != null) && !_inDictionary.isEmpty()) {
 			if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
 
 				// test is for sector 1 right leaners only
@@ -169,7 +169,7 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 
 					// see if this key is in the dictionary. If it is we'll get
 					// a hash of a GeneratedParticleRec back
-					String gprHash = _dictionary.get(hash);
+					String gprHash = _inDictionary.get(hash);
 
 					GeneratedParticleRecord rpr;
 					if (gprHash != null) {
@@ -177,9 +177,9 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 					} else {
 						System.err.println("No dictionary match. Looking for closest");
 
-						String nearestKey = _dictionary.nearestKey(hash);
+						String nearestKey = _inDictionary.nearestKey(hash);
 						System.err.println("COMMON BITS " + SNRDictionary.commonBits(hash, nearestKey));
-						gprHash = _dictionary.get(nearestKey);
+						gprHash = _inDictionary.get(nearestKey);
 						System.err.println("Closest Match");
 						// add to plot
 					}

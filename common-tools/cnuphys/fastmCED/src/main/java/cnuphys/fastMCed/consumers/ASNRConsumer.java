@@ -16,7 +16,9 @@ public abstract class ASNRConsumer extends PhysicsEventConsumer {
 
 	protected String errStr = "???";
 
-	protected SNRDictionary _dictionary;
+	// the dictionaries
+	protected SNRDictionary _outDictionary;
+	protected SNRDictionary _inDictionary;
 
 	protected SNRManager snr = SNRManager.getInstance();
 
@@ -26,7 +28,12 @@ public abstract class ASNRConsumer extends PhysicsEventConsumer {
 	}
 
 
-	protected void loadOrCreateDictionary() {
+	/**
+	 * Load a dictionary (looking in a dictionaries folder in the home dir,
+	 * clearly that is only temporary). If not found, create an empty dictionary
+	 * @param bendDirection either IN_BENDER or OIUT_BENDER constant from SNRDictionary class.
+	 */
+	protected void loadOrCreateDictionary(int bendDirection) {
 		double torusScale = 0;
 		double solenoidScale = 0;
 		boolean useTorus = MagneticFields.getInstance().hasTorus();
@@ -39,21 +46,31 @@ public abstract class ASNRConsumer extends PhysicsEventConsumer {
 			Solenoid solenoid = MagneticFields.getInstance().getSolenoid();
 			solenoidScale = (solenoid == null) ? 0 : solenoid.getScaleFactor();
 		}
-		String fileName = SNRDictionary.getFileName(useTorus, torusScale, useSolenoid, solenoidScale);
+		String fileName = SNRDictionary.getFileName(bendDirection, useTorus, torusScale, useSolenoid, solenoidScale);
 
 		String dirPath = Environment.getInstance().getHomeDirectory() + "/dictionaries";
+		
+		
+		SNRDictionary dictionary = null;
 
 		File file = new File(dirPath, fileName);
 		System.err.println("Dictionary file: [" + file.getPath() + "]");
 		if (file.exists()) {
 			System.err.println("Found dictionary file");
-			_dictionary = SNRDictionary.read(dirPath, fileName);
+			dictionary = SNRDictionary.read(dirPath, fileName);
 
-			System.err.println("Number of keys: " + _dictionary.size());
+			System.err.println("Number of keys: " + dictionary.size());
 		}
 
-		if (_dictionary == null) {
-			_dictionary = new SNRDictionary(useTorus, torusScale, useSolenoid, solenoidScale);
+		if (dictionary == null) {
+			dictionary = new SNRDictionary(bendDirection, useTorus, torusScale, useSolenoid, solenoidScale);
+		}
+		
+		if (bendDirection == SNRDictionary.OUT_BENDER) {
+			_outDictionary = dictionary;
+		}
+		else {
+			_inDictionary = dictionary;
 		}
 	}
 	

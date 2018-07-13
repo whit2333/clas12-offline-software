@@ -30,10 +30,10 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 	public void streamingChange(StreamReason reason) {
 		if (reason == StreamReason.STOPPED) {
 
-			if (_dictionary != null) {
-				System.err.println("Num keys " + _dictionary.size());
+			if (_inDictionary != null) {
+				System.err.println("Num keys " + _inDictionary.size());
 
-				File file = _dictionary.write(Environment.getInstance().getHomeDirectory() + "/dictionaries");
+				File file = _inDictionary.write(Environment.getInstance().getHomeDirectory() + "/dictionaries");
 
 				System.err.println("File: [" + file.getPath() + "]  size: " + file.length());
 				// make scatter plot
@@ -49,21 +49,21 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
 			GeneratedParticleRecord gpr = particleHits.get(0).getGeneratedParticleRecord();
 
-			if (_dictionary == null) {
-				loadOrCreateDictionary();
-				_plot3D = Dictionary3DPlot.plotDictionary(_dictionary);
+			if (_inDictionary == null) {
+				loadOrCreateDictionary(SNRDictionary.IN_BENDER);
+				_plot3D = Dictionary3DPlot.plotDictionary(_inDictionary);
 			}
 
 			//test is for sector 1 right leaners only
 			String hash = snr.hashKey(0, SNRManager.RIGHT); 
-			String gprHash = _dictionary.get(hash);
+			String gprHash = _inDictionary.get(hash);
 
 			// if not there, add
 			if (gprHash == null) {
 //				System.err.println("Added to dictionary");
 				
 				gprHash = gpr.hashKey();
-				_dictionary.put(hash, gprHash);
+				_inDictionary.put(hash, gprHash);
 				
 				// add to plot
 				_plot3D.append(gprHash);
@@ -77,12 +77,12 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 
-		if (_dictionary == null) {
-			loadOrCreateDictionary();
-			_plot3D = Dictionary3DPlot.plotDictionary(_dictionary);
+		if (_inDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
+			_plot3D = Dictionary3DPlot.plotDictionary(_inDictionary);
 		}
 
-		if ((_dictionary != null) && !_dictionary.isEmpty()) {
+		if ((_inDictionary != null) && !_inDictionary.isEmpty()) {
 			if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
 
 				//test is for sector 1 right leaners only
@@ -91,7 +91,7 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 
 					// see if this key is in the dictionary. If it is we'll get
 					//  a hash of a GeneratedParticleRec back
-					String gprHash = _dictionary.get(hash);
+					String gprHash = _inDictionary.get(hash);
 
 					GeneratedParticleRecord rpr;
 					if (gprHash != null) {
@@ -99,9 +99,9 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 					} else {
 						System.err.println("No dictionary match. Looking for closest");
 
-						String nearestKey = _dictionary.nearestKey(hash);
+						String nearestKey = _inDictionary.nearestKey(hash);
 						System.err.println("COMMON BITS " + SNRDictionary.commonBits(hash, nearestKey));
-						gprHash = _dictionary.get(nearestKey);
+						gprHash = _inDictionary	.get(nearestKey);
 						System.err.println("Closest Match");
 						// add to plot
 						_plot3D.append(gprHash);

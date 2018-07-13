@@ -7,24 +7,37 @@ import java.util.HashMap;
 import cnuphys.bCNU.util.SerialIO;
 import cnuphys.snr.ExtendedWord;
 
+/**
+ * An SNR dictionary encodes the segment extended words and a summary string as
+ * a key, and the track parameters as a value.
+ * 
+ * @author heddle
+ *
+ */
 public class SNRDictionary extends HashMap<String, String> implements Serializable {
-		
+
+	public static final int IN_BENDER = 0; // also called right leaning
+	public static final int OUT_BENDER = 1; // also called left leaning
+
 	private boolean _useTorus = true;
 	private boolean _useSolenoid = false;
-	
+
 	private double _solenoidScale = 1.0;
 	private double _torusScale = -1.0;
 
+	/** Should be either IN_BENDER or OUT_BENDER*/
+	public int _bendDirection;
+
 	public static final int GOODSIZE = 393241;
-	
-	//NOT thread safe
+
+	// NOT thread safe
 	private static ExtendedWord _w1 = new ExtendedWord(112);
 	private static ExtendedWord _w2 = new ExtendedWord(112);
 	private static ExtendedWord _w3 = new ExtendedWord(112);
 
 	private static ExtendedWord _ewords1[] = new ExtendedWord[6];
 	private static ExtendedWord _ewords2[] = new ExtendedWord[6];
-	
+
 	static {
 		for (int i = 0; i < 6; i++) {
 			_ewords1[i] = new ExtendedWord(112);
@@ -32,36 +45,64 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 		}
 	}
 
+	/**
+	 * Create a dictionary for a mag field setting
+	 * 
+	 * @param bendDirection
+	 *            should be IN_BENDER or OUT_BENDER
+	 * @param useTorus
+	 *            whether we are using the torus
+	 * @param torusScale
+	 *            the torus scale factor
+	 * @param useSolenoid
+	 *            whether we are using the solenoid
+	 * @param solenoidScale
+	 *            the solenoid scale factor
+	 */
+	public SNRDictionary(int bendDirection, boolean useTorus, double torusScale, boolean useSolenoid,
+			double solenoidScale) {
+		
+		this(bendDirection, useTorus, torusScale, useSolenoid, solenoidScale, GOODSIZE);
+	}
 
 	/**
 	 * Create a dictionary for a mag field setting
-	 * @param useTorus whether we are using the torus
-	 * @param torusScale the torus scale factor
-	 * @param useSolenoid whether we are using the solenoid
-	 * @param solenoidScale the solenoid scale factor
+	 * 
+	 * @param bendDirection
+	 *            should be IN_BENDER or OUT_BENDER
+	 * @param useTorus
+	 *            whether we are using the torus
+	 * @param torusScale
+	 *            the torus scale factor
+	 * @param useSolenoid
+	 *            whether we are using the solenoid
+	 * @param solenoidScale
+	 *            the solenoid scale factor
+	 * @param size
+	 *            the hash map size
 	 */
-	public SNRDictionary(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale) {
-		this(useTorus, torusScale, useSolenoid, solenoidScale, GOODSIZE);
-	}
-	
-	/**
-	 * Create a dictionary for a mag field setting
-	 * @param useTorus whether we are using the torus
-	 * @param torusScale the torus scale factor
-	 * @param useSolenoid whether we are using the solenoid
-	 * @param solenoidScale the solenoid scale factor
-	 * @param size the hash map size
-	 */
-	public SNRDictionary(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale, int size) {
+	public SNRDictionary(int bendDirection, boolean useTorus, double torusScale, boolean useSolenoid,
+			double solenoidScale, int size) {
 		super(size);
+		_bendDirection = (bendDirection == 1) ? OUT_BENDER : IN_BENDER;
 		_useTorus = useTorus;
 		_torusScale = torusScale;
 		_useSolenoid = useSolenoid;
 		_solenoidScale = solenoidScale;
 	}
 	
+
+	/**
+	 * Serialize out the dictionary. Warning: will delete if necessary.
+	 * 
+	 * @param dirPath
+	 *            the full path to the directory where the dictionary will be
+	 *            stored. This does not include the name of the dictionary
+	 *            itself, which is auto generated.
+	 * @return the dictionary file
+	 */
 	public File write(String dirPath) {
-		String fn = getFileName(_useTorus, _torusScale, _useSolenoid, _solenoidScale);
+		String fn = getFileName(_bendDirection, _useTorus, _torusScale, _useSolenoid, _solenoidScale);
 		File file = new File(dirPath, fn);
 		if (file.exists()) {
 			file.delete();
@@ -70,6 +111,15 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 		return file;
 	}
 
+	/**
+	 * Read the dictionary from the serialized file
+	 * 
+	 * @param dirPath
+	 *            the path to the directory
+	 * @param fileName
+	 *            the file name.
+	 * @return the dictionary
+	 */
 	public static SNRDictionary read(String dirPath, String fileName) {
 
 		SNRDictionary dictionary = null;
@@ -86,21 +136,23 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 		return dictionary;
 	}
 
-	
-	//get the file name based on mag field settings
-	public static String getFileName(boolean useTorus, double torusScale, boolean useSolenoid, double solenoidScale) {
-		
+	// get the file name based on mag field settings
+	public static String getFileName(int bendDirection, boolean useTorus, double torusScale, boolean useSolenoid,
+			double solenoidScale) {
+
 		boolean incTorus = (useTorus && (Math.abs(torusScale) > 0.001));
 		boolean incSolenoid = (useSolenoid && (Math.abs(solenoidScale) > 0.001));
-		
+
 		if (!incTorus && !incSolenoid) {
 			return "nofield.dct";
 		}
+		
+		String bStr = (bendDirection == OUT_BENDER) ? "out" : "in";
 		String tStr = incTorus ? String.format("T%4.2f", torusScale) : "";
 		String sStr = incSolenoid ? String.format("S%4.2f", solenoidScale) : "";
 		String sep = (incTorus && incSolenoid) ? "_" : "";
-		
-		String fn = tStr + sep + sStr + ".dct";
+
+		String fn = bStr + tStr + sep + sStr + ".dct";
 		fn = fn.replace(" ", "");
 		return fn;
 	}
@@ -144,7 +196,7 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 					maxCommonBits = cb;
 					nearestKey = hashKey;
 				}
-			} //matching summaries
+			} // matching summaries
 		}
 
 		return nearestKey;
@@ -159,13 +211,17 @@ public class SNRDictionary extends HashMap<String, String> implements Serializab
 		}
 		return commonBits;
 	}
-	
+
 	/**
-	 * Count the number of common bits in the bit patterns represented by these two hash keys.
-	 * An expensive operation. Use sparingly.
-	 * @param hashKey1 one hash key
-	 * @param hashKey2 the other hash key
-	 * @return the number of common bits (max value = 6 EW x 2 Long per EW x 64 = 768)
+	 * Count the number of common bits in the bit patterns represented by these
+	 * two hash keys. An expensive operation. Use sparingly.
+	 * 
+	 * @param hashKey1
+	 *            one hash key
+	 * @param hashKey2
+	 *            the other hash key
+	 * @return the number of common bits (max value = 6 EW x 2 Long per EW x 64
+	 *         = 768)
 	 */
 	public static int commonBits(String hashKey1, String hashKey2) {
 

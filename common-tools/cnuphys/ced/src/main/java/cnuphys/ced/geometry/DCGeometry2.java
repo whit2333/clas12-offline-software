@@ -3,9 +3,6 @@ package cnuphys.ced.geometry;
 import org.jlab.detector.base.DetectorType;
 import org.jlab.detector.base.GeometryFactory;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
-import org.jlab.detector.geant4.v2.ECGeant4Factory;
-import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
-import org.jlab.detector.geant4.v2.PCALGeant4Factory;
 import org.jlab.geom.base.ConstantProvider;
 
 import eu.mihosoft.vrl.v3d.Vector3d;
@@ -79,6 +76,7 @@ public class DCGeometry2 {
 		}
 	}
 	
+	//rotated tiltes cs to sector
 	private static void tiltedToSector(Vector3d v) {
 		double tx = v.x;
 		double tz = v.z;
@@ -88,26 +86,33 @@ public class DCGeometry2 {
 
 	}
 	
+	//diagnostic to compare wite psotion with Gagik's package
+	static void compareWire(int superlayer, int layer, int wire) {
+		DCGeometry.printWire(superlayer, layer, wire);
+		printWire(superlayer, layer, wire);
+	}
+	
+	public static void printWire(int superlayer, int layer, int wire) {
+		System.out.println(String.format(
+				"NEW  end (%-4.1f, %-4.1f, %-4.1f) end (%-4.1f, %-4.1f, %-4.1f) mid (%-4.1f, %-4.1f, %-4.1f)",
+				_wireLeftX[superlayer][layer][wire], _wireLeftY[superlayer][layer][wire], _wireLeftZ[superlayer][layer][wire],
+				_wireRightX[superlayer][layer][wire], _wireRightY[superlayer][layer][wire], _wireRightZ[superlayer][layer][wire],
+				_wireMidX[superlayer][layer][wire], _wireMidY[superlayer][layer][wire], _wireMidZ[superlayer][layer][wire]));
+	}
+	
 	public static void main(String arg[]) {
 		System.out.println("Testing the new DC geometry");
 		
 		initialize("default");
 		
-		//wire 000
-		System.out.println(String.format(
-				" end: (%-7.4f, %-7.4f, %-7.4f) end: (%-7.4f, %-7.4f, %-7.4f) mid: (%-7.4f, %-7.4f, %-7.4f)",
-				_wireLeftX[0][0][0], _wireLeftY[0][0][0], _wireLeftZ[0][0][0],
-				_wireRightX[0][0][0], _wireRightY[0][0][0], _wireRightZ[0][0][0],
-				_wireMidX[0][0][0], _wireMidY[0][0][0], _wireMidZ[0][0][0]));
+		//initialize Gagik's so I can compare
+		DCGeometry.initialize();
+		for (int superlayer = 0; superlayer < 6; superlayer++) {
+			for (int layer = 0; layer < 6; layer++) {
+				compareWire(superlayer,layer, 65);
+				System.out.println();
+			}
+		}
 		
-		System.out.println(String.format(
-				" end: (%-7.4f, %-7.4f, %-7.4f) end: (%-7.4f, %-7.4f, %-7.4f) mid: (%-7.4f, %-7.4f, %-7.4f)",
-				_wireLeftX[0][0][65], _wireLeftY[0][0][65], _wireLeftZ[0][0][65],
-				_wireRightX[0][0][65], _wireRightY[0][0][65], _wireRightZ[0][0][65],
-				_wireMidX[0][0][65], _wireMidY[0][0][65], _wireMidZ[0][0][65]));
-
-		
-		
-		System.out.println("Done.");
 	}
 }
