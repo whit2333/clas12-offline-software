@@ -232,7 +232,7 @@ public class DCGeometry {
 	 * @return the mid point of the wire in sector 1
 	 */
 	public static Point3D getMidPoint(int superlayer, int layer, int wire) {
-		return wires[superlayer - 1][layer - 1][wire - 1].getLine().midpoint();
+		return wires[superlayer - 1][layer - 1][wire - 1].getMidpoint();
 	}
 
 	/**
