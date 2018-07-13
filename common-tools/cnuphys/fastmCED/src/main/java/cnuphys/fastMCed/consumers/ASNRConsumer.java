@@ -75,11 +75,18 @@ public abstract class ASNRConsumer extends PhysicsEventConsumer {
 	}
 	
 	//get the truth information
-	protected TrajectoryRowData getTruth() {
+	//first entry with matching charge
+	protected TrajectoryRowData getTruth(int charge) {
 		ISwimAll allSwimmer = PhysicsEventManager.getInstance().getAllSwimmer();
 		
-		TrajectoryRowData trajData = allSwimmer.getRowData().firstElement();
-		return trajData;
+		boolean found = false;
+		
+		for (TrajectoryRowData trajData : allSwimmer.getRowData()) {
+			if (trajData.getCharge() == charge) {
+				return trajData;
+			}
+		}
+		return null;
 	}
 
 }

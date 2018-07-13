@@ -19,7 +19,8 @@ import cnuphys.lund.TrajectoryRowData;
 
 public class SNRSector1TestConsumer extends ASNRConsumer {
 
-	private Dictionary3DPlot _plot3D;
+	private Dictionary3DPlot _plot3DLeft;
+	private Dictionary3DPlot _plot3DRight;
 
 	@Override
 	public String getConsumerName() {
@@ -29,100 +30,108 @@ public class SNRSector1TestConsumer extends ASNRConsumer {
 	@Override
 	public void streamingChange(StreamReason reason) {
 		if (reason == StreamReason.STOPPED) {
-
-			if (_inDictionary != null) {
-				System.err.println("Num keys " + _inDictionary.size());
-
-				File file = _inDictionary.write(Environment.getInstance().getHomeDirectory() + "/dictionaries");
-
-				System.err.println("File: [" + file.getPath() + "]  size: " + file.length());
-				// make scatter plot
-				// makeScatterPlot();
-			}
+			writeDictionary(_inDictionary);
+			writeDictionary(_outDictionary);
 		}
 	}
 
+	//write the dictionary
+	private void writeDictionary(SNRDictionary dictionary) {
+		File file = dictionary.write(Environment.getInstance().getHomeDirectory() + "/dictionaries");
+		System.err.println("File: [" + file.getPath() + "]  size: " + file.length());
+		System.err.println("Num keys " + dictionary.size());
+	}
+	
+	private void initDicts() {
+		if (_inDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
+			_plot3DRight = Dictionary3DPlot.plotDictionary(_inDictionary);
+		}
+		if (_outDictionary == null) {
+			loadOrCreateDictionary(SNRDictionary.OUT_BENDER);
+			_plot3DLeft = Dictionary3DPlot.plotDictionary(_outDictionary);
+		}
+	}
 
 	@Override
 	public StreamProcessStatus streamingPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
+		
+		initDicts();
 
-		if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
+		update(_inDictionary,  _plot3DRight, particleHits, SNRManager.RIGHT);
+		update(_outDictionary, _plot3DLeft,  particleHits, SNRManager.LEFT);
+
+		return StreamProcessStatus.CONTINUE;
+	}
+	
+	public void update(SNRDictionary dictionary, Dictionary3DPlot plot, List<ParticleHits> particleHits, int direction) {
+		if (snr.segmentsInAllSuperlayers(0, direction)) {
 			GeneratedParticleRecord gpr = particleHits.get(0).getGeneratedParticleRecord();
 
-			if (_inDictionary == null) {
-				loadOrCreateDictionary(SNRDictionary.IN_BENDER);
-				_plot3D = Dictionary3DPlot.plotDictionary(_inDictionary);
-			}
-
 			//test is for sector 1 right leaners only
-			String hash = snr.hashKey(0, SNRManager.RIGHT); 
-			String gprHash = _inDictionary.get(hash);
+			String hash = snr.hashKey(0, direction); 
+			String gprHash = dictionary.get(hash);
 
 			// if not there, add
 			if (gprHash == null) {
-//				System.err.println("Added to dictionary");
 				
 				gprHash = gpr.hashKey();
-				_inDictionary.put(hash, gprHash);
+				dictionary.put(hash, gprHash);
 				
 				// add to plot
-				_plot3D.append(gprHash);
+				plot.append(gprHash);
 
 			}
 
 		}
-		return StreamProcessStatus.CONTINUE;
+		
 	}
 
 	@Override
 	public void newPhysicsEvent(PhysicsEvent event, List<ParticleHits> particleHits) {
 
-		if (_inDictionary == null) {
-			loadOrCreateDictionary(SNRDictionary.IN_BENDER);
-			_plot3D = Dictionary3DPlot.plotDictionary(_inDictionary);
+		initDicts();
+		
+		if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
+			lookForTrack(_inDictionary, _plot3DRight, SNRManager.RIGHT);
+			lookForTrack(_outDictionary, _plot3DLeft, SNRManager.LEFT);
 		}
+	} //newPhysicsEvent
 
-		if ((_inDictionary != null) && !_inDictionary.isEmpty()) {
-			if (PhysicsEventManager.getInstance().getEventGenerator() instanceof RandomEventGenerator) {
+	private void lookForTrack(SNRDictionary dictionary, Dictionary3DPlot plot, int direction) {
 
-				//test is for sector 1 right leaners only
-				if (snr.segmentsInAllSuperlayers(0, SNRManager.RIGHT)) {
-					String hash = snr.hashKey(0, SNRManager.RIGHT); 
+		System.err.println("Looking in direction: " + direction);
+		//test is for sector 1 only
+		if (snr.segmentsInAllSuperlayers(0, direction)) {
+			String hash = snr.hashKey(0, direction); 
 
-					// see if this key is in the dictionary. If it is we'll get
-					//  a hash of a GeneratedParticleRec back
-					String gprHash = _inDictionary.get(hash);
+			// see if this key is in the dictionary. If it is we'll get
+			//  a hash of a GeneratedParticleRec back
+			String gprHash = dictionary.get(hash);
 
-					GeneratedParticleRecord rpr;
-					if (gprHash != null) {
-						System.err.println("*** Dictionary Match ***");
-					} else {
-						System.err.println("No dictionary match. Looking for closest");
+			GeneratedParticleRecord rpr;
+			if (gprHash != null) {
+				System.err.println("*** Dictionary Match DIRECTION: " + direction);
+			} else {
+				System.err.println("No dictionary match. Looking for closest.  DIRECTION: " + direction);
 
-						String nearestKey = _inDictionary.nearestKey(hash);
-						System.err.println("COMMON BITS " + SNRDictionary.commonBits(hash, nearestKey));
-						gprHash = _inDictionary	.get(nearestKey);
-						System.err.println("Closest Match");
-						// add to plot
-						_plot3D.append(gprHash);
-					}
-					
-					rpr = GeneratedParticleRecord.fromHash(gprHash);
-					System.err.println(rpr.toString());
-					TrajectoryRowData trajData = getTruth();
-					double dP = Math.abs(trajData.getMomentum() - 1000*rpr.getMomentum());
-					double dTheta = Math.abs(trajData.getTheta() - rpr.getTheta());
-					double dPhi = Math.abs(trajData.getPhi() - rpr.getPhi());
-					double fracdP = dP/trajData.getMomentum();
-					System.err.println(String.format("Error dP = %-6.3f MeV dP/P = %-6.3f%% dTheta = %-6.3f deg  dPhi = %-6.3f deg", dP, 100*fracdP, dTheta, dPhi));
-				}
-
-			} // random generator
+				String nearestKey = dictionary.nearestKey(hash);
+				System.err.println("COMMON BITS " + SNRDictionary.commonBits(hash, nearestKey));
+				gprHash = dictionary.get(nearestKey);
+				System.err.println("Closest Match");
+				// add to plot
+				plot.append(gprHash);
+			}
+			
+			rpr = GeneratedParticleRecord.fromHash(gprHash);
+			System.err.println(rpr.toString());
+			TrajectoryRowData trajData = getTruth(rpr.getCharge());
+			double dP = Math.abs(trajData.getMomentum() - 1000*rpr.getMomentum());
+			double dTheta = Math.abs(trajData.getTheta() - rpr.getTheta());
+			double dPhi = Math.abs(trajData.getPhi() - rpr.getPhi());
+			double fracdP = dP/trajData.getMomentum();
+			System.err.println(String.format("Error dP = %-6.3f MeV dP/P = %-6.3f%% dTheta = %-6.3f deg  dPhi = %-6.3f deg", dP, 100*fracdP, dTheta, dPhi));
 		}
+		
 	}
-
-	// private void makeScatterPlot() {
-	// PThetaDialog dialog = new PThetaDialog(null, false, _dictionary);
-	// dialog.setVisible(true);
-	// }
 }

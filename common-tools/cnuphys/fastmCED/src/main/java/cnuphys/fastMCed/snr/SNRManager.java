@@ -197,6 +197,9 @@ public class SNRManager  {
 	 * @return the encoded 12-bit summary word
 	 */
 	public String fromHashKey(String hashKey, ExtendedWord[] ewords) {
+		if (hashKey == null) {
+			return null;
+		}
 		StringTokenizer t = new StringTokenizer(hashKey, HASHDELIM);
 		
 //		int num = t.countTokens();

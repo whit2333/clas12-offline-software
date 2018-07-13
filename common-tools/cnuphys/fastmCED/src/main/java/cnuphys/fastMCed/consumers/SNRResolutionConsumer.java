@@ -125,7 +125,7 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 					}
 					
 					rpr = GeneratedParticleRecord.fromHash(gprHash);
-					TrajectoryRowData trajData = getTruth();
+					TrajectoryRowData trajData = getTruth(rpr.getCharge());
 					double dP = trajData.getMomentum() - 1000*rpr.getMomentum();
 					double dTheta = trajData.getTheta() - rpr.getTheta();
 					double dPhi = trajData.getPhi() - rpr.getPhi();
@@ -186,7 +186,7 @@ public class SNRResolutionConsumer extends ASNRConsumer {
 
 					rpr = GeneratedParticleRecord.fromHash(gprHash);
 					System.err.println(rpr.toString());
-					TrajectoryRowData trajData = getTruth();
+					TrajectoryRowData trajData = getTruth(rpr.getCharge());
 					double dP = Math.abs(trajData.getMomentum() - 1000 * rpr.getMomentum());
 					double dTheta = Math.abs(trajData.getTheta() - rpr.getTheta());
 					double dPhi = Math.abs(trajData.getPhi() - rpr.getPhi());
