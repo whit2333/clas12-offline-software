@@ -27,6 +27,8 @@ import org.jlab.rec.dc.trajectory.DCSwimmer;
 import org.jlab.rec.dc.trajectory.StateVec;
 import org.jlab.rec.dc.trajectory.Trajectory;
 import org.jlab.rec.dc.trajectory.TrajectoryFinder;
+import org.jlab.rec.fvt.track.fit.MeasVecs;
+import org.jlab.rec.fvt.track.fit.TrackMatch;
 
 public class DCTBEngine extends DCEngine {
 
@@ -74,7 +76,8 @@ public class DCTBEngine extends DCEngine {
                 return true; // no REC HB bank
             }
         }
-        
+        DCSwimmer swimmer = new DCSwimmer();
+        TrackMatch match2FMT = new TrackMatch();
         //System.out.println(" RUNNING TIME BASED....................................");
         ClusterFitter cf = new ClusterFitter();
         ClusterCleanerUtilities ct = new ClusterCleanerUtilities();
@@ -194,7 +197,7 @@ public class DCTBEngine extends DCEngine {
         }
         
         //6) find the list of  track candidates
-        TrackCandListFinder trkcandFinder = new TrackCandListFinder("TimeBased");
+        TrackCandListFinder trkcandFinder = new TrackCandListFinder("TimeBased", swimmer);
         TrajectoryFinder trjFind = new TrajectoryFinder();
         for(int i = 0; i < TrackArray.length; i++) {
             if(TrackArray[i].get_ListOfHBSegments()==null || TrackArray[i].get_ListOfHBSegments().size()<4)
@@ -229,7 +232,56 @@ public class DCTBEngine extends DCEngine {
                 TrackArray[i].set_CovMat(kFit.finalCovMat.covMat);
                 if(TrackArray[i].get_Vtx0().toVector3D().mag()>500)
                     continue;
-                trkcands.add(TrackArray[i]);
+                //match to FMT
+                //System.out.println(" TRACK sector "+TrackArray[i].get_Sector());TrackArray[i].printInfo();
+                List<Trajectory.TrajectoryStateVec> fMTTraj = TrackArray[i].FMTTrajectory(i+1, swimmer, TrackArray[i].get_Vtx0().x(), TrackArray[i].get_Vtx0().y(), TrackArray[i].get_Vtx0().z(), TrackArray[i].get_pAtOrig().x(), TrackArray[i].get_pAtOrig().y(), TrackArray[i].get_pAtOrig().z(), TrackArray[i].get_Q(), tSurf);
+                List<ArrayList<MeasVecs.MeasVec>> listofFMTMeas = trjFind.getListOfMeasurements(event);
+                List<ArrayList<MeasVecs.MeasVec>> matchDCTrackLists = match2FMT.matchDCTrack2FMTClusters(fMTTraj, listofFMTMeas, fmtDetector);
+                
+                if(matchDCTrackLists!=null && matchDCTrackLists.size()>0 && matchDCTrackLists.size()<11) {
+                    ArrayList<Track> FMTTracks= new ArrayList<Track>();
+                    for(int k = 0; k<matchDCTrackLists.size(); k++) {
+                       // System.out.println(" FMT list idx "+k);
+                       // for(int k1=0; k1<matchDCTrackLists.get(k).size(); k1++) {
+                       //     System.out.println("Clus in layer "+matchDCTrackLists.get(k).get(k1).layer+" seed "+matchDCTrackLists.get(k).get(k1).seed
+                       //     +" cent "+(float)matchDCTrackLists.get(k).get(k1).centroid);
+                       // }
+                        Track FMTTrk = (Track) TrackArray[i].clone();
+                       
+                        org.jlab.rec.fvt.track.fit.KFitter FMTKF 
+                                = new org.jlab.rec.fvt.track.fit.KFitter(FMTTrk, matchDCTrackLists.get(k), swimmer);
+                        
+                        FMTKF.runFitter(FMTTrk);
+                        
+                        KFitter kFit2 = new KFitter(FMTTrk, dcDetector, true);
+                        kFit2.totNumIter=1;
+                        kFit2.useFilter=false;
+                        kFit2.runFitter();
+                        
+                        if(kFit2.finalStateVec!=null) {
+                            fn = new StateVec();
+                            // set the state vector at the last measurement site
+                            fn.set(kFit2.finalStateVec.x, kFit2.finalStateVec.y, kFit2.finalStateVec.tx, kFit2.finalStateVec.ty); 
+                            //set the track parameters if the filter does not fail
+                            FMTTrk.FMTRefit=true;
+                            FMTTrk.set_P(1./Math.abs(kFit2.finalStateVec.Q));
+                            FMTTrk.set_Q((int)Math.signum(kFit2.finalStateVec.Q));
+                            trkcandFinder.setTrackPars(FMTTrk, new Trajectory(), trjFind, fn, kFit2.finalStateVec.z, dcDetector);
+                            // candidate parameters are set from the state vector
+                            FMTTrk.set_FitChi2(kFit2.chi2); 
+                            FMTTrk.set_FitNDF(kFit2.NDF);
+                            FMTTrk.set_FitConvergenceStatus(kFit2.ConvStatus);
+                            //FMTTrk.set_Id(TrackArray[i].size()+1);
+                            FMTTrk.set_CovMat(kFit2.finalCovMat.covMat); 
+                        }
+                        //System.out.println("after KF refit chi "+kFit.chi2+"--> "+kFit2.chi2);FMTTrk.printInfo();
+                        //if(kFit2.chi2<kFit.chi2)
+                        FMTTracks.add(FMTTrk);
+                    } 
+                    trkcands.addAll(FMTTracks);
+                } else {
+                    trkcands.add(TrackArray[i]);
+                }
             }
         }
         
@@ -247,7 +299,7 @@ public class DCTBEngine extends DCEngine {
                 // reset the id
                 trk.set_Id(trkId);
                 trkcandFinder.matchHits(trk.get_Trajectory(), trk, dcDetector);
-                trk.calcTrajectory(trkId, trkcandFinder.dcSwim, trk.get_Vtx0().x(), trk.get_Vtx0().y(), trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), ftofDetector, tSurf);
+                trk.calcTrajectory(trkId, swimmer, trk.get_Vtx0().x(), trk.get_Vtx0().y(), trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), ftofDetector, tSurf);
 //                for(int j = 0; j< trk.trajectory.size(); j++) {
 //                System.out.println(trk.get_Id()+" "+trk.trajectory.size()+" ("+trk.trajectory.get(j).getDetId()+") ["+
 //                            trk.trajectory.get(j).getDetName()+"] "+

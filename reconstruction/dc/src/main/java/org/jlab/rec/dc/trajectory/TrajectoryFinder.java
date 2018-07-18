@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.prim.Vector3D;
+import org.jlab.io.base.DataBank;
+import org.jlab.io.base.DataEvent;
 import org.jlab.rec.dc.Constants;
 import org.jlab.rec.dc.cross.Cross;
+import org.jlab.rec.fvt.track.fit.MeasVecs;
 import trackfitter.fitter.LineFitter;
 
 /**
@@ -321,4 +324,28 @@ public class TrajectoryFinder {
         return Math.sqrt(d1*d1+e1*e1 + d2*d2*e2*e2);
     }
 
+    public List<ArrayList<MeasVecs.MeasVec>> getListOfMeasurements(DataEvent event) {
+        //System.out.println(" NEW EVENT READING FMT");
+        if (event.hasBank("FMTRec::Clusters") == false) {
+            return null;
+        }
+        List<ArrayList<MeasVecs.MeasVec>> listOfMeas= new ArrayList<ArrayList<MeasVecs.MeasVec>>();
+        for(int s =0; s<6; s++) {
+            ArrayList<MeasVecs.MeasVec> listOfMeasSec= new ArrayList<MeasVecs.MeasVec>();
+            listOfMeas.add(listOfMeasSec);
+        }
+        
+        DataBank bank = event.getBank("FMTRec::Clusters");
+        MeasVecs mv = new MeasVecs();
+        for (int i = 0; i < bank.rows(); i++) {
+            int sector = bank.getByte("sector", i); 
+            if(sector<1)
+                continue;
+            int layer = bank.getByte("layer", i); 
+            int size = bank.getShort("size", i); 
+            listOfMeas.get(layer-1).add(mv.setMeasVec(layer-1, (double) bank.getFloat("centroid", i), bank.getInt("seedStrip", i), size));
+        }
+        //System.out.println("number of clusters "+bank.rows());
+        return listOfMeas;
+    }
 }

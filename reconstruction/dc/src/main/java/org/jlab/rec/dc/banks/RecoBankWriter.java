@@ -716,7 +716,12 @@ public class RecoBankWriter {
 
         for (int i = 0; i < candlist.size(); i++) {
             bank.setShort("id", i, (short) candlist.get(i).get_Id());
-            bank.setShort("status", i, (short) (100+candlist.get(i).get_Status()*10+candlist.get(i).get_MissingSuperlayer()));
+            if(candlist.get(i).FMTRefit) {
+                bank.setShort("status", i, (short) (200+candlist.get(i).get_Status()*10+candlist.get(i).get_MissingSuperlayer()));
+            } else {
+               bank.setShort("status", i, (short) (100+candlist.get(i).get_Status()*10+candlist.get(i).get_MissingSuperlayer()));
+             
+            }
             bank.setByte("sector", i, (byte) candlist.get(i).get_Sector());
             bank.setByte("q", i, (byte) candlist.get(i).get_Q());
             //bank.setFloat("p", i, (float) candlist.get(i).get_P());

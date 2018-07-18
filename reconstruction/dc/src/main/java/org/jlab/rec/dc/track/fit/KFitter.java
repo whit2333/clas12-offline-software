@@ -103,6 +103,10 @@ public class KFitter {
                     this.ConvStatus=1;
                 }
             }
+            if(totNumIter==1) {
+                this.finalStateVec = sv.trackTraj.get(sv.Z.length - 1);
+                this.finalCovMat = sv.trackCov.get(sv.Z.length - 1);
+            }
         }
         this.calcFinalChisq();
 

@@ -46,6 +46,7 @@ public class Track extends Trajectory implements Comparable<Track>{
     public boolean fit_Successful;
     private int _missingSuperlayer;
     private int _fitConvergenceStatus;
+    public boolean FMTRefit =false;
     
     
     public Track() {

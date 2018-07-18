@@ -34,14 +34,16 @@ public class TrackCandListFinder {
      * the tracking status = HitBased or TimeBased
      */
     private String trking;
+    private DCSwimmer dcSwim;
     /**
      * 
      * @param stat the tracking status Hit-based or Time-based
      */
-    public TrackCandListFinder(String stat) {
+    public TrackCandListFinder(String stat, DCSwimmer dcSwimmer) {
             trking = stat;
+            dcSwim = dcSwimmer;
     }
-    public DCSwimmer dcSwim = new DCSwimmer();
+    //public DCSwimmer dcSwim = new DCSwimmer();
     
     /**
      * 

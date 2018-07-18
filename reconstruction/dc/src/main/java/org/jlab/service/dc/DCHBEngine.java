@@ -32,6 +32,7 @@ import org.jlab.rec.dc.track.TrackCandListFinder;
 import org.jlab.rec.dc.trajectory.DCSwimmer;
 import org.jlab.rec.dc.trajectory.RoadFinder;
 import org.jlab.rec.dc.trajectory.Road;
+import org.jlab.service.fmt.FMTReconstruction;
 import org.jlab.utils.groups.IndexedTable;
 
 public class DCHBEngine extends DCEngine {
@@ -104,7 +105,8 @@ public class DCHBEngine extends DCEngine {
                        rightShifts);
        
        //System.out.println("RUNNING HITBASED_________________________________________");
-
+       DCSwimmer swimmer = new DCSwimmer();
+       
        ClusterFitter cf = new ClusterFitter();
        ClusterCleanerUtilities ct = new ClusterCleanerUtilities();
 
@@ -186,7 +188,7 @@ public class DCHBEngine extends DCEngine {
         CrossList crosslist = crossLister.candCrossLists(crosses, false, super.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist"), dcDetector, null);
 
         //6) find the list of  track candidates
-        TrackCandListFinder trkcandFinder = new TrackCandListFinder("HitBased");
+        TrackCandListFinder trkcandFinder = new TrackCandListFinder("HitBased", swimmer);
         trkcands = trkcandFinder.getTrackCands(crosslist, dcDetector, DCSwimmer.getTorScale() ) ;
 
 
@@ -297,15 +299,14 @@ public class DCHBEngine extends DCEngine {
     }
 
     public static void main(String[] args)  {
-        
         //String inputFile = args[0];
         //String outputFile = args[1];
         //String inputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305.hipo";
-        //String inputFile="/Users/ziegler/Desktop/Work/validation/infiles/out_clas_004013.evio.filt.hipo";
-        //String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/BGMERG/gemc_out_mu-_hipo/mu-_30nA_bg_out.ev.hipo";
-         String inputFile="/Users/ziegler/Desktop/Work/Files/GEMC/straight.hipo";
-        //String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_rec.hipo";
+        //String inputFile="/Users/ziegler/Desktop/Work/validation/infiles/sidis_tm1_sm1.hipo";
+        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/SimuTag_4a.2.4/lumiclas12_pi.hipo";
         //System.err.println(" \n[PROCESSING FILE] : " + inputFile);
+        FMTReconstruction en0 = new FMTReconstruction();
+        en0.init();
         
         DCHBEngine en = new DCHBEngine();
         en.init();
@@ -321,24 +322,24 @@ public class DCHBEngine extends DCEngine {
         HipoDataSync writer = new HipoDataSync();
         //Writer
         
-        //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGDSt.hipo";
-       // String outputFile="/Users/ziegler/Desktop/Work/validation/outfiles/out_clas_004013.evio.filtRecookSinThread.hipo";
-        String outputFile="/Users/ziegler/Desktop/Work/Files/GEMC/straight_rec.hipo";
-        //String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_recFMTClusNoTrkRefit.hipo";
-        
+        //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGD.hipo";
+        //String outputFile="/Users/ziegler/Desktop/Work/validation/FMTDBUGsidis_tm1_sm1.hipo";
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/SimuTag_4a.2.4/lumiclas12_pi_rec2.hipo";
         writer.open(outputFile);
         TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
         long t1 = 0;
         while (reader.hasEvent()) {
             
             counter++;
-            System.out.println("************************************************************* ");
+            //System.out.println("************************************************************* ");
             DataEvent event = reader.getNextEvent();
             if (counter > 0) {
                 t1 = System.currentTimeMillis();
             }
-            //if(event.getBank("RUN::config").getInt("event", 0) <50)
-             //   continue;
+            //if(event.getBank("RUN::config").getInt("event", 0) >30)
+            //    break;
+            en0.processDataEvent(event);
+            
             en.processDataEvent(event);
             //event.show();
             // Processing TB
@@ -346,22 +347,22 @@ public class DCHBEngine extends DCEngine {
             writer.writeEvent(event);
             System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
            // event.show();
-            //if (event.getBank("RUN::config").getInt("event", 0) > 350) {
+            //if (event.getBank("RUN::config").getInt("event", 0) > 50) {
             //    break;
-            //}
+           // }
             
             
             // event.show();
             //if(counter%100==0)
             
-            //if(event.hasBank("HitBasedTrkg::HBTracks")) {
-            //    event.show();
-            
-            //}
+         //   if(event.hasBank("TimeBasedTrkg::TBTracks")) {
+        //        event.getBank("TimeBasedTrkg::TBTracks").show();  
+        //    }
         }
         writer.close();
         double t = System.currentTimeMillis() - t1;
         System.out.println(t1 + " TOTAL  PROCESSING TIME = " + (t / (float) counter));
     }
+
 
 }
