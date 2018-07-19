@@ -314,6 +314,22 @@ public class SwimTrajectory extends ArrayList<double[]> {
 		}
 		return pos;
 	}
+	
+	/**
+	 * Get the total BDL integral if computed
+	 * @return the total BDL integral in kG-m
+	 */
+	public double getComputedBDL() {
+		if (!_computedBDL) {
+			return Double.NaN;
+		}
+		
+		if (this.size() < 1) {
+			return 0;
+		}
+		
+		return this.lastElement()[BXDL_IDX];
+	}
 
 	/**
 	 * Compute the integral B cross dl. This will cause the state vector arrays to
@@ -368,10 +384,10 @@ public class SwimTrajectory extends ArrayList<double[]> {
 		if (_computedBDL) {
 			return;
 		}
-
+		
 		Bxdl previous = new Bxdl();
 		Bxdl current = new Bxdl();
-		double[] p0 = this.get(0);
+		double[] p0 = get(0);
 		augment(p0, 0, 0, 0);
 
 		for (int i = 1; i < size(); i++) {
@@ -379,9 +395,14 @@ public class SwimTrajectory extends ArrayList<double[]> {
 			Bxdl.sectorAccumulate(sector, previous, current, p0, p1, probe);
 			
 			augment(p1, current.getPathlength(), current.getIntegralBxdl(), i);
+			
+//			System.out.println("HEY MAN " + current.getIntegralBxdl());
+
 			previous.set(current);
 			p0 = p1;
 		}
+
+//		System.out.println("DUDE " + this.lastElement()[BXDL_IDX]);
 
 		_computedBDL = true;
 	}

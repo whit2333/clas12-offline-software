@@ -24,9 +24,9 @@ public class ConverterSolenoid {
 	static boolean firstLine = true;
 	static int lineCount;
 
-	private static String gemcName[] = { "\"azimuthal\"", "\"transverse\"", "\"longitudinal\"" };
-	private static String ordinal[] = { "first", "second", "third" };
-	private static String units[] = { "\"deg\"", "\"cm\"", "\"cm\"" };
+	private static String gemcName[] = { "NOT USED", "\"transverse\"", "\"longitudinal\"" };
+	private static String ordinal[] = { "NOT USED", "first", "second" };
+	private static String units[] = { "NOT USED", "\"m\"", "\"m\"" };
 
 	private static String _homeDir = System.getProperty("user.home");
 
@@ -297,7 +297,11 @@ public class ConverterSolenoid {
 
 	}
 
-	//convert ot binary
+	/**
+	 * Convert to binary
+	 * @param zfiles the sorted list of z files
+	 * @param gdata the grid data
+	 */
 	public static void convertToBinary(ArrayList<ZFile> zfiles, GridData gdata[]) {
 		if (gdata != null) {
 			try {
@@ -308,12 +312,14 @@ public class ConverterSolenoid {
 		}
 	}
 
-	public static void convertToGemc(ArrayList<File> files, GridData gdata[]) {
+	/**
+	 * Convert to GEMC ascii
+	 * @param zfiles the ordered list of z files
+	 * @param gdata the grid data
+	 */
+	public static void convertToGemc(ArrayList<ZFile> zfiles, GridData gdata[]) {
 		if (gdata != null) {
-			File afile = new File(getDataDir(), "gemc_torus.txt");
-
-			boolean assumedSymmetric = gdata[PHI].max < 100;
-			System.out.println("In GEMC Converter assumed symmetric: " + assumedSymmetric);
+			File afile = new File(getDataDir(), "gemc_solenoid.txt");
 
 			if (afile.exists()) {
 				afile.delete();
@@ -328,12 +334,11 @@ public class ConverterSolenoid {
 				writeln(writer, indentLevel, false, "<mfield>");
 				indentLevel++;
 
-				writeln(writer, indentLevel, true, "description name=\"" + afile.getName()
-						+ "\" factory=\"ASCII\" comment=\"clas12 superconducting torus\"");
+				writeln(writer, indentLevel, true, "description name=\"clas12-solenoid\" factory=\"ASCII\" comment=\"clas12 superconducting solenoid\"");
 
 				writeln(writer, indentLevel, true,
-						"symmetry type=\"" + (assumedSymmetric ? "phi-segmented\"" : "none\"")
-								+ " format=\"map\" integration=\"ClassicalRK4\" minStep=\"1*mm\"");
+						"symmetry type=\"cylindrical-z\""
+								+ " format=\"map\" integration=\"ClassicalRK4\" minStep=\"0.01*mm\"");
 
 				writeln(writer, indentLevel, false, "<map>");
 				indentLevel++;
@@ -341,15 +346,16 @@ public class ConverterSolenoid {
 				writeln(writer, indentLevel, false, "<coordinate>");
 				indentLevel++;
 
-				for (GridData gd : gdata) {
-					writeln(writer, indentLevel, true, gd.forGEMC());
+				for (int i = 1; i < 3; i++) {
+					writeln(writer, indentLevel, true, gdata[i].forGEMC());
 				}
 
 				indentLevel--;
 				writeln(writer, indentLevel, false, "</coordinate>");
 
-				writeln(writer, indentLevel, true, "field unit=\"kilogauss\"");
-				writeln(writer, indentLevel, true, "interpolation type=\"none\"");
+				writeln(writer, indentLevel, true, "field unit=\"T\"");
+				//Mauri says intrpolation line deprecated
+	//			writeln(writer, indentLevel, true, "interpolation type=\"none\"");
 
 				indentLevel--;
 				writeln(writer, indentLevel, false, "</map>");
@@ -359,44 +365,66 @@ public class ConverterSolenoid {
 
 				// OK now the data
 
-				int nPhi = gdata[PHI].n;
+			//	int nPhi = gdata[PHI].n;
 				int nRho = gdata[RHO].n;
 				int nZ = gdata[Z].n;
 
 				int zIndex = 0;
-				FloatVect[][][] bvals = new FloatVect[nPhi][nRho][nZ];
-
-				for (File file : files) {
+				FloatVect[][] bvals = new FloatVect[nRho][nZ];
+				
+				for (ZFile zfile : zfiles) {
+					
+					File file = zfile.file;
 
 					System.out.print(" PROCESSING FILE [" + file.getName() + "] zindex =  " + zIndex + "  ");
 
 					try {
 
 						AsciiReader ar = new AsciiReader(file, zIndex) {
-							int count = 0;
+							int rhoIndex = 0;
 
 							@Override
 							protected void processLine(String line) {
 								String tokens[] = AsciiReadSupport.tokens(line);
 								if ((tokens != null) && (tokens.length == 7)) {
 
-									int rhoIndex = count % nRho;
-									int phiIndex = count / nRho;
 
-									// note T to kG
-									float Bx = Float.parseFloat(tokens[3]) * 10;
-									float By = Float.parseFloat(tokens[4]) * 10;
-									float Bz = Float.parseFloat(tokens[5]) * 10;
+									// note keep in Tesla (unlike binary file)
+									float Bx = Float.parseFloat(tokens[3]);
+									float By = Float.parseFloat(tokens[4]);
+									float Bz = Float.parseFloat(tokens[5]);
+									float Brho = Bx;
+									float Bphi = By;
+									
+									if (Math.abs(Bphi) > 0.1) {
+										System.err.println("Non zero Bphi.");
+										System.exit(1);
+									}
+									
+									try {
+										bvals[rhoIndex][iVal] = new FloatVect(Bphi, Brho, Bz);
+									} catch (ArrayIndexOutOfBoundsException e) {
+										e.printStackTrace();
+										System.err.println(
+												"RHOINDX: " + rhoIndex + "  ZINDX:  " + iVal);
 
-									bvals[phiIndex][rhoIndex][iVal] = new FloatVect(Bx, By, Bz);
+										double x = Double.parseDouble(tokens[0]) / 10;
+										double y = Double.parseDouble(tokens[1]);
+										double z = Double.parseDouble(tokens[2]);
+										double phi = Math.toDegrees(Math.atan2(y, x));
+										double rho = Math.hypot(x, y);
+										System.err.println("PHI: " + phi + "   rho: " + rho + "   z: " + z);
 
-									count++;
+										System.exit(1);
+									}
+
+									rhoIndex++;
 								}
 							}
 
 							@Override
 							public void done() {
-								System.out.println(" processed " + count + " lines");
+								System.out.println(" processed " + rhoIndex + " lines");
 							}
 
 						};
@@ -409,28 +437,41 @@ public class ConverterSolenoid {
 
 				} // end for loop
 
-				// now write them back out
-				for (int iPhi = 0; iPhi < nPhi; iPhi++) {
-					double phi = gdata[PHI].min + iPhi * gdata[PHI].del();
-					for (int iRho = 0; iRho < nRho; iRho++) {
-						double rho = gdata[RHO].min + iRho * gdata[RHO].del();
-						for (int iZ = 0; iZ < nZ; iZ++) {
-							double z = gdata[Z].min + iZ * gdata[Z].del();
-							FloatVect fv = bvals[iPhi][iRho][iZ];
 
-							writeln(writer, 0, false, String.format("%-5.1f %-5.1f %-5.1f %s %s %s", phi, rho, z,
-									bstr(fv.x), bstr(fv.y), bstr(fv.z)));
-
-							// if (iZ == 200) {
-							// writer.flush();
-							// writer.close();
-							// return;
-							// }
-						}
-
+				for (int iRHO = 0; iRHO < nRho; iRHO++) {
+					System.out.println("iRHO = " + iRHO);
+					double rho = gdata[RHO].min + iRHO * gdata[RHO].del();
+					for (int iZ = 0; iZ < nZ; iZ++) {
+						double z = gdata[Z].min + iZ * gdata[Z].del();
+						FloatVect fcv = bvals[iRHO][iZ];
+						writeln(writer, 0, false, String.format("%-6.3f %-6.3f %s %s", rho/100., z/100.,
+								bstr(fcv.y), bstr(fcv.z)));
 					}
-
+					
 				}
+
+				// now write them back out
+//				for (int iPhi = 0; iPhi < nPhi; iPhi++) {
+//					double phi = gdata[PHI].min + iPhi * gdata[PHI].del();
+//					for (int iRho = 0; iRho < nRho; iRho++) {
+//						double rho = gdata[RHO].min + iRho * gdata[RHO].del();
+//						for (int iZ = 0; iZ < nZ; iZ++) {
+//							double z = gdata[Z].min + iZ * gdata[Z].del();
+//							FloatVect fv = bvals[iPhi][iRho][iZ];
+//
+//							writeln(writer, 0, false, String.format("%-5.1f %-5.1f %-5.1f %s %s %s", phi, rho, z,
+//									bstr(fv.x), bstr(fv.y), bstr(fv.z)));
+//
+//							// if (iZ == 200) {
+//							// writer.flush();
+//							// writer.close();
+//							// return;
+//							// }
+//						}
+//
+//					}
+//
+//				}
 
 				writer.flush();
 				writer.close();
@@ -441,18 +482,14 @@ public class ConverterSolenoid {
 	}
 
 	private static String bstr(float b) {
-		if (Math.abs(b) < 1.0e-3) {
-			return "0";
-		} else {
-			return String.format("% 11.4E", b);
-		}
+		return String.format("%-9.6f", b);
+//		if (Math.abs(b) < 1.0e-6) {
+//			return "0";
+//		} else {
+//			return String.format("%-9.6f", b);
+//		}
 	}
 	
-	private static double getZ(File file) {
-		ZFile zf = new ZFile(file);
-		return zf.z;
-	}
-
 
 	private static String spaces = "    ";
 
@@ -568,8 +605,8 @@ public class ConverterSolenoid {
 			
 
 
-		convertToBinary(zfiles, gdata);
-		// convertToGemc(files, gdata);
+		//convertToBinary(zfiles, gdata);
+		 convertToGemc(zfiles, gdata);
 
 		System.out.println("done");
 	}
@@ -586,7 +623,7 @@ public class ConverterSolenoid {
 
 		public String forGEMC() {
 			return String.format("%-6s name=%-14s npoints=\"%d\" min=\"%d\" max=\"%d\" units=%s", ordinal[index],
-					gemcName[index], n, (int) min, (int) max, units[index]);
+					gemcName[index], n, (int) min/100, (int) max/100, units[index]); //cm to m
 		}
 
 		@Override

@@ -23,6 +23,7 @@ import cnuphys.bCNU.util.PropertySupport;
 import cnuphys.bCNU.util.X11Colors;
 import cnuphys.bCNU.view.BaseView;
 import cnuphys.fastMCed.item.AllDCSuperLayer;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.ControlPanel;
 
@@ -310,6 +311,13 @@ public class AllDCView extends AView {
 		// feedbackStrings.add("#DC hits: " + _numHits);
 		
 		int sector = getSector(container, screenPoint, worldPoint);
+		
+		if (sector > 0) {
+			boolean leftTrack = SNRManager.getInstance().potentialLeftTrack(sector-1);
+			boolean rightTrack = SNRManager.getInstance().potentialRightTrack(sector-1);
+			feedbackStrings.add("potential left  track: " + leftTrack);
+			feedbackStrings.add("potential right track: " + rightTrack);
+		}
 
 //		double totalOcc = 100.*DC.getInstance().totalOccupancy();
 //		double sectorOcc = 100.*DC.getInstance().totalSectorOccupancy(sector);

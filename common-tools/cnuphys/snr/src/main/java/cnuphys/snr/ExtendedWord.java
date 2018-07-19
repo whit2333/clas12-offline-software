@@ -469,7 +469,6 @@ public class ExtendedWord {
 	}
 	
 
-	
 	public static void main(String arg[]) {
 		ExtendedWord a = new ExtendedWord(112);
 		ExtendedWord b = new ExtendedWord(112);

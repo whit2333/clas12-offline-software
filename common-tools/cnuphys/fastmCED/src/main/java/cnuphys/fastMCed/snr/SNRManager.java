@@ -18,6 +18,11 @@ import cnuphys.snr.clas12.Clas12NoiseResult;
 
 public class SNRManager  {
 	
+	//for use in theta estimates
+	public static final double _thetaMin[] = {5.3, 5.1, 5.4, 5.3, 5.0, 5.0};
+	public static final double _thetaMax[] = {41.1, 40.9, 42.7, 42.7, 45., 45.};
+	
+	
 	//bend direction
 	public static final int LEFT  = 0;
 	public static final int RIGHT = 1;
@@ -61,7 +66,139 @@ public class SNRManager  {
 		}
 		return instance;
 	}
+	
+	/**
+	 * An approximate value of theta based on the wire
+	 * @param superlayer0 the superlayer [0..5]
+	 * @param wire0 
+	 * @return
+	 */
+	public double approximateTheta(int superlayer0, int wire0) {
+		double dTheta = (_thetaMax[superlayer0] - _thetaMin[superlayer0])/111.;
+		return _thetaMin[superlayer0] + wire0*dTheta;
+	}
 
+	
+	/** 
+	 * Is there a potential right leaning track
+	 * @param sect0 the zero based sector [0..5]
+	 * @return <code>true</code> if the track search was turned on and a potential right
+	 * leaning track based on the composite shifts was found
+	 */
+	public boolean potentialRightTrack(int sect0) {
+		if (segmentsInAllSuperlayers(sect0, SNRManager.RIGHT)) {
+			NoiseReductionParameters params0 = getParameters(sect0, 0);
+			NoiseReductionParameters params4 = getParameters(sect0, 4);
+			
+			int rm0 = leftMostBitIndex(params0.getRightSegments());
+			int rm4 = rightMostBitIndex(params4.getRightSegments());
+			
+			if (approximateTheta(4, rm4) > approximateTheta(0, rm0)) {
+				return false;
+			}
+		
+			NoiseReductionParameters params1 = getParameters(sect0, 1);
+			NoiseReductionParameters params5 = getParameters(sect0, 5);
+			int rm1 = leftMostBitIndex(params1.getRightSegments());
+			int rm5 = rightMostBitIndex(params5.getRightSegments());
+
+			if (approximateTheta(5, rm5) > approximateTheta(1, rm1)) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/** 
+	 * Is there a potential left leaning track
+	 * @param sect0 the zero based sector [0..5]
+	 * @return <code>true</code> if the track search was turned on and a potential left
+	 * leaning track based on the composite shifts was found
+	 */
+	public boolean potentialLeftTrack(int sect0) {
+		if (segmentsInAllSuperlayers(sect0, SNRManager.RIGHT)) {
+			NoiseReductionParameters params0 = getParameters(sect0, 0);
+			NoiseReductionParameters params4 = getParameters(sect0, 4);
+			
+			int rm0 = rightMostBitIndex(params0.getRightSegments());
+			int rm4 = leftMostBitIndex(params4.getRightSegments());
+			
+			if (approximateTheta(4, rm4) < approximateTheta(0, rm0)) {
+				return false;
+			}
+		
+			NoiseReductionParameters params1 = getParameters(sect0, 1);
+			NoiseReductionParameters params5 = getParameters(sect0, 5);
+			int rm1 = rightMostBitIndex(params1.getRightSegments());
+			int rm5 = leftMostBitIndex(params5.getRightSegments());
+
+			if (approximateTheta(5, rm5) < approximateTheta(1, rm1)) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Get the left most bit set
+	 * @param w the long to check
+	 * @return the left most bit set. It returns 0 if the "first" (LSB) bit
+	 * is set. returns 63 if the MSB is set. Returns -1 if no bit is set.
+	 */
+	private static int leftMostBit(long w) {
+		int index = Long.numberOfLeadingZeros(w);
+		return 63-index;
+	}
+	
+	/**
+	 * Get the right most bit set
+	 * @param w the long to check
+	 * @return the right most bit set. Returns -1 if no bit is set.
+	 */
+	private static int rightMostBit(long w) {
+		int index = Long.numberOfTrailingZeros(w);
+		return (index > 63) ? -1 : index;
+	}
+	
+	/**
+	 * Get the left most bit set
+	 * @param w the long to check
+	 * @return the left most bit set. It returns 0 if the "first" (LSB) bit
+	 * is set. Returns -1 if no bit is set.
+	 */
+	private static int leftMostBitIndex(ExtendedWord ew) {
+		long words[] = ew.getWords();
+		int index = leftMostBit(words[1]);
+		if (index > -1) {
+			return 64 + index;
+		}
+		return leftMostBit(words[0]);
+	}
+	
+	/**
+	 * Get the right most bit set
+	 * @param w the long to check
+	 * @return the right most bit set. Returns -1 if no bit is set.
+	 */
+	private static int rightMostBitIndex(ExtendedWord ew) {
+		long words[] = ew.getWords();
+		int index = rightMostBit(words[0]);
+//		System.err.println("INDEX: " + index);
+		if (index > -1) {
+			return index;
+		}
+		index = rightMostBit(words[1]);
+		return (index < 0) ? -1 : (index + 64);
+	}
+
+
+	
 	/**
 	 * see if SNR found a segment in every superlayer of given sector
 	 * @param sect0 zero based sector

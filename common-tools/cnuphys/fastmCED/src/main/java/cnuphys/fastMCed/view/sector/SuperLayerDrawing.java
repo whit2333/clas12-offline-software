@@ -630,6 +630,7 @@ public class SuperLayerDrawing {
 			feedbackStrings.add("Superlayer " + _iSupl.superlayer() + "  Layer "
 					+ layer + "  Wire " + wire);
 
+//			System.err.println("Approx theta = " + SNRManager.getInstance().approximateTheta(_iSupl.superlayer()-1, wire-1));
 			
 			int wire0 = wire-1;  //convert to 0 based
 			List<ParticleHits> hits = _eventManager.getParticleHits();

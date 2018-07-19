@@ -56,6 +56,7 @@ import cnuphys.fastMCed.item.BeamLineItem;
 import cnuphys.fastMCed.item.FTOFPanelItem;
 import cnuphys.fastMCed.item.MagFieldItem;
 import cnuphys.fastMCed.item.SectorSuperLayer;
+import cnuphys.fastMCed.snr.SNRManager;
 import cnuphys.fastMCed.view.AView;
 import cnuphys.fastMCed.view.ControlPanel;
 import cnuphys.fastMCed.view.DisplayBits;
@@ -705,7 +706,14 @@ public class SectorView extends AView implements ChangeListener {
 		}
 		
 		//DC Occupancy
-//		int sector = getSector(container, pp, wp);
+		int sector = getSector(container, pp, wp);
+		if (sector > 0) {
+			boolean leftTrack = SNRManager.getInstance().potentialLeftTrack(sector-1);
+			boolean rightTrack = SNRManager.getInstance().potentialRightTrack(sector-1);
+			feedbackStrings.add("potential left  track: " + leftTrack);
+			feedbackStrings.add("potential right track: " + rightTrack);
+		}
+
 //
 //		double totalOcc = 100.*DC.getInstance().totalOccupancy();
 //		double sectorOcc = 100.*DC.getInstance().totalSectorOccupancy(sector);

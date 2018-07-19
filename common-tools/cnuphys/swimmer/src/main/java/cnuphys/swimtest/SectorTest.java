@@ -54,9 +54,11 @@ public class SectorTest {
 				FieldProbe probe = swimmer.getProbe();
 				if (probe instanceof RotatedCompositeProbe) {
 					traj.sectorComputeBDL(sector, (RotatedCompositeProbe)probe);
+	//				System.out.println("BDL = " + traj.getComputedBDL() + " kG-m");
 				} else {
 					traj.computeBDL(probe);
 				}
+				
 	            
 	            double lastY[] = traj.lastElement();
 				System.out.print("Sector: " + sector + "  ");
@@ -65,6 +67,8 @@ public class SectorTest {
 				e.printStackTrace();
 			}
 		}
+
+		if (true) return;
 
 		System.out.println("\nSwim v. SwimZ");
 		for (int sector = 1; sector <= 6; sector ++) {
