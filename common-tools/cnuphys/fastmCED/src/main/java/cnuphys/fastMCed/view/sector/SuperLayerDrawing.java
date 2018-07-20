@@ -32,7 +32,6 @@ public class SuperLayerDrawing {
 	private PhysicsEventManager _eventManager = PhysicsEventManager.getInstance();
 	
 	private static final int NUM_LAYER = 6;
-	private static final int NUM_SUPERLAYER = 6;
 	private static final int NUM_WIRE = 112;
 
 
@@ -135,10 +134,13 @@ public class SuperLayerDrawing {
 		for (int wire = 0; wire < parameters.getNumWire(); wire++) {
 			boolean leftSeg = parameters.getLeftSegments().checkBit(wire);
 			boolean rightSeg = parameters.getRightSegments().checkBit(wire);
+			
+			
 			if (leftSeg) {
 				drawMask(g, container, wire, parameters.getLeftLayerShifts(), 1);
 			}
 			if (rightSeg) {
+
 				drawMask(g, container, wire, parameters.getRightLayerShifts(), -1);
 			}
 		}

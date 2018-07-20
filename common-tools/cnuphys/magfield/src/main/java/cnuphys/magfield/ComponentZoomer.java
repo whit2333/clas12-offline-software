@@ -91,20 +91,17 @@ public class ComponentZoomer implements MouseListener, MouseMotionListener {
 
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		System.out.println("Mouse Entered");
 	}
 
 
 	@Override
 	public void mouseExited(MouseEvent e) {
-		System.out.println("Mouse Exited");
 	}
 
 
 	@Override
 	public void mouseDragged(MouseEvent e) {
 		if (!_isDragging) {
-			System.out.println("Dragging initiated.");
 			_startPP = new Point(e.getX(), e.getY());
 			_isDragging = true;
 			return;

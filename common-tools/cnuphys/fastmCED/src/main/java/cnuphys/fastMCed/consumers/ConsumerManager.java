@@ -1,13 +1,11 @@
 package cnuphys.fastMCed.consumers;
 
-import java.awt.ItemSelectable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Vector;
 
@@ -87,18 +85,18 @@ public class ConsumerManager extends Vector<PhysicsEventConsumer> implements IPh
 		testConsumer.setActive(false);
 		add(testConsumer);
 		
-//		SNRShiftTestConsumer shiftConsumer = new SNRShiftTestConsumer();
-//		shiftConsumer.setActive(true);
-//		add(shiftConsumer);
+		SNRShiftTestConsumer shiftConsumer = new SNRShiftTestConsumer();
+		shiftConsumer.setActive(false);
+		add(shiftConsumer);
 		
 		
-		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
-		testConsumer2.setActive(false);
-		add(testConsumer2);
-		
-		SNRResolutionConsumer resConsumer = new SNRResolutionConsumer();
-		resConsumer.setActive(true);
-		add(resConsumer);
+//		SNRSector1TestConsumerV2 testConsumer2 = new SNRSector1TestConsumerV2();
+//		testConsumer2.setActive(false);
+//		add(testConsumer2);
+//		
+//		SNRResolutionConsumer resConsumer = new SNRResolutionConsumer();
+//		resConsumer.setActive(true);
+//		add(resConsumer);
 
 		
 		//now the plugins
