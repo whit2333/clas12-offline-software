@@ -61,6 +61,15 @@ public class Swimmer2 {
 	public Swimmer2(IMagField magneticField) {
 		_probe = FieldProbe.factory(magneticField);
 	}
+	
+	/**
+	 * Get the underlying field probe
+	 * @return the probe
+	 */
+	public FieldProbe getProbe() {
+		return _probe;
+	}
+
 
 	/**
 	 * Swims a charged particle. This swims to a fixed z value. This is for the

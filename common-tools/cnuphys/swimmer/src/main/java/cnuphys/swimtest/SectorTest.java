@@ -21,18 +21,28 @@ public class SectorTest {
 	public static void testSectorSwim(int num) {
 
 		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
+//		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
 
 		double hdata[] = new double[3];
 		
 		int charge = -1;
 		
-		double x0 = (-40. + 20*Math.random())/100.;
-		double y0 = (10. + 40.*Math.random())/100.;
-		double z0 = (180 + 40*Math.random())/100.;
+//		double x0 = (-40. + 20*Math.random())/100.;
+//		double y0 = (10. + 40.*Math.random())/100.;
+//		double z0 = (180 + 40*Math.random())/100.;
+		
+		
+		double x0 = -80/100.; //m
+		double y0 = 0;
+		double z0 = 300/100.; //m
+		
+		
+		
 		double pTot = 1.0;
 		double theta = 0;
 		double phi = 0;
-		double z = 511.0/100.;
+	//	double z = 511.0/100.;
+		double z = z0 + 0.56;
 		double accuracy = 10/1.0e6;
 		double stepSize = 0.01;
 		
@@ -49,6 +59,11 @@ public class SectorTest {
 				traj = swimmer.sectorSwim(sector, charge, x0, y0, z0, pTot,
 				            theta, phi, z, accuracy, 10,
 				            10, stepSize, Swimmer.CLAS_Tolerance, hdata);
+				
+				if (traj == null) {
+					System.err.println("Null trajectory in Sector Test");
+					System.exit(1);;
+				}
 				
 				
 				FieldProbe probe = swimmer.getProbe();

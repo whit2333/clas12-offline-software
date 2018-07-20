@@ -395,15 +395,10 @@ public class SwimTrajectory extends ArrayList<double[]> {
 			Bxdl.sectorAccumulate(sector, previous, current, p0, p1, probe);
 			
 			augment(p1, current.getPathlength(), current.getIntegralBxdl(), i);
-			
-//			System.out.println("HEY MAN " + current.getIntegralBxdl());
 
 			previous.set(current);
 			p0 = p1;
 		}
-
-//		System.out.println("DUDE " + this.lastElement()[BXDL_IDX]);
-
 		_computedBDL = true;
 	}
 

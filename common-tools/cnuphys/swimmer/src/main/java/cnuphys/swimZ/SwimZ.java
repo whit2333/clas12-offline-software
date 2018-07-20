@@ -103,6 +103,15 @@ public class SwimZ {
 		initialize();
 	}
 	
+	/**
+	 * Get the underlying field probe
+	 * @return the probe
+	 */
+	public FieldProbe getProbe() {
+		return _probe;
+	}
+
+	
 	//some initialization
 	private void initialize() {
 		
@@ -115,8 +124,8 @@ public class SwimZ {
 
 		setAbsoluteTolerance(1.0e-3);
 		//the 100 is because the steps size assumed in RK is meters
-		RungeKutta.setMaxStepSize(RungeKutta.getMaxStepSize()*100.);
-		RungeKutta.setMinStepSize(RungeKutta.getMinStepSize()*100.);
+		_rk4.setMaxStepSize(RungeKutta.DEFMAXSTEPSIZE*100.);
+		_rk4.setMinStepSize(RungeKutta.DEFMINSTEPSIZE*100.);
 	}
 	
 	/**

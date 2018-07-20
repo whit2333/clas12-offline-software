@@ -183,7 +183,7 @@ public class SwimMenu extends JMenu implements ActionListener {
 //		System.err.println("Current Max Stepsize  (cm): " + 100
 //				* RungeKutta4.getMaxStepSize());
 		String s = DoubleFormat.doubleFormat(
-				100 * RungeKutta.getMaxStepSize(), 2, false);
+				100 * RungeKutta.DEFMAXSTEPSIZE, 2, false);
 		final JTextField maxSStf = new JTextField(s, 10);
 
 		KeyAdapter ka = new KeyAdapter() {
@@ -197,13 +197,13 @@ public class SwimMenu extends JMenu implements ActionListener {
 						enumber = Math.min(100, Math.max(0.1, enumber));
 						System.err.println("Changing max step size to "
 								+ enumber + " cm");
-						RungeKutta.setMaxStepSize(enumber / 100); // to meters
+						RungeKutta.DEFMAXSTEPSIZE = (enumber / 100); // to meters
 					} catch (Exception e) {
 						// e.printStackTrace();
 						enumber = Swimmer.getEps();
 					}
 					String s = DoubleFormat.doubleFormat(
-							100 * RungeKutta.getMaxStepSize(), 2, false);
+							100 * RungeKutta.DEFMAXSTEPSIZE, 2, false);
 					maxSStf.setText(s);
 				}
 			}

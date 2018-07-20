@@ -15,8 +15,11 @@ public class RungeKutta {
 	// for adaptive stepsize, this is how much h will grow
 	private static final double HGROWTH = 1.5;
 
-	private static double MINSTEPSIZE = 1.0e-5;
-	private static double MAXSTEPSIZE = 0.4;
+	public static double DEFMINSTEPSIZE = 1.0e-5;
+	public static double DEFMAXSTEPSIZE = 0.4;
+	
+	private double _minStepSize = DEFMINSTEPSIZE;
+	private double _maxStepSize = DEFMAXSTEPSIZE;
 
 	// the max dimension we'll use is probably 6, for state vectors
 	// [x,y,z,vx,vy,vz].
@@ -867,7 +870,7 @@ public class RungeKutta {
 
 			if (decreaseStep) {
 				h = h / 2;
-				if (h < MINSTEPSIZE) {
+				if (h < _minStepSize) {
 					throw (new RungeKuttaException("Step size too small in Runge Kutta driver (A)"));
 				}
 			}
@@ -904,7 +907,7 @@ public class RungeKutta {
 				}
 				// System.err.println("HEY MAN (B) h = " + h);
 				h *= HGROWTH;
-				h = Math.min(h, MAXSTEPSIZE);
+				h = Math.min(h, _maxStepSize);
 
 			} // accepted this step max error < tolerance
 		} // while (keepgoing)
@@ -1016,7 +1019,7 @@ public class RungeKutta {
 
 			if (decreaseStep) {
 				h = h / 2;
-				if (h < MINSTEPSIZE) {
+				if (h < _minStepSize) {
 					throw (new RungeKuttaException("Step size too small in Runge Kutta driver (A)"));
 				}
 			}
@@ -1057,7 +1060,7 @@ public class RungeKutta {
 
 				// System.err.println("HEY MAN (A) h = " + h);
 				h *= HGROWTH;
-				h = Math.min(h, MAXSTEPSIZE);
+				h = Math.min(h, _maxStepSize);
 
 			} // max error < tolerance
 		}
@@ -1172,7 +1175,7 @@ public class RungeKutta {
 
 			if (decreaseStep) {
 				h = h / 2;
-				if (h < MINSTEPSIZE) {
+				if (h < _minStepSize) {
 					throw (new RungeKuttaException("Step size too small in Runge Kutta driver (A)"));
 				}
 			}
@@ -1340,7 +1343,7 @@ public class RungeKutta {
 			if (errMax > 1.0) {
 				double hnew = 0.9 * h * Math.pow(errMax, -0.25);
 				h = Math.max(hnew, 0.1 * h); // limit reduction
-				if (h < MINSTEPSIZE) {
+				if (h < _minStepSize) {
 					throw (new RungeKuttaException("Step size too small in Runge Kutta driver (B)"));
 				}
 			}
@@ -1627,8 +1630,8 @@ public class RungeKutta {
 	 * @param maxSS
 	 *            the maximum stepsize is whatever units you are using
 	 */
-	public static void setMaxStepSize(double maxSS) {
-		MAXSTEPSIZE = maxSS;
+	public void setMaxStepSize(double maxSS) {
+		_maxStepSize = maxSS;
 	}
 
 	/**
@@ -1637,8 +1640,8 @@ public class RungeKutta {
 	 * @param maxSS
 	 *            the minimum stepsize is whatever units you are using
 	 */
-	public static void setMinStepSize(double minSS) {
-		MINSTEPSIZE = minSS;
+	public void setMinStepSize(double minSS) {
+		_minStepSize = minSS;
 	}
 
 	/**
@@ -1646,8 +1649,8 @@ public class RungeKutta {
 	 * 
 	 * @return the maximum stepsize is whatever units you are using
 	 */
-	public static double getMaxStepSize() {
-		return MAXSTEPSIZE;
+	public double getMaxStepSize() {
+		return _maxStepSize;
 	}
 	
 	/**
@@ -1655,8 +1658,8 @@ public class RungeKutta {
 	 * 
 	 * @return the minimum stepsize is whatever units you are using
 	 */
-	public static double getMinStepSize() {
-		return MINSTEPSIZE;
+	public double getMinStepSize() {
+		return _minStepSize;
 	}
 
 

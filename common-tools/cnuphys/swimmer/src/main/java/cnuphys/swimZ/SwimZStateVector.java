@@ -147,6 +147,17 @@ public class SwimZStateVector {
 		ty = v[1];
 	}
 
+	/**
+	 * Compute the difference between this state vector's location
+	 * and another state vector's location
+	 * @param zv the other state vector
+	 * @param dr will hold the delta in cm
+	 */
+	public void dR(SwimZStateVector zv, double dr[]) {
+		dr[0] = zv.x - x;
+		dr[1] = zv.y - y;
+		dr[2] = zv.z - z;
+	}
 
 	/**
 	 * Get a string representation

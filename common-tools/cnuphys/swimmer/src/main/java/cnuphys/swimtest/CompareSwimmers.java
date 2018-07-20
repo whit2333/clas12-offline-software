@@ -98,7 +98,12 @@ public class CompareSwimmers {
 		}
 		time = System.currentTimeMillis() - time;
 		System.out.println("Swimmer 1 time: " + timeString(time, num) + "  max step size = " + hdata[2] + "  numStep: " + (traj1[num-1].size()));
-        SwimTest.printSummary("Last for swimmer 1", traj1[num-1].size(), pTot[num-1], traj1[num-1].lastElement(), hdata);
+ 
+		SwimTrajectory lastTraj = traj1[num-1];
+		SwimTest.printSummary("Last for swimmer 1", lastTraj.size(), pTot[num-1], lastTraj.lastElement(), hdata);
+		lastTraj.computeBDL(swimmer1.getProbe());
+		System.out.println("**** BDL for swimmer 1 = " + 100*lastTraj.lastElement()[SwimTrajectory.BXDL_IDX] + "  kG cm");
+		System.out.println("**** PATHLENGTH for swimmer 1 = " + 100*lastTraj.lastElement()[SwimTrajectory.PATHLEN_IDX] + "  cm");
 
 		
 		System.out.println("Swimmer 2");
@@ -114,7 +119,12 @@ public class CompareSwimmers {
 		}
 		time = System.currentTimeMillis() - time;
 		System.out.println("Swimmer 2 time: " + timeString(time, num) + "  max step size = " + hdata[2] + "  numStep: " + (traj2[num-1].size()));
-        SwimTest.printSummary("Last for swimmer 2", traj2[num-1].size(), pTot[num-1], traj2[num-1].lastElement(), hdata);
+		lastTraj = traj2[num-1];
+        SwimTest.printSummary("Last for swimmer 2", lastTraj.size(), pTot[num-1], lastTraj.lastElement(), hdata);
+		lastTraj.computeBDL(swimmer2.getProbe());
+		System.out.println("**** BDL for swimmer 2 = " + 100*lastTraj.lastElement()[SwimTrajectory.BXDL_IDX] + "  kG cm");
+		System.out.println("**** PATHLENGTH for swimmer 2 = " + 100*lastTraj.lastElement()[SwimTrajectory.PATHLEN_IDX] + "  cm");
+
 
 		int maxDiffIndex = -1;
 		double maxDiff = -1;
@@ -140,7 +150,7 @@ public class CompareSwimmers {
 			try {
 				numStep = swimmer2.swim(charge[i], x0[i], y0[i], z0[i], pTot[i], 
 						theta[i], phi[i], zTarg, accuracy, 10, stepSize,
-						RungeKutta.getMaxStepSize(),
+						RungeKutta.DEFMAXSTEPSIZE,
 						Swimmer.CLAS_Tolerance, hdata, finalV);
 			} catch (RungeKuttaException e) {
 				e.printStackTrace();
@@ -162,8 +172,15 @@ public class CompareSwimmers {
 			}
 		}
 		time = System.currentTimeMillis() - time;
-		System.out.println("SwimZ time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (szTraj[num-1].size()));
-        SwimTest.printSummary("Last for swimZ", szTraj[num-1].size(), pTot[num-1], theta[num-1], szTraj[num-1].last(), hdata);
+		SwimZResult lastSZR =  szTraj[num-1];
+		System.out.println("SwimZ time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (lastSZR.size()));
+        SwimTest.printSummary("Last for swimZ", lastSZR.size(), pTot[num-1], theta[num-1], lastSZR.last(), hdata);
+        
+       
+		System.out.println("**** BDL for swimZ = " + lastSZR.getBDL(swimZ.getProbe()) + "  kG cm");
+		System.out.println("**** PATHLENGTH for swimZ = " + lastSZR.getPathLength() + "  cm");
+
+
 //		SwimTest.printSwimZ(szTraj[num-1].last(), "Last for swimZ");
 		
 		maxDiffIndex = -1;
