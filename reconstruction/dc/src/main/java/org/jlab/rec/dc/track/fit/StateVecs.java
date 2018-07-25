@@ -439,7 +439,7 @@ public class StateVecs {
             
             dcSwim.SetSwimParameters(trkR1X.x(), trkR1X.y(), trkR1X.z(), 
                     trkR1P.x(), trkR1P.y(), trkR1P.z(), trkcand.get_Q());
-            
+           // System.out.println(" track sector "+trkcand.get_Sector());
             double[] VecAtFirstMeasSite = dcSwim.SwimToPlane(trkcand.get_Sector(), z0);
             StateVec initSV = new StateVec(0);
             initSV.x = VecAtFirstMeasSite[0];

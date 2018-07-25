@@ -38,14 +38,15 @@ public class Track extends Trajectory implements Comparable<Track>{
     private double _totPathLen;
     private Point3D _trakOrig;
     private Vector3D _pOrig;
-    private Point3D _trakOrigFMT;
-    private Vector3D _pOrigFMT;
+    private Point3D _trakOrigFMT = new Point3D(999,999,999);
+    private Vector3D _pOrigFMT = new Vector3D(999,999,999);
     private String _trking;
     private int _FitNDF;
     private double _fitChisq;
     public boolean fit_Successful;
     private int _missingSuperlayer;
     private int _fitConvergenceStatus;
+    public boolean FMTRefit = false;
     
     
     public Track() {

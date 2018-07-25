@@ -32,6 +32,7 @@ import org.jlab.rec.dc.track.TrackCandListFinder;
 import org.jlab.rec.dc.trajectory.DCSwimmer;
 import org.jlab.rec.dc.trajectory.RoadFinder;
 import org.jlab.rec.dc.trajectory.Road;
+import org.jlab.service.fmt.FMTReconstruction;
 import org.jlab.utils.groups.IndexedTable;
 
 public class DCHBEngine extends DCEngine {
@@ -80,7 +81,6 @@ public class DCHBEngine extends DCEngine {
             int    cycles = tabJ.getIntValue("cycles", 0,0,0);
             
             if(cycles>0) triggerPhase=period*((timeStamp+phase)%cycles); 
-
             TableLoader.FillT0Tables(newRun, super.variationName);
             TableLoader.Fill(super.getConstantsManager().getConstants(newRun, "/calibration/dc/time_to_distance/time2dist")); 
             
@@ -417,8 +417,10 @@ public class DCHBEngine extends DCEngine {
         //String outputFile = args[1];
         //String inputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305.hipo";
         //String inputFile="/Users/ziegler/Desktop/Work/validation/infiles/sidis_tm1_sm1.hipo";
-        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_rec.hipo";
+        String inputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/SimuTag_4a.2.4/lumiclas12_pi.hipo";
         //System.err.println(" \n[PROCESSING FILE] : " + inputFile);
+        FMTReconstruction en0 = new FMTReconstruction();
+        en0.init();
         
         DCHBEngine en = new DCHBEngine();
         en.init();
@@ -436,7 +438,7 @@ public class DCHBEngine extends DCEngine {
         
         //String outputFile="/Users/ziegler/Desktop/Work/Files/Data/DecodedData/clas_003305_recGD.hipo";
         //String outputFile="/Users/ziegler/Desktop/Work/validation/FMTDBUGsidis_tm1_sm1.hipo";
-        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/pion_rec3.1.nofmtrefit.hipo";
+        String outputFile="/Users/ziegler/Desktop/Work/Files/FMTDevel/gemc/SimuTag_4a.2.4/lumiclas12_pi_rec2.hipo";
         writer.open(outputFile);
         TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
         long t1 = 0;
@@ -448,27 +450,28 @@ public class DCHBEngine extends DCEngine {
             if (counter > 0) {
                 t1 = System.currentTimeMillis();
             }
-            //if(event.getBank("RUN::config").getInt("event", 0) <50)
-             //   continue;
+            //if(event.getBank("RUN::config").getInt("event", 0) >30)
+            //    break;
+            en0.processDataEvent(event);
+            
             en.processDataEvent(event);
             //event.show();
             // Processing TB
             en2.processDataEvent(event);
             writer.writeEvent(event);
-            //System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
+            System.out.println("PROCESSED  EVENT "+event.getBank("RUN::config").getInt("event", 0));
            // event.show();
-            //if (event.getBank("RUN::config").getInt("event", 0) > 350) {
+            //if (event.getBank("RUN::config").getInt("event", 0) > 50) {
             //    break;
-            //}
+           // }
             
             
-             event.show();
+            // event.show();
             //if(counter%100==0)
             
-            //if(event.hasBank("HitBasedTrkg::HBTracks")) {
-            //    event.show();
-            
-            //}
+         //   if(event.hasBank("TimeBasedTrkg::TBTracks")) {
+        //        event.getBank("TimeBasedTrkg::TBTracks").show();  
+        //    }
         }
         writer.close();
         double t = System.currentTimeMillis() - t1;

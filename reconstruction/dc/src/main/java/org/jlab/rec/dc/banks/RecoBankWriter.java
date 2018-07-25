@@ -720,6 +720,9 @@ public class RecoBankWriter {
         for (int i = 0; i < candlist.size(); i++) {
             bank.setShort("id", i, (short) candlist.get(i).get_Id());
             bank.setShort("status", i, (short) (100+candlist.get(i).get_Status()*10+candlist.get(i).get_MissingSuperlayer()));
+            if(candlist.get(i).FMTRefit)
+               bank.setShort("status", i, (short) (200+candlist.get(i).get_Status()*10+candlist.get(i).get_MissingSuperlayer()));
+             
             bank.setByte("sector", i, (byte) candlist.get(i).get_Sector());
             bank.setByte("q", i, (byte) candlist.get(i).get_Q());
             //bank.setFloat("p", i, (float) candlist.get(i).get_P());
@@ -755,6 +758,7 @@ public class RecoBankWriter {
             bank.setFloat("p0_y", i, (float) candlist.get(i).get_pAtOrig().y());
             bank.setFloat("p0_z", i, (float) candlist.get(i).get_pAtOrig().z());
             
+            //System.out.println(" Refitted track to banks "+candlist.get(i).get_Vtx0FMT().toString());
             if(bank.getDescriptor().hasEntry("Vtx0_x_fmt")==true && candlist.get(i).get_Vtx0FMT()!=null){
                 bank.setFloat("Vtx0_x_fmt", i, (float) candlist.get(i).get_Vtx0FMT().x());
             }
@@ -773,7 +777,6 @@ public class RecoBankWriter {
             if(bank.getDescriptor().hasEntry("p0_z_fmt")==true && candlist.get(i).get_pAtOrigFMT()!=null){
                 bank.setFloat("p0_z_fmt", i, (float) candlist.get(i).get_pAtOrigFMT().z());
             }
-            
             if(candlist.get(i).size()==3) {
                 bank.setShort("Cross1_ID", i, (short) candlist.get(i).get(0).get_Id());
                 bank.setShort("Cross2_ID", i, (short) candlist.get(i).get(1).get_Id());

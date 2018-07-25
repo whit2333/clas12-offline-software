@@ -2,6 +2,7 @@ package org.jlab.rec.dc.timetodistance;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.util.Optional;
 import org.jlab.detector.calib.utils.DatabaseConstantProvider;
 import org.jlab.rec.dc.Constants;
 import org.jlab.utils.groups.IndexedTable;
@@ -53,6 +54,7 @@ public class TableLoader {
     
     
     public static synchronized void FillT0Tables(int run, String variation) {
+        System.out.println(" T0 variation used....");
         if (T0LOADED) return;
         System.out.println(" T0 TABLE FILLED..... for Run "+run+" with VARIATION "+variation);
         DatabaseConstantProvider dbprovider = new DatabaseConstantProvider(run, variation);

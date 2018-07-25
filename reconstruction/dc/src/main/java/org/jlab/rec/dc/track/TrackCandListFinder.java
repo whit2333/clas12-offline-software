@@ -211,7 +211,7 @@ public class TrackCandListFinder {
                         //set the track parameters if the filter does not fail
                         cand.set_P(1./Math.abs(kFit.finalStateVec.Q));
                         cand.set_Q((int)Math.signum(kFit.finalStateVec.Q));
-                        this.setTrackPars(cand, traj, trjFind, fn, kFit.finalStateVec.z, DcDetector, dcSwim, false);
+                        this.setTrackPars(cand, traj, trjFind, fn, kFit.finalStateVec.z, DcDetector, dcSwim);
                         // candidate parameters are set from the state vector
                         cand.set_FitChi2(kFit.chi2);
                         cand.set_FitNDF(kFit.NDF);
@@ -400,7 +400,7 @@ public class TrackCandListFinder {
                                 //set the track parameters if the filter does not fail
                                 cand.set_P(1./Math.abs(kFit.finalStateVec.Q));
                                 cand.set_Q((int)Math.signum(kFit.finalStateVec.Q));
-                                this.setTrackPars(cand, traj, trjFind, fn, kFit.finalStateVec.z, DcDetector, dcSwim, false);
+                                this.setTrackPars(cand, traj, trjFind, fn, kFit.finalStateVec.z, DcDetector, dcSwim);
                                 // candidate parameters are set from the state vector
                                 cand.set_FitChi2(kFit.chi2);
                                 cand.set_FitNDF(kFit.NDF);
@@ -530,7 +530,7 @@ public class TrackCandListFinder {
      * @param z the z position in the tilted sector coordinate system at the last measurement site 
      * @param getDcDetector the detector geometry
      */
-    public void setTrackPars(Track cand, Trajectory traj, TrajectoryFinder trjFind, StateVec stateVec, double z, DCGeant4Factory getDcDetector, DCSwimmer dcSwim, boolean FMTRefit) {
+    public void setTrackPars(Track cand, Trajectory traj, TrajectoryFinder trjFind, StateVec stateVec, double z, DCGeant4Factory getDcDetector, DCSwimmer dcSwim) {
         double pz = cand.get_P() / Math.sqrt(stateVec.tanThetaX()*stateVec.tanThetaX() + stateVec.tanThetaY()*stateVec.tanThetaY() + 1);
 
         //System.out.println("Setting track params for ");stateVec.printInfo();
@@ -634,12 +634,15 @@ public class TrackCandListFinder {
         double totPathLen =  PathInFromR3+VecAtTarOut[6];
         cand.set_TotPathLen(totPathLen);
         
-        if(FMTRefit==true) {
+        if(cand.FMTRefit==true) {
             cand.set_Vtx0FMT(new Point3D(xOrFix,yOrFix, zOrFix));
             cand.set_pAtOrigFMT(new Vector3D(pxOrFix, pyOrFix, pzOrFix));
+            
         } else {
             cand.set_Vtx0(new Point3D(xOrFix,yOrFix, zOrFix));
             cand.set_pAtOrig(new Vector3D(pxOrFix, pyOrFix, pzOrFix));
+            
+            
         }
         double[] VecAtHtccSurf = dcSwim.SwimToSphere(175);
         double xInner  = VecAtHtccSurf[0];

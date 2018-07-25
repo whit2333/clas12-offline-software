@@ -223,7 +223,7 @@ public class DCTBEngine extends DCEngine {
                 //set the track parameters if the filter does not fail
                 TrackArray[i].set_P(1./Math.abs(kFit.finalStateVec.Q));
                 TrackArray[i].set_Q((int)Math.signum(kFit.finalStateVec.Q));
-                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector, swimmer, false);
+                trkcandFinder.setTrackPars(TrackArray[i], new Trajectory(), trjFind, fn, kFit.finalStateVec.z, dcDetector, swimmer);
                 // candidate parameters are set from the state vector
                 TrackArray[i].set_FitChi2(kFit.chi2); 
                 TrackArray[i].set_FitNDF(kFit.NDF);
@@ -234,52 +234,60 @@ public class DCTBEngine extends DCEngine {
                 if(TrackArray[i].get_Vtx0().toVector3D().mag()>500)
                     continue;
                 //match to FMT
-//                List<Trajectory.TrajectoryStateVec> fMTTraj = TrackArray[i].FMTTrajectory(i+1, swimmer, TrackArray[i].get_Vtx0().x(), TrackArray[i].get_Vtx0().y(), TrackArray[i].get_Vtx0().z(), TrackArray[i].get_pAtOrig().x(), TrackArray[i].get_pAtOrig().y(), TrackArray[i].get_pAtOrig().z(), TrackArray[i].get_Q(), tSurf);
-//                List<ArrayList<ArrayList<MeasVecs.MeasVec>>> listofFMTMeas = match2FMT.getListOfMeasurements(event);
-//                List<ArrayList<MeasVecs.MeasVec>> matchDCTrackLists = match2FMT.matchDCTrack2FMTClusters(listofFMTMeas, fMTTraj, 20, fmtDetector);
-//                if(matchDCTrackLists!=null && matchDCTrackLists.size()>0) {
-//                    ArrayList<Track> FMTTracks= new ArrayList<Track>();
-//                    for(int k = 0; k<matchDCTrackLists.size(); k++) {
-//                       // System.out.println(" FMT list idx "+k);
-//                       // for(int k1=0; k1<matchDCTrackLists.get(k).size(); k1++) {
-//                       //     System.out.println("Clus in layer "+matchDCTrackLists.get(k).get(k1).layer+" seed "+matchDCTrackLists.get(k).get(k1).seed
-//                       //     +" cent "+(float)matchDCTrackLists.get(k).get(k1).centroid);
-//                       // }
-//                        Track FMTTrk = (Track) TrackArray[i].clone();
-//                        org.jlab.rec.fvt.track.fit.KFitter FMTKF 
-//                                = new org.jlab.rec.fvt.track.fit.KFitter(FMTTrk, matchDCTrackLists.get(k), swimmer);
-//                        //System.out.println("before fmt refit ");FMTTrk.printInfo();
-//                        FMTKF.runFitter(FMTTrk);
-//                        //System.out.println("after fmt refit ");FMTTrk.printInfo();
-//                        
-//                        KFitter kFit2 = new KFitter(FMTTrk, dcDetector, true, swimmer);
-//                        kFit2.totNumIter=2;
-//                        //kFit2.useFilter=false;
-//                        kFit2.runFitter();
-//            
-//                        if(kFit2.setFitFailed==false && kFit2.finalStateVec!=null) {
-//                            fn = new StateVec();
-//                            // set the state vector at the last measurement site
-//                            fn.set(kFit2.finalStateVec.x, kFit2.finalStateVec.y, kFit2.finalStateVec.tx, kFit2.finalStateVec.ty); 
-//                            //set the track parameters if the filter does not fail
-//                            FMTTrk.set_P(1./Math.abs(kFit2.finalStateVec.Q));
-//                            FMTTrk.set_Q((int)Math.signum(kFit2.finalStateVec.Q));
-//                            trkcandFinder.setTrackPars(FMTTrk, new Trajectory(), trjFind, fn, kFit2.finalStateVec.z, dcDetector, swimmer, true);
-//                            // candidate parameters are set from the state vector
-//                            FMTTrk.set_FitChi2(kFit2.chi2); 
-//                            FMTTrk.set_FitNDF(kFit2.NDF);
-//                            FMTTrk.set_FitConvergenceStatus(kFit2.ConvStatus);
-//                            FMTTrk.set_Id(TrackArray[i].size()+1);
-//                            FMTTrk.set_CovMat(kFit2.finalCovMat.covMat);
-//                        }
-//                        System.out.println("after KF refit chi "+kFit.chi2+"--> "+kFit2.chi2);FMTTrk.printInfo();
-//                        //if(kFit2.chi2<kFit.chi2)
-//                        FMTTracks.add(FMTTrk);
-//                    } 
-//                    trkcands.addAll(FMTTracks);
-//                } else {
+                //System.out.println(" TRACK sector "+TrackArray[i].get_Sector());TrackArray[i].printInfo();
+                List<Trajectory.TrajectoryStateVec> fMTTraj = TrackArray[i].FMTTrajectory(i+1, swimmer, TrackArray[i].get_Vtx0().x(), TrackArray[i].get_Vtx0().y(), TrackArray[i].get_Vtx0().z(), TrackArray[i].get_pAtOrig().x(), TrackArray[i].get_pAtOrig().y(), TrackArray[i].get_pAtOrig().z(), TrackArray[i].get_Q(), tSurf);
+                List<ArrayList<MeasVecs.MeasVec>> listofFMTMeas = trjFind.getListOfMeasurements(event);
+                List<ArrayList<MeasVecs.MeasVec>> matchDCTrackLists = match2FMT.matchDCTrack2FMTClusters(fMTTraj, listofFMTMeas, fmtDetector);
+                
+                if(matchDCTrackLists!=null && matchDCTrackLists.size()>0 && matchDCTrackLists.size()<11) {
+                    ArrayList<Track> FMTTracks= new ArrayList<Track>();
+                    for(int k = 0; k<matchDCTrackLists.size(); k++) {
+                       // System.out.println(" FMT list idx "+k);
+                       // for(int k1=0; k1<matchDCTrackLists.get(k).size(); k1++) {
+                       //     System.out.println("Clus in layer "+matchDCTrackLists.get(k).get(k1).layer+" seed "+matchDCTrackLists.get(k).get(k1).seed
+                       //     +" cent "+(float)matchDCTrackLists.get(k).get(k1).centroid);
+                       // }
+                        Track FMTTrk = (Track) TrackArray[i].clone();
+                        System.out.println("DC clone ");FMTTrk.printInfo();
+                        org.jlab.rec.fvt.track.fit.KFitter FMTKF 
+                                = new org.jlab.rec.fvt.track.fit.KFitter(FMTTrk, matchDCTrackLists.get(k), swimmer);
+                        
+                        FMTKF.runFitter(FMTTrk);
+                        System.out.println("after fmt nonrefit ");FMTTrk.printInfo();
+                        System.out.println(" Final state dc "+kFit.finalStateVec.x+","+kFit.finalStateVec.y+","+kFit.finalStateVec.z+","
+                        +kFit.finalStateVec.tx+","+kFit.finalStateVec.ty+","+kFit.finalStateVec.Q);
+                        
+                        KFitter kFit2 = new KFitter(FMTTrk, dcDetector, true, swimmer);
+                        kFit2.totNumIter=1;
+                        kFit2.useFilter=false;
+                        kFit2.runFitter();
+                        
+                        if(kFit2.finalStateVec!=null) {
+                            fn = new StateVec();
+                            // set the state vector at the last measurement site
+                            fn.set(kFit2.finalStateVec.x, kFit2.finalStateVec.y, kFit2.finalStateVec.tx, kFit2.finalStateVec.ty); 
+                            //set the track parameters if the filter does not fail
+                            FMTTrk.FMTRefit=true;
+                            System.out.println(" Final state fmt "+kFit2.finalStateVec.x+","+kFit2.finalStateVec.y+","+kFit2.finalStateVec.z+","
+                        +kFit2.finalStateVec.tx+","+kFit2.finalStateVec.ty+","+kFit2.finalStateVec.Q);
+                            FMTTrk.set_P(1./Math.abs(kFit2.finalStateVec.Q));
+                            FMTTrk.set_Q((int)Math.signum(kFit2.finalStateVec.Q));
+                            trkcandFinder.setTrackPars(FMTTrk, new Trajectory(), trjFind, fn, kFit2.finalStateVec.z, dcDetector, swimmer);
+                            // candidate parameters are set from the state vector
+                            FMTTrk.set_FitChi2(kFit2.chi2); 
+                            FMTTrk.set_FitNDF(kFit2.NDF);
+                            FMTTrk.set_FitConvergenceStatus(kFit2.ConvStatus);
+                            //FMTTrk.set_Id(TrackArray[i].size()+1);
+                            FMTTrk.set_CovMat(kFit2.finalCovMat.covMat); 
+                        }
+                        //System.out.println("after KF refit chi "+kFit.chi2+"--> "+kFit2.chi2);FMTTrk.printInfo();
+                        //if(kFit2.chi2<kFit.chi2)
+                        FMTTracks.add(FMTTrk);
+                    } 
+                    trkcands.addAll(FMTTracks);
+                } else {
                     trkcands.add(TrackArray[i]);
-//                }
+                }
             }
         }
         
@@ -303,6 +311,7 @@ public class DCTBEngine extends DCEngine {
                 if(FMTClusList!=null && FMTClusList.size()>0){
                 double FMTMatchesInLayer[] = new double[6];
                     for(int analLy=0; analLy<6; analLy++) {
+                        
                         if(FMTClusList.get(analLy).size()>0) {
                             for(int clusIdx = 0; clusIdx<FMTClusList.get(analLy).size(); clusIdx++)   {     
                                 if(Math.abs(fmtDetector.getClosestStrip(trk.trajectory.get(analLy+1).getX(), trk.trajectory.get(analLy+1).getY(), analLy+1)-
@@ -311,7 +320,7 @@ public class DCTBEngine extends DCEngine {
                             }
                         }
                         trk.trajectory.get(analLy+1).setFMTOcc(FMTMatchesInLayer[analLy]);
-                    }
+                    } 
                 }
 //                for(int j = 0; j< trk.trajectory.size(); j++) {
 //                System.out.println(trk.get_Id()+" "+trk.trajectory.size()+" ("+trk.trajectory.get(j).getDetId()+") ["+
@@ -351,7 +360,7 @@ public class DCTBEngine extends DCEngine {
 
         return true;
     }
-
+    
     private void resetTrackParams(Track track, DCSwimmer dcSwim) {
         if(track.get_ListOfHBSegments().size()<Constants.NSUPERLAYERTRACKING) {
             //System.err.println(" not enough segments ");

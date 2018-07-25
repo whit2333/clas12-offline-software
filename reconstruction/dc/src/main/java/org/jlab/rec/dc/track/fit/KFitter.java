@@ -107,8 +107,18 @@ public class KFitter {
                     this.ConvStatus=1;
                 }
             }
+            if(totNumIter==1) {
+                this.finalStateVec = sv.trackTraj.get(sv.Z.length - 1);
+                this.finalCovMat = sv.trackCov.get(sv.Z.length - 1);
+            }
         }
-        this.calcFinalChisq(sector);
+        if(useFilter) {
+            //System.out.println(" DC filter....");
+            this.calcFinalChisq(sector, false);
+        } else {
+            //System.out.println(" FMT filter....");
+            this.calcFinalChisq(sector, false);
+        }
 
     }
 
@@ -201,7 +211,7 @@ public class KFitter {
         }
     }
 
-    private void calcFinalChisq(int sector) {
+    private void calcFinalChisq(int sector, boolean debug) {
         int k = sv.Z.length - 1;
         this.chi2 = 0;
         double path =0;
@@ -225,7 +235,8 @@ public class KFitter {
                 double V = mv.measurements.get(k1 + 1).error; 
                 double h = mv.h(new double[]{sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y}, 
                         (int) mv.measurements.get(k1 + 1).tilt,  mv.measurements.get(k1 + 1).wireMaxSag,  mv.measurements.get(k1 + 1).wireLen);
-//System.out.println("KF "+mv.measurements.get(k1 + 1).z+" meas --> "+mv.measurements.get(k1 + 1).x+" h "+h+" state x "+sv.trackTraj.get(k1 + 1).x+" y "+ sv.trackTraj.get(k1 + 1).y);
+                if(debug)
+                    System.out.println("KF at z="+mv.measurements.get(k1 + 1).z+" meas --> "+mv.measurements.get(k1 + 1).x+" h "+h+"; state x "+sv.trackTraj.get(k1 + 1).x+" y "+ sv.trackTraj.get(k1 + 1).y);
                 svc = new org.jlab.rec.dc.trajectory.StateVec(sv.trackTraj.get(k1 + 1).x, sv.trackTraj.get(k1 + 1).y, sv.trackTraj.get(k1 + 1).tx, sv.trackTraj.get(k1 + 1).ty);
                 svc.setZ(sv.trackTraj.get(k1 + 1).z);
                 svc.setB(sv.trackTraj.get(k1 + 1).B);
