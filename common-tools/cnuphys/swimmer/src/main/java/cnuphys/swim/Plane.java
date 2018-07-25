@@ -1,6 +1,4 @@
-package cnuphys.bCNU.planes;
-
-import cnuphys.bCNU.util.VectorSupport;
+package cnuphys.swim;
 
 /**
  * A plane is defined by the equation ax + by + cz = d
@@ -8,6 +6,7 @@ import cnuphys.bCNU.util.VectorSupport;
  *
  */
 public class Plane {
+	
 	
 	//effectively zero
 	private static double TINY = 1.0e-10;
@@ -18,6 +17,16 @@ public class Plane {
 	private double _c;
 	private double _d;
 	
+	//use to compute distance to the plane
+	private double _distDenom = Double.NaN;
+
+	/**
+	 * Create a plane of the form ax + by + cz = d
+	 * @param a
+	 * @param b
+	 * @param c
+	 * @param d
+	 */
 	public Plane(double a, double b, double c, double d) {
 		_a = a;
 		_b = b;
@@ -40,6 +49,21 @@ public class Plane {
 		double c = u[2];
 		double d = a*p[0] + b*p[1] + c*p[2];
 		return new Plane(a, b, c, d);
+	}
+	
+	/**
+	 * Get the perpendicular distance for a point to the plane
+	 * @param x the x coordinate of the point.
+	 * @param y the y coordinate of the point.
+	 * @param z the z coordinate of the point.
+	 * @return the perpendicular distance
+	 */
+	public double distanceToPlane(double x, double y, double z) {
+		if (Double.isNaN(_distDenom)) {
+			_distDenom = Math.sqrt(_a*_a + _b*_b + _c*_c);
+		}
+		
+		return (_a*x + _b*y + _c*z - _d)/_distDenom;
 	}
 	
 	/**
@@ -128,6 +152,7 @@ public class Plane {
 		
 		return createPlane(norm, p);
 	}
+	
 	
 	public static void main(String arg[]) {
 		

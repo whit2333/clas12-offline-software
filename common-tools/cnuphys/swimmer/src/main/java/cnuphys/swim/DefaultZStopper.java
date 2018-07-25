@@ -18,10 +18,11 @@ public class DefaultZStopper implements IStopper {
 	
 	
 	/**
-	 * Z stopper that doesn't check pathlength (does check max R)
+	 * Z stopper that doesn't check max R (does check max path length)
 	 * @param s0 starting path length in meters
 	 * @param sMax maximal path length in meters
 	 * @param targetZ stopping Z in meters
+	 * @param accuracy the accuracy in meters
 	 * @param normalDirection <code></code> if going smaller to larger z
 	 */
 	public DefaultZStopper(double s0, double sMax, double targetZ, double accuracy, boolean normalDirection) {
@@ -33,11 +34,12 @@ public class DefaultZStopper implements IStopper {
 	}
 	
 	/**
-	 * Z stopper that doesn't check pathlength (does check max R)
+	 * Z stopper that checks Rmax (and sMax)
 	 * @param s0 starting path length in meters
 	 * @param rMax maximal radius in meters
 	 * @param sMax maximal path length in meters
 	 * @param targetZ stopping Z in meters
+	 * @param accuracy the accuracy in meters
 	 * @param normalDirection <code></code> if going smaller to larger z
 	 */
 	public DefaultZStopper(double s0, double rMax, double sMax, double targetZ, double accuracy, boolean normalDirection) {
@@ -78,6 +80,7 @@ public class DefaultZStopper implements IStopper {
 			return true;
 		}
 		
+		//check limit of radial coordinate if finite max
 		if (Double.isFinite(_maxRsSq)) {
 			double rsq = y[0]*y[0] + y[1]*y[1] + y[2]*y[2];
 			if (rsq > _maxRsSq) {
@@ -89,8 +92,6 @@ public class DefaultZStopper implements IStopper {
 		if (s > _maxS) {
 			return true;
 		}
-		
-//		System.err.println("TOTAL PATH LEN = " + _totalPathLength);
 		
 		if (_normalDirection) {
 			return (_currentZ > _targetZ);

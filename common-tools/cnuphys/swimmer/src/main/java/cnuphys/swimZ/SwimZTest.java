@@ -98,27 +98,27 @@ public class SwimZTest {
 
 	// test the new SwimZ uniform integrator
 	private static void testUniform(int numTimes) {
-
-		header("SwimZ UNIFORM");
-
-		// the new swimmer
-		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
-
-		SwimZResult result = null;
-		SwimZStateVector last = null;
-
-		SwimZ sz = new SwimZ();
-		long startTime = System.currentTimeMillis();
-		for (int i = 0; i < numTimes; i++) {
-			try {
-				result = sz.uniformRK4(Q, p, start, zf, uniformStepSize);
-			} catch (SwimZException e) {
-				e.printStackTrace();
-			}
-		}
-		double timePerSwim = ((double) (System.currentTimeMillis() - startTime)) / numTimes;
-		partialReport(result, timePerSwim, "Z UNIFORM");
-		footer("SwimZ UNIFORM");
+//
+//		header("SwimZ UNIFORM");
+//
+//		// the new swimmer
+//		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
+//
+//		SwimZResult result = null;
+//		SwimZStateVector last = null;
+//
+//		SwimZ sz = new SwimZ();
+//		long startTime = System.currentTimeMillis();
+//		for (int i = 0; i < numTimes; i++) {
+//			try {
+//				result = sz.uniformRK4(Q, p, start, zf, uniformStepSize);
+//			} catch (SwimZException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		double timePerSwim = ((double) (System.currentTimeMillis() - startTime)) / numTimes;
+//		partialReport(result, timePerSwim, "Z UNIFORM");
+//		footer("SwimZ UNIFORM");
 	}
 
 	private static void testAdaptive(int numTimes) {

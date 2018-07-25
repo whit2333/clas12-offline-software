@@ -8,8 +8,6 @@ public class SectorSwimZDerivative extends SwimZDerivative {
 	
 	private int _sector = 0;
 	
-	private RotatedCompositeProbe _rcProbe;
-	
 	/**
 	 * Set the sector [1..6]
 	 * @param sector the sector [1..6]
@@ -30,7 +28,7 @@ public class SectorSwimZDerivative extends SwimZDerivative {
 	 */
 	public void set(int sector, int Q, double p, FieldProbe probe) {
 		_sector = sector;
-		_rcProbe = (RotatedCompositeProbe)probe;
+		_probe = probe;
 		set(Q, p, probe);
 	}
 
@@ -53,7 +51,7 @@ public class SectorSwimZDerivative extends SwimZDerivative {
 	public void derivative(double z, double[] x, double[] dxdz) {
 
 		// get the field
-		_rcProbe.field(_sector, (float) x[0], (float) x[1], (float) z, B);
+		((RotatedCompositeProbe)_probe).field(_sector, (float) x[0], (float) x[1], (float) z, B);
 
 		// some needed factors
 		double tx = x[2];

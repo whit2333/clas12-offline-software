@@ -12,6 +12,7 @@ import cnuphys.rk4.IRkListener;
 import cnuphys.rk4.IStopper;
 import cnuphys.rk4.RungeKutta;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.rk4.RungeKuttaZ;
 
 /**
  * This class holds the parameters and static methods for the swimZ
@@ -43,7 +44,7 @@ public class SwimZ {
 	public static final double ARGONRADLEN = 14.;
 
 	// Min momentum to swim in GeV/c
-	public static final double MINMOMENTUM = 5e-05;
+//	public static final double MINMOMENTUM = 5e-05;
 
 	/** The current magnetic field probe */
 	private FieldProbe _probe;
@@ -52,7 +53,7 @@ public class SwimZ {
 	private IStopper _stopper = new DefaultStopper();
 	
 	//need an integrator
-	private RungeKutta _rk4 = new RungeKutta();
+	private RungeKuttaZ _rk4 = new RungeKuttaZ();
 
 	//storage for values of independent variable z
 	private ArrayList<Double> zArray = new ArrayList<Double>(100);
@@ -123,9 +124,6 @@ public class SwimZ {
 		}
 
 		setAbsoluteTolerance(1.0e-3);
-		//the 100 is because the steps size assumed in RK is meters
-		_rk4.setMaxStepSize(RungeKutta.DEFMAXSTEPSIZE*100.);
-		_rk4.setMinStepSize(RungeKutta.DEFMINSTEPSIZE*100.);
 	}
 	
 	/**
@@ -192,6 +190,11 @@ public class SwimZ {
 		// straight line?
 		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
 			return straightLineResult(Q, p, start, zf);
+		}
+		
+		//ARGGH
+		if (start.z > zf) {
+			Q = -Q;
 		}
 
 		// need to set the derivative
@@ -273,6 +276,12 @@ public class SwimZ {
 		if ((Q == 0) || (_probe == null) || _probe.isZeroField()) {
 			return straightLineResult(Q, p, start, zf);
 		}
+		
+		//ARGGH
+		if (start.z > zf) {
+			Q = -Q;
+		}
+
 
 		// need to set the derivative
 		((SectorSwimZDerivative)deriv).set(sector, Q, p, _probe);
@@ -288,7 +297,12 @@ public class SwimZ {
 			nStep = _rk4.adaptiveStepToTf(yo, start.z, zf, stepSize, zArray, yArray, deriv, _stopper, _absoluteTolerance, hdata);
 		}
 		catch (RungeKuttaException e) {
-			e.printStackTrace();
+//			System.err.println("Integration Failure");
+//			System.err.println("Q = " + Q + "  p = " + p + " zf = " + zf);
+//			int pzSign = (zf < start.z) ? -1 : 1;
+//			System.err.println("Start SV: " + start.normalPrint(p, pzSign));
+			//e.printStackTrace();
+			throw new SwimZException("Runge Kutta Failure in SwimZ sectorAdaptiveRK");
 		}
 
 		if (nStep == 0) {
@@ -564,47 +578,47 @@ public class SwimZ {
 	 * @return the swim result
 	 * @throws SwimZException
 	 */
-	public SwimZResult uniformRK4(int Q, double p, SwimZStateVector start, double zf, double stepSize)
-			throws SwimZException {
-		if (start == null) {
-			throw new SwimZException("Null starting state vector.");
-		}
-
-		// straight line?
-		if (Q == 0) {
-			System.out.println("Z uniform swimmer detected straight line.");
-			return straightLineResult(Q, p, start, zf);
-		}
-
-		// need to set the derivative
-		deriv.set(Q, p, _probe);
-
-		// obtain a range
-		SwimZRange swimZrange = new SwimZRange(start.z, zf, stepSize);
-
-		// create a do nothing stopper for now
-		IStopper stopper = new DefaultStopper();
-
-		// RK4 storage
-		int nDim = 4; // should be able to make 4 since q = const
-		int nStep = swimZrange.getNumStep();
-
-		double yo[] = { start.x, start.y, start.tx, start.ty };
-		double z[] = new double[nStep];
-		double y[][] = new double[nDim][nStep];
-		nStep = _rk4.uniformStep(yo, start.z, zf, y, z, deriv, stopper);
-
-		SwimZResult result = new SwimZResult(Q, p, start.z, zf, nStep + 1);
-		result.add(start);
-		for (int i = 0; i < nStep; i++) {
-
-			double v[] = { y[0][i], y[1][i], y[2][i], y[3][i] };
-			SwimZStateVector sv = new SwimZStateVector(z[i], v);
-			result.add(sv);
-		}
-
-		return result;
-	}
+//	public SwimZResult uniformRK4(int Q, double p, SwimZStateVector start, double zf, double stepSize)
+//			throws SwimZException {
+//		if (start == null) {
+//			throw new SwimZException("Null starting state vector.");
+//		}
+//
+//		// straight line?
+//		if (Q == 0) {
+//			System.out.println("Z uniform swimmer detected straight line.");
+//			return straightLineResult(Q, p, start, zf);
+//		}
+//
+//		// need to set the derivative
+//		deriv.set(Q, p, _probe);
+//
+//		// obtain a range
+//		SwimZRange swimZrange = new SwimZRange(start.z, zf, stepSize);
+//
+//		// create a do nothing stopper for now
+//		IStopper stopper = new DefaultStopper();
+//
+//		// RK4 storage
+//		int nDim = 4; // should be able to make 4 since q = const
+//		int nStep = swimZrange.getNumStep();
+//
+//		double yo[] = { start.x, start.y, start.tx, start.ty };
+//		double z[] = new double[nStep];
+//		double y[][] = new double[nDim][nStep];
+//		nStep = _rk4.uniformStep(yo, start.z, zf, y, z, deriv, stopper);
+//
+//		SwimZResult result = new SwimZResult(Q, p, start.z, zf, nStep + 1);
+//		result.add(start);
+//		for (int i = 0; i < nStep; i++) {
+//
+//			double v[] = { y[0][i], y[1][i], y[2][i], y[3][i] };
+//			SwimZStateVector sv = new SwimZStateVector(z[i], v);
+//			result.add(sv);
+//		}
+//
+//		return result;
+//	}
 	
 	/**
 	 * Swim to a fixed z over short distances using a parabolic estimate, without intermediate points

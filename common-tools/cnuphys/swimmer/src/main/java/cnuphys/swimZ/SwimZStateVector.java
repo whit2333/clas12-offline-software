@@ -173,5 +173,25 @@ public class SwimZStateVector {
 
 		return sb.toString();
 	}
+	
+	public String normalPrint(double p, int pzSign) {
+		StringBuffer sb = new StringBuffer(255);
+		sb.append(String.format("R = [%9.6f, %9.6f, %9.6f] cm", x, y, z));
+		
+
+//		int _pzSign = (zf < zo) ? -1 : 1;
+
+			double txsq = tx * tx;
+			double tysq = ty * ty;
+			double pz = pzSign * p / Math.sqrt(txsq + tysq + 1);
+			double px = pz * tx;
+			double py = pz * ty;
+
+			double theta = Math.toDegrees(Math.acos(pz/p));
+			double phi = Math.toDegrees(Math.atan2(py, px));
+			sb.append(String.format("\nP, theta, phi = [%9.6f, %9.6f, %9.6f] ", p, theta, phi));
+		
+			return sb.toString();
+	}
 
 }

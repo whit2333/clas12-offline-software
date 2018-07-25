@@ -86,6 +86,20 @@ public class DCGeometry2 {
 
 	}
 	
+	/**
+	 * Convert tilted x and z to sector x and z
+	 * @param tiltedX the tilted x coordinate
+	 * @param tiltedZ the tilted z coordinate
+	 * @return the sector coordinates, with v[0] = x and v[1] = z
+	 */
+	public static double[] tiltedToSector(double tiltedX, double tiltedZ) {
+		double[] v = new double[2];
+		v[0] = tiltedX * _cos25 + tiltedZ * _sin25;
+		v[1] = tiltedZ * _cos25 - tiltedX * _sin25;
+
+		return v;
+	}
+	
 	//diagnostic to compare wite psotion with Gagik's package
 	static void compareWire(int superlayer, int layer, int wire) {
 		DCGeometry.printWire(superlayer, layer, wire);

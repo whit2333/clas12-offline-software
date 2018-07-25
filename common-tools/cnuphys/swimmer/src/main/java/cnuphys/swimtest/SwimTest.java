@@ -112,6 +112,7 @@ public class SwimTest {
 		final JMenuItem threadItem = new JMenuItem("Thread Test");
 		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. SwimZ Test");
 		final JMenuItem polyItem = new JMenuItem("SwimZ vs. Poly Approx Test");
+		final JMenuItem specialItem = new JMenuItem("Special Trouble Cases");
 
 		ActionListener al = new ActionListener() {
 
@@ -128,6 +129,9 @@ public class SwimTest {
 				}
 				else if (e.getSource() == oneVtwoItem) {
 					CompareSwimmers.swimmerVswimmer2Test(3344632211L, 10000);
+				}
+				else if (e.getSource() == specialItem) {
+					CompareSwimmers.specialCaseTest();;
 				}
 				else if (e.getSource() == polyItem) {
 					SmallDZTest.smallDZTest(3344632211L, 10000, 100);
@@ -146,12 +150,14 @@ public class SwimTest {
 		polyItem.addActionListener(al);	
 		testSectorItem.addActionListener(al);	
 		reconfigItem.addActionListener(al);	
+		specialItem.addActionListener(al);	
 		menu.add(createTrajItem);
 		menu.add(oneVtwoItem);
 		menu.add(polyItem);
 		menu.add(testSectorItem);
 		menu.add(reconfigItem);
 		menu.add(threadItem);
+		menu.add(specialItem);
 		
 		return menu;
 	}
@@ -204,7 +210,7 @@ public class SwimTest {
 		// add the menu
 		JMenuBar mb = new JMenuBar();
 		testFrame.setJMenuBar(mb);
-		mb.add(mf.getMagneticFieldMenu());
+		mb.add(mf.getMagneticFieldMenu(true, false));
 		mb.add(SwimMenu.getInstance());
 		
 		JMenu testMenu = getTestMenu();
@@ -420,6 +426,9 @@ public class SwimTest {
 						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
 								y[0], y[1], y[2], R, P * y[3], P * y[4], P
 										* y[5], P));
+		
+		
+		
 		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}
@@ -446,7 +455,7 @@ public class SwimTest {
 		System.out
 				.println(String
 						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
-								sv.x, sv.y, sv.z, R, px, py, pz, P));
+								sv.x/100, sv.y/100, sv.z/100, R/100, px, py, pz, P));
 		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}
