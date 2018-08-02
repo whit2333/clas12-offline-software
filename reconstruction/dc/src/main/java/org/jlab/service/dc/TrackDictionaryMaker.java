@@ -51,7 +51,7 @@ public class TrackDictionaryMaker extends DCEngine{
         PrintWriter pwi = null;
         PrintWriter pwo = null;
         try {
-            
+            System.out.println(" MAKING ROADS......................");
             pwi = new PrintWriter("PosTracksDicTorus"+String.valueOf(torScale)+"Solenoid"+String.valueOf(solScale)+".txt");
             pwo = new PrintWriter("NegTracksDicTorus"+String.valueOf(torScale)+"Solenoid"+String.valueOf(solScale)+".txt");
             this.ProcessTracks(pwi, pwo, dcDetector, ftofDetector, pcalDetector, sw);
@@ -207,7 +207,7 @@ public class TrackDictionaryMaker extends DCEngine{
             int nBinsTheta = (int) (thetaRange / thetaBinSize) + 1;
             double vzMin = -2.5;
             double vzMax = 2.5;
-            double vzRange = vzMin - vzMax;
+            double vzRange = vzMax - vzMin;
             double vzBinSize = 0.1;
             int nBinsVz = (int) (vzRange / vzBinSize) + 1;
             
@@ -327,16 +327,16 @@ public class TrackDictionaryMaker extends DCEngine{
                                         String.valueOf(Wl1.get(5))+ String.valueOf(Wl2.get(5))+ String.valueOf(Wl3.get(5))+ String.valueOf(Wl4.get(5))+ String.valueOf(Wl5.get(5))+ String.valueOf(Wl6.get(5))+
                                         String.valueOf(paddle);
                                 if(i==0)
-                                    pwi.printf("%d\t%.1f\t %.1f\t %.1f\t %.1f\t"
+                                    pwi.printf("%d\t%.1f\t %.1f\t %.1f\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
-                                        +"%d\t\n",
+                                        +"%d\t %.1f\t\n",
                                         //+ "%.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t\n", 
-                                        q, p, theta, phi, vz,
+                                        q, p, theta, phi,
                                         Wl1.get(0), Wl2.get(0), Wl3.get(0), Wl4.get(0), Wl5.get(0), Wl6.get(0), 
                                         Wl1.get(1), Wl2.get(1), Wl3.get(1), Wl4.get(1), Wl5.get(1), Wl6.get(1), 
                                         Wl1.get(2), Wl2.get(2), Wl3.get(2), Wl4.get(2), Wl5.get(2), Wl6.get(2), 
@@ -344,18 +344,18 @@ public class TrackDictionaryMaker extends DCEngine{
                                         Wl1.get(4), Wl2.get(4), Wl3.get(4), Wl4.get(4), Wl5.get(4), Wl6.get(4), 
                                         Wl1.get(5), Wl2.get(5), Wl3.get(5), Wl4.get(5), Wl5.get(5), Wl6.get(5), 
                                         //trkTOF[0], trkTOF[1], trkTOF[2], trkPCAL[0], trkPCAL[1], trkPCAL[2]);
-                                        paddle);
+                                        paddle, vz);
                                 if(i==1)
-                                    pwo.printf("%d\t%.1f\t %.1f\t %.1f\t %.1f\t"
+                                    pwo.printf("%d\t%.1f\t %.1f\t %.1f\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
                                         + "%d\t %d\t %d\t %d\t %d\t %d\t "
-                                        +"%d\t\n",
+                                        +"%d\t %.1f\t\n",
                                         //+ "%.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t\n", 
-                                        q, p, theta, phi, vz,
+                                        q, p, theta, phi,
                                         Wl1.get(0), Wl2.get(0), Wl3.get(0), Wl4.get(0), Wl5.get(0), Wl6.get(0), 
                                         Wl1.get(1), Wl2.get(1), Wl3.get(1), Wl4.get(1), Wl5.get(1), Wl6.get(1), 
                                         Wl1.get(2), Wl2.get(2), Wl3.get(2), Wl4.get(2), Wl5.get(2), Wl6.get(2), 
@@ -363,7 +363,7 @@ public class TrackDictionaryMaker extends DCEngine{
                                         Wl1.get(4), Wl2.get(4), Wl3.get(4), Wl4.get(4), Wl5.get(4), Wl6.get(4), 
                                         Wl1.get(5), Wl2.get(5), Wl3.get(5), Wl4.get(5), Wl5.get(5), Wl6.get(5), 
                                         //trkTOF[0], trkTOF[1], trkTOF[2], trkPCAL[0], trkPCAL[1], trkPCAL[2]);
-                                        paddle);
+                                        paddle, vz);
                                 //System.out.printf("%d\t\t%.1f\t\t %.1f\t\t %.1f\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %.1f\t\t %.1f\t\t %.1f\t\t %.1f\t\t %.1f\t\t %.1f\t\t\n", q, p, theta, phi, Wi.get(0), Wf.get(0), Wi.get(1), Wf.get(1), Wi.get(2), Wf.get(2),Wi.get(3), Wf.get(3), Wi.get(4), Wf.get(4), Wi.get(5), Wf.get(5), trkTOF[0], trkTOF[1], trkTOF[2], trkPCAL[0], trkPCAL[1], trkPCAL[2]);
 
                                 //System.out.printf("%d\t\t %.1f\t\t %.1f\t\t %.1f\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t %d\t\t\n",q, p, theta, phi, Wi.get(0), Wi.get(1), Wi.get(2), Wi.get(3), Wi.get(4), Wi.get(5));
@@ -624,6 +624,8 @@ public class TrackDictionaryMaker extends DCEngine{
             float torus    = (float) parser.getOption("-t").doubleValue();
             float solenoid = (float) parser.getOption("-s").doubleValue();
             tm.processFile(torus, solenoid);
+        } else {
+            System.out.println(" FIELDS NOT SET");
         }
     }
     
