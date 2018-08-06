@@ -1,7 +1,7 @@
 package cnuphys.rk4;
 
 /**
- * Integrators used by the Z swimmer
+ * Integrators used by the S swimmer
  * @author heddle
  *
  */
@@ -10,15 +10,19 @@ import java.util.List;
 
 /**
  * Static methods for Runge-Kutta 4 integration, including a constant stepsize
- * method and an adaptive stepsize method. This is used by SwimZ
+ * method and an adaptive stepsize method.
  * 
  * @author heddle
  * 
  */
-public class RungeKuttaZ {
+public class RungeKuttaS {
 
 	// for adaptive stepsize, this is how much h will grow
 	private static final double HGROWTH = 1.5;
+	
+	// use a simple half-step advance
+	private IAdvance _advancer = new HalfStepAdvance();
+
 
 	//think in cm
 	public static double DEFMINSTEPSIZE = 1.0e-3;
@@ -26,41 +30,36 @@ public class RungeKuttaZ {
 	
 	private double _minStepSize = DEFMINSTEPSIZE;
 	private double _maxStepSize = DEFMAXSTEPSIZE;
+	
+	// the dimension is 6 [x, y, z, px/p, py/p, pz/p]
+	private static int DIM = 6;
+	
+	private double u[] = new double[DIM];
+	private double yt2[] = new double[DIM];
+	private double du[] = new double[DIM];
+	private double error[] = new double[DIM];
 
-	// the dimension is 4 [x, y, tx, ty]
-	private static int DIM = 4; // we'll know if this fails!
-	
-	double yt[] = new double[DIM];
-	double yt2[] = new double[DIM];
-	double dydt[] = new double[DIM];
-	double error[] = new double[DIM];
-
-	
-	// use a simple half-step advance
-	private IAdvance _advancer = new HalfStepAdvance();
-	
 	/**
 	 * Create a RungeKutta object that can be used for integration
 	 */
-	public RungeKuttaZ() {
+	public RungeKuttaS() {
 	}
 
 
 	/**
-	 * Integrator that uses the RungeKutta advance with a HalfStep and
+	 * Integrator that uses the RungeKutta advance with a Half Step advancer and
 	 * adaptive stepsize and a tolerance vector.
-	 * 	 * 
-	 * @param yo
-	 *            initial values. (xo, yo, txo, tyo).
-	 * @param zo
-	 *            the initial value of the independent variable z.
-	 * @param zf
-	 *            the maximum value of the independent variable z.
+	 * 
+	 * @param uo
+	 *            initial values. Probably something like (xo, yo, zo, vxo, vyo,
+	 *            vzo).
+	 * @param so
+	 *            the initial value of the independent variable (path length) usually 0
 	 * @param h
 	 *            the starting steps size
-	 * @param z
-	 *            a list of the values of z at each step
-	 * @param y
+	 * @param s
+	 *            a list of the values of s at each step
+	 * @param u
 	 *            a list of the values of the state vector at each step
 	 * @param deriv
 	 *            the derivative computer (interface). This is where the problem
@@ -78,49 +77,51 @@ public class RungeKuttaZ {
 	 * @return the number of steps used.
 	 * @throws RungeKuttaException
 	 */
-	public int adaptiveStepZoZf(double yo[],
-			double zo,
-			double zf,
+	public int adaptiveStep(double uo[],
+			double so,
 			double h,
-			final List<Double> z,
-			final List<double[]> y,
+			final List<Double> s,
+			final List<double[]> u,
 			IDerivative deriv,
 			IStopper stopper,
 			double relTolerance[],
 			double hdata[]) throws RungeKuttaException {
+		
 
 		// put starting step in
-		z.add(zo);
-		y.add(copy(yo));
+		s.add(so);
+		u.add(copy(uo));
 
+		//listen for each step
 		IRkListener listener = new IRkListener() {
 
 			@Override
-			public void nextStep(double tNext, double yNext[], double h) {
-				z.add(tNext);
-				y.add(copy(yNext));
+			public void nextStep(double nextS, double nextU[], double h) {
+				s.add(nextS);
+				u.add(copy(nextU));
 			}
 
 		};
-		return adaptiveStepZoZf(yo, zo, zf, h, deriv, stopper, listener, relTolerance, hdata);
+		return adaptiveStep(uo, so, h, deriv, stopper, listener, relTolerance, hdata);
 	}
 
 
-	
-
 	/**
 	 * Integrator that uses the RungeKutta advance with a Half Step advancer and
-	 * adaptive stepsize
+	 * adaptive stepsize and a tolerance vector.
 	 * 
 	 * This version uses an IRk4Listener to notify the listener that the next
 	 * step has been advanced.
 	 * 
+	 * A very typical case is a 2nd order ODE converted to a 1st order where the
+	 * dependent variables are x, y, z, vx, vy, vz and the independent variable
+	 * is time.
+	 * 
 	 * @param yo
-	 *            initial values. (xo, yo, tx0, ty0)
-	 * @param zo
+	 *            initial values. Probably something like (xo, yo, zo, vxo, vyo,
+	 *            vzo).
+	 * @param so
 	 *            the initial value of the independent variable
-	 * @param zf
-	 *            the maximum value of the independent variable.
 	 * @param h
 	 *            the starting steps size
 	 * @param deriv
@@ -141,34 +142,20 @@ public class RungeKuttaZ {
 	 * @return the number of steps used.
 	 * @throws RungeKuttaException
 	 */
-	public int adaptiveStepZoZf(double yo[],
-			double zo, double zf, double h, IDerivative deriv, IStopper stopper, IRkListener listener,
+	public int adaptiveStep(double yo[],
+			double so, double h, IDerivative deriv, IStopper stopper, IRkListener listener,
 			double relTolerance[], double hdata[]) throws RungeKuttaException {
-
-		// use a simple half-step advance
-	//	IAdvance advancer = new ButcherTableauAdvance(ButcherTableau.FEHLBERG_ORDER5);
 
 		int nStep = 0;
 		try {
-			nStep = driverZoZf(yo, zo, zf, h, deriv, stopper, listener, _advancer, relTolerance, hdata);
+			nStep = driver(yo, so, h, deriv, stopper, listener, _advancer, relTolerance, hdata);
 		} catch (RungeKuttaException e) {
 //			System.err.println("Trying to integrate from " + to + " to " + tf);
 			throw e;
 		}
 		return nStep;
 	}
-
-
-	// copy a vector
-	private double[] copy(double v[]) {
-		double w[] = new double[v.length];
-		System.arraycopy(v, 0, w, 0, v.length);
-
-		// for (int i = 0; i < v.length; i++) {
-		// w[i] = v[i];
-		// }
-		return w;
-	}
+	
 
 	/**
 	 * Driver that uses the RungeKutta advance with an adaptive step size
@@ -176,17 +163,10 @@ public class RungeKuttaZ {
 	 * This version uses an IRk4Listener to notify the listener that the next
 	 * step has been advanced.
 	 * 
-	 * A very typical case is a 2nd order ODE converted to a 1st order where the
-	 * dependent variables are x, y, z, vx, vy, vz and the independent variable
-	 * is time.
-	 * 
 	 * @param yo
-	 *            initial values. Probably something like (xo, yo, zo, vxo, vyo,
-	 *            vzo).
-	 * @param zo
-	 *            the initial value of the independent variable, e.g., time.
-	 * @param zf
-	 *            the maximum value of the independent variable.
+	 *            initial values. (xo, yo, zo, px0/p, py0/p, pz0/p).
+	 * @param so
+	 *            the initial value of the independent variable
 	 * @param h
 	 *            the step size
 	 * @param deriv
@@ -210,9 +190,8 @@ public class RungeKuttaZ {
 	 * @throw(new RungeKuttaException("Step size too small in Runge Kutta
 	 *            driver" ));
 	 */
-	private int driverZoZf(double yo[],
-			double zo,
-			double zf,
+	private int driver(double yo[],
+			double so,
 			double h,
 			IDerivative deriv,
 			IStopper stopper,
@@ -220,9 +199,6 @@ public class RungeKuttaZ {
 			IAdvance advancer,
 			double absError[],
 			double hdata[]) throws RungeKuttaException {
-
-		//going in the normal direction?
-		boolean normalDir = (zf > zo);
 		
 		// if our advancer does not compute error we can't use adaptive stepsize
 		if (!advancer.computesError()) {
@@ -236,12 +212,10 @@ public class RungeKuttaZ {
 			hdata[2] = h;
 		}
 
-		// the dimensionality of the problem
-		int nDim = 4;
 
-		double z = zo;
-		for (int i = 0; i < nDim; i++) {
-			yt[i] = yo[i];
+		double s = so;
+		for (int i = 0; i < DIM; i++) {
+			u[i] = yo[i];
 		}
 
 		int nstep = 0;
@@ -249,32 +223,29 @@ public class RungeKuttaZ {
 
 		while (keepGoing) {
 			// use derivs at previous t
-			deriv.derivative(z, yt, dydt);
-			// System.out.println("curr y: [" + yt[0] + ", " + yt[1] + "]");
+			deriv.derivative(s, u, du);
 
-			//we might be going backwards
-			double newZ = (normalDir ? z + h: z - h);
-
-			int oldSign = ((zf - z) < 0) ? -1 : 1;
-			int newSign = ((zf - newZ) < 0) ? -1 : 1;
-
-			if (oldSign != newSign) { // crossed zf
-				h = Math.abs(zf - z);  //h always positive
-				keepGoing = false;
-			}
-
-			if (normalDir) {
-				advancer.advance(z, yt, dydt, h, deriv, yt2, error);
-			} else {
-				advancer.advance(z, yt, dydt, -h, deriv, yt2, error);
-			}
+			advancer.advance(s, u, du, h, deriv, yt2, error);
+			
+	//		System.out.println("h = " + h);
 
 			boolean decreaseStep = false;
 			if (keepGoing) {
-				for (int i = 0; i < nDim; i++) {
-					decreaseStep = error[i] > absError[i];
-					if (decreaseStep) {
-						break;
+				
+				if (stopper != null) {
+					boolean stop = stopper.stopIntegration(s+h, yt2);
+					if (stop) {
+						boolean terminate = stopper.terminateIntegration(s, u);
+						decreaseStep = stop && !terminate;
+					}
+				}
+
+				if (!decreaseStep) {
+					for (int i = 0; i < DIM; i++) {
+						decreaseStep = error[i] > absError[i];
+						if (decreaseStep) {
+							break;
+						}
 					}
 				}
 			}
@@ -293,34 +264,36 @@ public class RungeKuttaZ {
 					hdata[2] = Math.max(hdata[2], h);
 				}
 
-				for (int i = 0; i < nDim; i++) {
-					yt[i] = yt2[i];
+				for (int i = 0; i < DIM; i++) {
+					u[i] = yt2[i];
 				}
 
-				if (normalDir) {
-					z += h;
-				}
-				else {
-					z -= h;
-				}
+				s += h;
 				
 				nstep++;
-
-				// someone listening?
-				if (listener != null) {
-					listener.nextStep(z, yt, h);
-				}
-
+				
 				// premature termination? Skip if stopper is null.
 				if (stopper != null) {
-					stopper.setFinalT(z);
-					if (stopper.stopIntegration(z, yt)) {
+					stopper.setFinalT(s);
+					if (stopper.stopIntegration(s, u)) {
+						// someone listening?
+						if (listener != null) {
+							listener.nextStep(s, u, h);
+						}
+
 						if ((hdata != null) && (nstep > 0)) {
 							hdata[1] = hdata[1] / nstep;
 						}
 						return nstep; // actual number of steps taken
 					}
 				}
+
+
+				// someone listening?
+				if (listener != null) {
+					listener.nextStep(s, u, h);
+				}
+
 				h *= HGROWTH;
 				h = Math.min(h, _maxStepSize);
 
@@ -336,106 +309,14 @@ public class RungeKuttaZ {
 	}
 
 
-//	// a Butcher Tableau advancer
-//	class ButcherTableauAdvance implements IAdvance {
-//
-//		private ButcherTableau tableau;
-//
-//		public ButcherTableauAdvance(ButcherTableau tableau) {
-//			this.tableau = tableau;
-//		}
-//
-//		@Override
-//		public void advance(double t,
-//				double[] y,
-//				double[] dydt,
-//				double h,
-//				IDerivative deriv,
-//				double[] yout,
-//				double[] error) {
-//
-//			// System.err.println("TABLEAU ADVANCE");
-//			int nDim = y.length;
-//			int numStage = tableau.getS();
-//
-//			double ytemp[] = getWorkArrayFromCache();
-//			double k[][] = new double[numStage + 1][];
-//			k[0] = null; // not used
-//
-//			// k1 is just h*dydt
-//			k[1] = getWorkArrayFromCache();
-//			for (int i = 0; i < nDim; i++) {
-//				k[1][i] = h * dydt[i];
-//			}
-//
-//			// fill the numStage k vectors
-//			for (int s = 2; s <= numStage; s++) {
-//				k[s] = getWorkArrayFromCache();
-//
-//				double ts = t + tableau.c(s);
-//				for (int i = 0; i < nDim; i++) {
-//					ytemp[i] = y[i];
-//					for (int ss = 1; ss < s; ss++) {
-//						ytemp[i] += tableau.a(s, ss) * k[ss][i];
-//					}
-//				}
-//				deriv.derivative(ts, ytemp, k[s]);
-//				for (int i = 0; i < nDim; i++) {
-//					k[s][i] *= h;
-//				}
-//			}
-//
-//			for (int i = 0; i < nDim; i++) {
-//				double sum = 0.0;
-//				for (int s = 1; s <= numStage; s++) {
-//					sum += tableau.b(s) * k[s][i];
-//				}
-//				yout[i] = y[i] + sum;
-//			}
-//
-//			// compute error?
-//
-//			if (tableau.isAugmented() && (error != null)) {
-//
-//				// absolute error
-//				for (int i = 0; i < nDim; i++) {
-//					error[i] = 0.0;
-//					// error diff 4th and 5th order
-//					for (int s = 1; s <= numStage; s++) {
-//						error[i] += tableau.bdiff(s) * k[s][i]; // abs error
-//					}
-//				}
-//
-//				// relative error
-//				// for (int i = 0; i < nDim; i++) {
-//				// double sum = 0.0;
-//				// for (int s = 1; s <= numStage; s++) {
-//				// sum += tableau.bstar(s)*k[s][i];
-//				// }
-//				// double ystar = y[i] + sum;
-//				// error[i] = relativeDiff(yout[i], ystar);
-//				// }
-//
-//				// for (int i = 0; i < nDim; i++) {
-//				// System.out.print(String.format("[%-12.5e] ", error[i]));
-//				// }
-//				// System.out.println();
-//
-//			}
-//
-//			// //return the work arrays
-//			_workArrayCache.push(ytemp);
-//			for (int s = 1; s <= numStage; s++) {
-//				_workArrayCache.push((k[s]));
-//			}
-//		}
-//
-//		@Override
-//		public boolean computesError() {
-//			return tableau.isAugmented();
-//		}
-//
-//	}
+
+	// copy a vector
+	private double[] copy(double v[]) {
+		double w[] = new double[DIM];
+		System.arraycopy(v, 0, w, 0, DIM);
+		return w;
+	}
+
 
 	/**
 	 * Set the maximum step size

@@ -5,13 +5,17 @@
  */
 package org.jlab.clas.swimtools;
 
+import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.IStopper;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
+import cnuphys.swim.Trajectory;
 import cnuphys.swim.util.Plane;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
+import cnuphys.swimZ.SwimZ;
+import cnuphys.swimS.SwimS;
+
 import org.apache.commons.math3.util.FastMath;
 import org.jlab.geom.prim.Vector3D;
 
@@ -32,6 +36,9 @@ public class Swim {
 									// detectors
 	private double _maxPathLength = 9;
 	private int _charge;
+	
+	//if true, charge was flipped to reverse swim
+	private boolean _chargeFlipped = false;
 
 	final double SWIMZMINMOM = 0.75; // GeV/c
 	final double MINTRKMOM = 0.05; // GeV/c
@@ -48,6 +55,31 @@ public class Swim {
 		}
 
 	}
+	
+	/**
+	 * Get the rotated composite probe for this thread
+	 * @return the rotated composite probe for this thread
+	 */
+	public RotatedCompositeProbe getRCP() {
+		return PC.RCP;
+	}
+	
+	/**
+	 * Get the rotated composite Z swimmer for this thread
+	 * @return the rotated composite Z swimmer for this thread
+	 */
+	public SwimZ getRCF_z() {
+		return PC.RCF_z;
+	}
+
+	/**
+	 * Get the rotated composite S swimmer for this thread
+	 * @return the rotated composite S swimmer for this thread
+	 */
+	public SwimS getRCF_s() {
+		return PC.RCF_s;
+	}
+
 
 	/**
 	 *
@@ -75,8 +107,9 @@ public class Swim {
 		_phi = Math.toDegrees(FastMath.atan2(py, px));
 		_pTot = Math.sqrt(px * px + py * py + pz * pz);
 		_theta = Math.toDegrees(Math.acos(pz / _pTot));
-
-		_charge = direction * charge;
+ 		_charge = direction * charge;
+ 		
+ 		_chargeFlipped = (direction < 0);
 	}
 
 	/**
@@ -109,6 +142,7 @@ public class Swim {
 
 		_charge = charge;
 
+		_chargeFlipped = false;
 	}
 
 	/**
@@ -131,7 +165,7 @@ public class Swim {
 		_theta = Math.toDegrees(Math.acos(pz / _pTot));
 
 		_charge = charge;
-
+		_chargeFlipped = false;
 	}
 
 	/**
@@ -156,7 +190,7 @@ public class Swim {
 		_x0 = xcm / 100;
 		_y0 = ycm / 100;
 		_z0 = zcm / 100;
-
+		_chargeFlipped = false;
 	}
 
 	public double[] SwimToPlaneTiltSecSys(int sector, double z_cm) {
@@ -169,7 +203,7 @@ public class Swim {
 		}
 
 		// use a SwimZResult instead of a trajectory (dph)
-		SwimZResult szr = null;
+		Trajectory szr = null;
 
 		SwimTrajectory traj = null;
 		double hdata[] = new double[3];
@@ -185,11 +219,22 @@ public class Swim {
 				double stepSizeCM = stepSize * 100; // convert to cm
 
 				// create the starting SwimZ state vector
-				SwimZStateVector start = new SwimZStateVector(_x0 * 100, _y0 * 100, _z0 * 100, _pTot, _theta, _phi);
+				StateVec start = new StateVec(_x0 * 100, _y0 * 100, _z0 * 100, _charge/_pTot, _theta, _phi);
+				
+				boolean signConsistent = start.pzSignCorrect(_z0 * 100, z_cm);
+				if (!signConsistent) {
+//					System.out.println("INCONSISTENT sign for pz zi = " + (_z0 * 100) + "   zf = " + z_cm + 
+//							"  SIGN: " + start.pzSign + "   theta = " + _theta + "   phi = " + _phi);
+//					
+					for (int i = 0; i < value.length; i++) {
+						value[i] = 0;
+						return value;
+					}
+				}
 
 				try {
-					szr = PC.RCF_z.sectorAdaptiveRK(sector, _charge, _pTot, start, z_cm, stepSizeCM, hdata);
-				} catch (SwimZException e) {
+					szr = PC.RCF_z.sectorAdaptiveRK(sector, start, z_cm, stepSizeCM, hdata);
+				} catch (SwimException e) {
 					szr = null;
 					System.err.println("[WARNING] Tilted SwimZ Failed for p = " + _pTot);
 				}
@@ -199,8 +244,8 @@ public class Swim {
 				double bdl = szr.sectorGetBDL(sector, PC.RCF_z.getProbe());
 				double pathLength = szr.getPathLength(); // already in cm
 
-				SwimZStateVector last = szr.last();
-				double p3[] = szr.getThreeMomentum(last);
+				StateVec last = szr.last();
+				double p3[] = last.getThreeMomentum();
 
 				value[0] = last.x; // xf in cm
 				value[1] = last.y; // yz in cm
@@ -249,7 +294,7 @@ public class Swim {
 		double hdata[] = new double[3];
 
 		// use a SwimZResult instead of a trajectory (dph)
-		SwimZResult szr = null;
+		Trajectory szr = null;
 
 		try {
 
@@ -262,11 +307,23 @@ public class Swim {
 				double stepSizeCM = stepSize * 100; // convert to cm
 
 				// create the starting SwimZ state vector
-				SwimZStateVector start = new SwimZStateVector(_x0 * 100, _y0 * 100, _z0 * 100, _pTot, _theta, _phi);
+				StateVec start = new StateVec(_x0 * 100, _y0 * 100, _z0 * 100, _charge/_pTot, _theta, _phi);
+				
+				boolean signConsistent = start.pzSignCorrect(_z0 * 100, z_cm);
+				if (!signConsistent) {
+//					System.out.println("INCONSISTENT sign for pz zi = " + (_z0 * 100) + "   zf = " + z_cm + 
+//							"  SIGN: " + start.pzSign + "   theta = " + _theta + "   phi = " + _phi);
+//					
+					for (int i = 0; i < value.length; i++) {
+						value[i] = 0;
+						return value;
+					}
+				}
+
 
 				try {
-					szr = PC.CF_z.adaptiveRK(_charge, _pTot, start, z_cm, stepSizeCM, hdata);
-				} catch (SwimZException e) {
+					szr = PC.CF_z.adaptiveRK(start, z_cm, stepSizeCM, hdata);
+				} catch (SwimException e) {
 					szr = null;
 					System.err.println("[WARNING] SwimZ Failed for p = " + _pTot);
 
@@ -277,8 +334,8 @@ public class Swim {
 				double bdl = szr.getBDL(PC.CF_z.getProbe());
 				double pathLength = szr.getPathLength(); // already in cm
 
-				SwimZStateVector last = szr.last();
-				double p3[] = szr.getThreeMomentum(last);
+				StateVec last = szr.last();
+				double p3[] = last.getThreeMomentum();
 
 				value[0] = last.x; // xf in cm
 				value[1] = last.y; // yz in cm
@@ -664,5 +721,15 @@ public class Swim {
 		result[2] = result[2] / 10;
 
 	}
+	
+	/**
+	 * Check whether the charge was flipped for a retrace swim
+	 * @return <code>true</code> if the charge was flipped for a retrace swim
+	 */
+	public boolean isChargeFlipped() {
+		return _chargeFlipped;
+	}
+	
+	
 
 }

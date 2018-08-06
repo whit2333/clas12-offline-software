@@ -4,16 +4,16 @@ import java.util.Random;
 
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
-import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.rk4.RungeKutta;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swim.Swimmer2;
-import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
+import cnuphys.swim.Swimming;
+import cnuphys.swim.Trajectory;
+import cnuphys.swimS.SwimS;
 
 public class CompareSwimmers {
 	
@@ -25,76 +25,46 @@ public class CompareSwimmers {
 	
 	//for testing special cases that are failing in swimZ
 	public static void specialCaseTest() {
-		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITE);
 
-		double xo = -1.391717; //m
-		double yo = 0.049991; //m
-		double zo = 5.059315; //m
-		double p = 3.904347; //GeV
-		double theta = 160.903767;
-		double phi =  -0.837846;
-		double zTarg = 1.8; //m
+		//these are in tilted cm
+		double xo = -131.2882773; //cm
+		double yo = -4.5990424; //cm
+		double zo = 245.9633200; //cm
+		double p = 0.437202; //GeV
+		double theta = 52.739187;
+		double phi =  17.649689;
+		int q = 1;
+		double[] hdata = new double[3];
+		double stepSize = 0.01;
+		
+		StateVec iVecTilted = new StateVec(xo, yo, zo, q/p, theta, phi);
+		System.out.println("iVecTilted:\n" + iVecTilted);
+		
+		//get in sector coords
+		StateVec iVec = new StateVec();
+		StateVec.tiltedToSector(iVec, iVecTilted);
+		
+		System.out.println("iVecSector:\n" + iVec);
 
 		
-		Swimmer swimmer1 = new Swimmer(MagneticFields.getInstance().getRotatedCompositeField());
-
-		SwimZ swimZ = new SwimZ(MagneticFields.getInstance().getRotatedCompositeField());
-		double accuracy = 1.0e-5; //m
-		double stepSize = 0.01; //m
-		double stepSizeCM = stepSize*100; //cm
-
-		double hdata[] = new double[3];
-		
-		//swimZ uses CM
-		SwimZStateVector szV = new SwimZStateVector(xo*100, yo*100, zo*100, p, theta, phi);
-
-
+		SwimS swimS = new SwimS();
+		int sector = 1;
 		try {
-			int sect = 2;
-			SwimTrajectory traj = swimmer1.sectorSwim(sect, -1, xo, yo, zo, p, theta, phi, zTarg, accuracy, 8, 9, stepSize,
-					Swimmer.CLAS_Tolerance, hdata);
-			
-			SwimTest.printSummary("Last for swimmer 1", traj.size(), p, traj.lastElement(), hdata);
-			traj.sectorComputeBDL(sect, (RotatedCompositeProbe) swimmer1.getProbe());
-			System.out.println("**** BDL for swimmer 1 = " + 100*traj.lastElement()[SwimTrajectory.BXDL_IDX] + "  kG cm");
-			System.out.println("**** PATHLENGTH for swimmer 1 = " + 100*traj.lastElement()[SwimTrajectory.PATHLEN_IDX] + "  cm");
-			
-			double sc[] = tiltedToSector(xo, zo);
-			double sf[] =  tiltedToSector(traj.lastElement()[SwimTrajectory.X_IDX], traj.lastElement()[SwimTrajectory.Z_IDX]);
-			
-			double poz = p*Math.cos(Math.toRadians(theta));
-			double pop = p*Math.sin(Math.toRadians(theta));
-			double pox = pop*Math.cos(Math.toRadians(phi));
-			double poy = pop*Math.sin(Math.toRadians(phi));
-			double sp[] = tiltedToSector(pox, poz);
-			pox = sp[0];
-			poz = sp[1];
-			double sTheta = Math.toDegrees(Math.acos(poz/p));
-			double sPhi = Math.toDegrees(Math.atan2(poy, pox));
-			
-			
-			System.out.println("START IN SECTOR CS: (" + 100*sc[0] + ", " +  100*yo + ", " + 100*sc[1] + ")  theta = " + sTheta + "  phi = " + sPhi);
-			System.out.println("  END IN SECTOR CS: (" + 100*sf[0] + ", " +  100*traj.lastElement()[SwimTrajectory.Y_IDX] + ", " + 100*sf[1] + ")");
-			System.out.println();
-			
-			try {
-				SwimZResult szr = swimZ.sectorAdaptiveRK(sect, -1 ,p, szV, zTarg*100, stepSizeCM, hdata);
-				
-		        SwimTest.printSummary("Last for swimZ", szr.size(), p, theta, szr.last(), hdata);
-		        
-		        
-				System.out.println("**** BDL for swimZ = " + szr.sectorGetBDL(sect, swimZ.getProbe()) + "  kG cm");
-				System.out.println("**** PATHLENGTH for swimZ = " + szr.getPathLength() + "  cm");
+			Trajectory szr = swimS.adaptiveRK(iVec, 1000, stepSize, hdata);
+			StateVec last = szr.last();
 
-			} catch (SwimZException e) {
-				e.printStackTrace();
-			}
+	        SwimTest.printSummary("Last for swimZ", szr.size(), p, last, hdata);
+	        
+	       
+			System.out.println("**** BDL for swimZ = " + szr.sectorGetBDL(sector, swimS.getProbe()) + "  kG cm");
+			System.out.println("**** PATHLENGTH for swimS = " + szr.getPathLength() + "  cm");
+			Swimming.addMCTrajectory(szr.toSwimTrajectory());
 
-		} catch (RungeKuttaException e) {
+		} catch (SwimException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 
 	}
 	
@@ -150,8 +120,8 @@ public class CompareSwimmers {
 		double y0[] = new double[num];
 		double z0[] = new double[num];
 		
-		SwimZStateVector szV[] = new SwimZStateVector[num];
-		SwimZResult szTraj[] = new SwimZResult[num];
+		StateVec szV[] = new StateVec[num];
+		Trajectory szTraj[] = new Trajectory[num];
 		
 		double hdata[] = new double[3];
 		
@@ -160,7 +130,7 @@ public class CompareSwimmers {
 		
 		Swimmer swimmer1 = new Swimmer();
 		Swimmer2 swimmer2 = new Swimmer2();
-		SwimZ swimZ = new SwimZ();
+		SwimS swimS = new SwimS();
 		
 		for (int i = 0; i < num; i++) {
 			charge[i] = ((rand.nextFloat() < 0.5f) ? -1 : 1);
@@ -182,8 +152,8 @@ public class CompareSwimmers {
 			}
 
 						
-			//swimZ uses CM
-			szV[i] = new SwimZStateVector(x0[i]*100, y0[i]*100, z0[i]*100, pTot[i], theta[i], phi[i]);
+			//swimS uses CM
+			szV[i] = new StateVec(x0[i]*100, y0[i]*100, z0[i]*100, charge[i]/pTot[i], theta[i], phi[i]);
 		}
 		
 		//prime the pump
@@ -202,30 +172,6 @@ public class CompareSwimmers {
 		long time;
 		time = System.currentTimeMillis();
 	
-//		System.out.println("Swimmer 1 UNIFORM");
-//		time = System.currentTimeMillis();
-//		for (int i = 0; i < num; i++) {
-//			try {
-//				traj1[i] = swimmer1.swim(charge[i], x0[i], y0[i], z0[i], pTot[i], theta[i], phi[i], zTarg, accuracy, 10, 10, stepSize,
-//						0.05);
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		time = System.currentTimeMillis() - time;
-//		System.out.println("Swimmer 1 UNIFORM time: " + timeString(time, num) + "  max step size = " + hdata[2] + "  numStep: " + (traj1[num-1].size()));
-// 
-//		lastTraj = traj1[num-1];
-//		SwimTest.printSummary("Last for swimmer 1 UNIFORM", lastTraj.size(), pTot[num-1], lastTraj.lastElement(), hdata);
-//		lastTraj.computeBDL(swimmer1.getProbe());
-//		System.out.println("**** BDL for swimmer 1 UNIFORM = " + 100*lastTraj.lastElement()[SwimTrajectory.BXDL_IDX] + "  kG cm");
-//		System.out.println("**** PATHLENGTH for swimmer 1 UNIFORM = " + 100*lastTraj.lastElement()[SwimTrajectory.PATHLEN_IDX] + "  cm");
-
-
-		
-//		public SwimTrajectory swim(int charge, double xo, double yo, double zo, double momentum, double theta, double phi,
-//				final double fixedZ, final double accuracy, double maxRad, double maxPathLength, double stepSize,
-//				double distanceBetweenSaves) {
 
 		System.out.println("Swimmer 1 ADAPTIVE");
 		time = System.currentTimeMillis();
@@ -307,18 +253,18 @@ public class CompareSwimmers {
 		
 		for (int i = 0; i < num; i++) {
 			try {
-				szTraj[i] = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], zTargCM, stepSizeCM, hdata);
-			} catch (SwimZException e) {
+				szTraj[i] = swimS.adaptiveRK(szV[i], zTargCM, stepSizeCM, hdata);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}
 		time = System.currentTimeMillis() - time;
-		SwimZResult lastSZR =  szTraj[num-1];
+		Trajectory lastSZR =  szTraj[num-1];
 		System.out.println("SwimZ time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (lastSZR.size()));
-        SwimTest.printSummary("Last for swimZ", lastSZR.size(), pTot[num-1], theta[num-1], lastSZR.last(), hdata);
+        SwimTest.printSummary("Last for swimZ", lastSZR.size(), pTot[num-1], lastSZR.last(), hdata);
         
        
-		System.out.println("**** BDL for swimZ = " + lastSZR.getBDL(swimZ.getProbe()) + "  kG cm");
+		System.out.println("**** BDL for swimZ = " + lastSZR.getBDL(swimS.getProbe()) + "  kG cm");
 		System.out.println("**** PATHLENGTH for swimZ = " + lastSZR.getPathLength() + "  cm");
 
 
@@ -336,23 +282,23 @@ public class CompareSwimmers {
 			}
 		}
 		
-		System.out.println("Max Swimmer1-SwimZ difference at index " + maxDiffIndex + " = " + maxDiff);		
+		System.out.println("Max Swimmer1-SwimS difference at index " + maxDiffIndex + " = " + maxDiff);		
 		
-		System.out.println("\nSwimZ no traj");
-		time = System.currentTimeMillis();
-		
-		SwimZStateVector stopSV = new SwimZStateVector();
-		for (int i = 0; i < num; i++) {
-			try {
-				numStep = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], stopSV, zTargCM, stepSizeCM, hdata);
-			} catch (SwimZException e) {
-				e.printStackTrace();
-			}
-		}
-		time = System.currentTimeMillis() - time;
-		System.out.println("SwimZ no traj time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (szTraj[num-1].size()));
-        SwimTest.printSummary("Last for swimZ no traj", numStep, pTot[num-1], theta[num-1], stopSV, hdata);
-//		SwimTest.printSwimZ(stopSV, "Last for swimZ no traj");
+//		System.out.println("\nSwimZ no traj");
+//		time = System.currentTimeMillis();
+//		
+//		StateVec stopSV = new StateVec();
+//		for (int i = 0; i < num; i++) {
+//			try {
+//				numStep = swimS.adaptiveRK(szV[i], stopSV, zTargCM, stepSizeCM, hdata);
+//			} catch (SwimException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		time = System.currentTimeMillis() - time;
+//		System.out.println("SwimZ no traj time: " + timeString(time, num) + "  max step size = " + hdata[2]/100. + "  numStep: " + (szTraj[num-1].size()));
+//        SwimTest.printSummary("Last for swimZ no traj", numStep, pTot[num-1], stopSV, hdata);
+////		SwimTest.printSwimZ(stopSV, "Last for swimZ no traj");
 		
         
         //SWIM BACKWARDS TEST
@@ -364,7 +310,7 @@ public class CompareSwimmers {
         double zB = 5.000006;
         double thetaB = 177.893937;
         double phiB = 0;
-        double zfB = 0;
+        double zfB = 1.0;
         double pB = 2;
 		try {
 			lastTraj = swimmer1.swim(qB, xB, yB, zB, pB, thetaB, phiB, zfB, accuracy, 10, 10, stepSize,
@@ -380,16 +326,17 @@ public class CompareSwimmers {
 		}
 		
         System.out.println("\n\nSwimZ BACKWARDS");
-        SwimZStateVector szVB = new SwimZStateVector(xB*100, yB*100, zB*100, pB, thetaB, phiB);
-
+        StateVec szVB = new StateVec(xB*100, yB*100, zB*100, qB/pB, thetaB, phiB);
         try {
-			lastSZR = swimZ.adaptiveRK(qB, pB, szVB, zfB*100, stepSizeCM, hdata);
-	        SwimTest.printSummary("Last for swimZ Backwards", lastSZR.size(), pB, thetaB, lastSZR.last(), hdata);
+        	
+        	//swimZ do not have to change the sign of q
+			lastSZR = swimS.adaptiveRK(szVB, zfB*100, stepSizeCM, hdata);
+	        SwimTest.printSummary("Last for swimZ Backwards", lastSZR.size(), pB, lastSZR.last(), hdata);
 	        
 	       
-			System.out.println("**** BDL for swimZ Backwards = " + lastSZR.getBDL(swimZ.getProbe()) + "  kG cm");
+			System.out.println("**** BDL for swimZ Backwards = " + lastSZR.getBDL(swimS.getProbe()) + "  kG cm");
 			System.out.println("**** PATHLENGTH for swimZ Backwards = " + lastSZR.getPathLength() + "  cm");
-		} catch (SwimZException e) {
+		} catch (SwimException e) {
 			e.printStackTrace();
 		}
 

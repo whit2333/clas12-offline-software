@@ -112,6 +112,7 @@ public abstract class MagneticField implements IMagField {
 	// determine whether we use interpolation or nearest neighbor
 	protected static boolean _interpolate = true;		
 	
+	private static final double TINY = 1.0e-5;
 	/**
 	 * Scale the field.
 	 * 
@@ -119,8 +120,14 @@ public abstract class MagneticField implements IMagField {
 	 *            the scale factor
 	 */
 	public final void setScaleFactor(double scale) {
-		_scaleFactor = scale;
-		MagneticFields.getInstance().changedScale(this);
+		System.out.println("CHANGING SCALE from " + _scaleFactor + " to " + scale + "  for " + getBaseFileName());
+		if (Math.abs(scale - _scaleFactor) > TINY) {
+			_scaleFactor = scale;
+			MagneticFields.getInstance().changedScale(this);
+		}
+		else {
+			System.out.println("Ignored inconsequential scale change for " + getBaseFileName());
+		}
 	}
 	
 	@Override

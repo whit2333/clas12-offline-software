@@ -9,6 +9,15 @@ import org.jlab.rec.dc.Constants;
 import org.jlab.rec.dc.cross.Cross;
 import org.jlab.rec.dc.track.Track;
 
+import cnuphys.magfield.MagneticFields;
+import cnuphys.magfield.MagneticFields.FieldType;
+
+import cnuphys.swim.CovMat;
+import cnuphys.swim.CovMatTransport;
+import cnuphys.swim.StateVec;
+import cnuphys.swimS.SwimS;
+import cnuphys.swim.SwimException;
+
 public class StateVecs {
     private double Bmax = 2.366498; // averaged
     
@@ -92,6 +101,8 @@ public class StateVecs {
 
     }
     
+    
+     
     /**
      * 
      * @param i initial state vector index
@@ -99,7 +110,43 @@ public class StateVecs {
      * @param iVec state vector at the initial index
      * @param covMat state covariance matrix at the initial index
      */
+    
+    static boolean USESWIMCOVMATTRANSPORT = true;
+    
+    static boolean DEBUG = true;
     public void transport(int sector, int i, int f, StateVec iVec, CovMat covMat) { // s = signed step-size
+    	
+    	if (USESWIMCOVMATTRANSPORT) {
+    		if (iVec == null) {
+    			return;
+    		}
+
+    		iVec.z = Z[i];
+    		
+    		CovMatTransport.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+    		
+    		
+    		
+//        	SwimS swimS = dcSwim.getRCF_s();
+        	
+       	
+//        	try {
+//    			iVec.pzSign = (Z[f] > iVec.z) ? 1 : -1;
+//    			StateVec start = new StateVec(iVec);
+//       	        swimS.sectorTransport(sector, i, f, start, covMat, Z[f], trackTraj, trackCov, A, dA);
+//        	}
+//        	catch (SwimException e) {
+//        		System.out.println("\nTRANSPORT FAIL " + e.getMessage());
+//        		System.out.println("zi = " + iVec.z);
+//        		System.out.println("zf = " + Z[f]);
+//        		System.out.println("WAS CHARGE FLIPPED: " + dcSwim.isChargeFlipped());
+//       	    	System.out.println("iVec:\n" + iVec);
+//        		e.printStackTrace();
+//        		//e.printStackTrace();
+//        	}
+//   	    	return;
+    	}
+    	
         if(iVec==null)
             return;
         //StateVec iVec = trackTraj.get(i);
@@ -118,6 +165,27 @@ public class StateVecs {
         double ty = iVec.ty;
         double Q = iVec.Q;
         double Bf = iVec.B;
+        
+        
+ //       boolean PRINT = (Math.abs(Z[i]-491.90442) < .001) && (Math.abs(Z[f]-494.70984) < 0.001) ;
+        
+        double diff = Z[f]-Z[i];
+        boolean PRINT = (diff < -100);
+        
+        
+
+        if (PRINT && DEBUG) {
+            System.out.println("\nTRANSPORT from Zi = " + Z[i] + " to  Zf = " + Z[f]);
+            System.out.println("Mag Field Config:");
+            System.out.println(MagneticFields.getInstance().getCurrentConfigurationMultiLine());
+        	System.out.println("sector = " + sector);
+        	System.out.println("WAS CHARGE FLIPPED: " + dcSwim.isChargeFlipped());
+          	printStateVec("Initial State Vec:", iVec);
+            printCovMatrix("\nInitial Covariance Matrix:", covMat);
+        }
+        
+        
+        
         // B-field components at state vector coordinates
         dcSwim.Bfield(sector, x, y, Z[i], bf);
         
@@ -146,6 +214,11 @@ public class StateVecs {
         }
         
         int nSteps = (int) (Math.abs((Z[i] - Z[f]) / stepSize) + 1);
+        
+        if (PRINT && DEBUG) {
+        	System.out.println("\nNum Steps = " + nSteps);
+        }
+        
 
         double s  = (Z[f] - Z[i]) / (double) nSteps;
         double z = Z[i];
@@ -156,7 +229,7 @@ public class StateVecs {
             if (j == nSteps - 1) {
                 s = Math.signum(Z[f] - Z[i]) * Math.abs(z - Z[f]);
             }
-
+            
             //B bf = new B(i, z, x, y, tx, ty, s);
             //bfieldPoints.add(bf);
             dcSwim.Bfield(sector, x, y, z, bf);
@@ -223,10 +296,13 @@ public class StateVecs {
 
             // Q  process noise matrix estimate	
             double p = Math.abs(1. / Q);
+            
+            
+            
             double pz = p / Math.sqrt(1 + tx * tx + ty * ty);
             double px = tx * pz;
             double py = ty * pz;
-
+            
             double t_ov_X0 = Math.signum(Z[f] - Z[i]) * s / Constants.ARGONRADLEN; //path length in radiation length units = t/X0 [true path length/ X0] ; Ar radiation length = 14 cm
 
             //double mass = this.MassHypothesis(this.massHypo); // assume given mass hypothesis
@@ -286,9 +362,32 @@ public class StateVecs {
             fCov.covMat = covMat.covMat;
             //CovMat = fCov;
             this.trackCov.put(f, fCov);
+            
+            if (PRINT && DEBUG) {
+            	printStateVec("Final State Vec:", fVec);
+                printCovMatrix("\nFinal Covariance Matrix:", fCov);
+                
+                double dx = fVec.x - iVec.x;
+                double dy = fVec.y - iVec.y;
+                double dz = fVec.z - iVec.z;
+                               
+                System.out.println("dPath = " + dPath + "  Euclidean dist: " + Math.sqrt(dx*dx + dy*dy + dz*dz));
+            }
+
         }
+        
+        if (PRINT && DEBUG) {
+          	DEBUG = false;
+        }
+        
     }
 
+    private void printStateVec(String s, StateVec v) {
+    	System.out.println(s);
+    	double r = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+    	System.out.println(String.format("(%-10.7f, %-10.7f, %-10.7f) |R| = %-8.4f  tx: %-10.7f  ty: %-10.7f  q = %d  p = %-10.7f", 
+    			v.x, v.y, v.z, r, v.tx, v.ty, (v.Q > 0) ? 1 : -1, Math.abs(1. / v.Q)));
+    }
 
     /*
     public class B {
@@ -428,6 +527,23 @@ public class StateVecs {
         this.trackCov.put(0, initCM);
     }
 
+    private void printCovMatrix(String s, CovMat covMat) {
+    	System.out.println(s);
+    	System.out.print("k = " + covMat.k);
+    	Matrix m = covMat.covMat;
+        for (int i = 0; i < 5; i++) {
+        	System.out.println();
+        	for (int j = 0; j < 4; j++) {
+        		System.out.print(String.format("%-12.8f, ", m.get(i, j)));
+        	}
+    		System.out.print(String.format("%-12.8f", m.get(i, 4)));
+        }
+        
+    	System.out.println();
+
+    }
+    
+    
     public void printMatrix(Matrix C) {
         for (int k = 0; k < 5; k++) {
             for (int j = 0; j < 5; j++) {
@@ -471,36 +587,36 @@ public class StateVecs {
         }
         
     }
-    /**
-     * The state vector representing the track at a given measurement site
-     */
-    public class StateVec {
-        
-        final int k;        //index
-        public double z;    //z (fixed measurement planes)
-        public double x;    //track x in the tilted sector coordinate system at z
-        public double y;    //track y in the tilted sector coordinate system at z
-        public double tx;   //track px/pz in the tilted sector coordinate system at z
-        public double ty;   //track py/pz in the tilted sector coordinate system at z
-        public double Q;    //track q/p
-        double B;
-        double deltaPath;
-        
-        StateVec(int k) {
-            this.k = k;
-        }
-    }
+//    /**
+//     * The state vector representing the track at a given measurement site
+//     */
+//    public class StateVec {
+//        
+//        final int k;        //index
+//        public double z;    //z (fixed measurement planes)
+//        public double x;    //track x in the tilted sector coordinate system at z
+//        public double y;    //track y in the tilted sector coordinate system at z
+//        public double tx;   //track px/pz in the tilted sector coordinate system at z
+//        public double ty;   //track py/pz in the tilted sector coordinate system at z
+//        public double Q;    //track q/p
+//        double B;
+//        double deltaPath;
+//        
+//        StateVec(int k) {
+//            this.k = k;
+//        }
+//    }
     /**
      * The track covariance matrix
      */
-    public class CovMat {
-        
-        final int k;
-        public Matrix covMat;
-        
-        CovMat(int k) {
-            this.k = k;
-        }
-        
-    }
+//    public class CovMat {
+//        
+//        final int k;
+//        public Matrix covMat;
+//        
+//        CovMat(int k) {
+//            this.k = k;
+//        }
+//        
+//    }
 }

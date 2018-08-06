@@ -4,14 +4,14 @@ import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.magfield.MagneticFields.FieldType;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swim.Swimming;
+import cnuphys.swim.Trajectory;
 import cnuphys.swim.util.Plane;
 import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
 
 public class PlaneTest {
 
@@ -101,6 +101,8 @@ public class PlaneTest {
 			double pz = p*Math.cos(Math.toRadians(theta));
 			double tp[] = CompareSwimmers.sectorToTilted(px, pz);
 			
+			int q = -1;
+			
 			double tpx = tp[0];
 			double tpz = tp[1];
 			
@@ -113,12 +115,13 @@ public class PlaneTest {
 //			System.out.println("PPHI = " + pphi);
 
 			// swimZ uses CM
-			SwimZStateVector szV = new SwimZStateVector(xo * 100, yo * 100, zo * 100, p, ptheta, pphi);
-			SwimZResult szr = swimZ.sectorAdaptiveRK(1, -1, p, szV, distToPlaneCM, stepSizeCM, hdata);
+			int sector = 1;
+			StateVec szV = new StateVec(xo * 100, yo * 100, zo * 100, q/p, ptheta, pphi);
+			Trajectory szr = swimZ.sectorAdaptiveRK(sector, szV, distToPlaneCM, stepSizeCM, hdata);
 			
 		
-			SwimZStateVector last = szr.last();
-			SwimTest.printSummary("Last for swimZ", szr.size(), p, theta, last, hdata);
+			StateVec last = szr.last();
+			SwimTest.printSummary("Last for swimZ", szr.size(), p, last, hdata);
 			
 			double sr[] = CompareSwimmers.tiltedToSector(last.x, last.z);
 			System.out.println("R in sector coordinates (" + sr[0]/100 + ", " + last.y/100 + ", " + sr[1]/100 + ") m");
@@ -136,7 +139,7 @@ public class PlaneTest {
 			System.out.println("Swim to plane: " + (System.currentTimeMillis()-time));
 			time = System.currentTimeMillis();
 			for (int i = 0; i < 1000; i++) {
-				szr = swimZ.sectorAdaptiveRK(1, -1, p, szV, distToPlaneCM, stepSizeCM, hdata);
+				szr = swimZ.sectorAdaptiveRK(sector, szV, distToPlaneCM, stepSizeCM, hdata);
 			}
 			System.out.println("SwimZ: " + (System.currentTimeMillis()-time));
 
@@ -144,7 +147,7 @@ public class PlaneTest {
 		} catch (RungeKuttaException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (SwimZException e) {
+		} catch (SwimException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

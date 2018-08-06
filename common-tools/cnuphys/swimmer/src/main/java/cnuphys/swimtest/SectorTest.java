@@ -7,12 +7,12 @@ import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.magfield.MagneticFields.FieldType;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
-import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
+import cnuphys.swim.Trajectory;
+import cnuphys.swimS.SwimS;
 
 public class SectorTest {
 
@@ -48,7 +48,7 @@ public class SectorTest {
 		
 		System.out.println("=======");
 		Swimmer swimmer = new Swimmer();
-		SwimZ sz = new SwimZ();
+		SwimS swimS = new SwimS();
 
 		swimmer.getProbe().getField().printConfiguration(System.out);
 		
@@ -107,17 +107,16 @@ public class SectorTest {
 		        SwimTest.printSummary("Last for Swimmer", traj.size(), pTot, lastY, hdata);
 				
 				//swim same with swimZ
-				SwimZStateVector start = new SwimZStateVector(x0*100, y0*100, z0*100, pTot, theta, phi);
-				SwimZStateVector stop = new SwimZStateVector(x0*100, y0*100, z0*100, pTot, theta, phi);
+				StateVec start = new StateVec(x0*100, y0*100, z0*100, charge/pTot, theta, phi);
 
-				SwimZResult szr = null;
+				Trajectory szr = null;
 				try {
-					szr = sz.sectorAdaptiveRK(sector, charge, pTot, start, 100*z, 100*stepSize, hdata);
-				} catch (SwimZException e) {
+					szr = swimS.sectorAdaptiveRK(sector, start, 100*z, 100*stepSize, hdata);
+				} catch (SwimException e) {
 					e.printStackTrace();
 				}
 
-			    SwimTest.printSummary("Last for swimZ", szr.size(), pTot, theta, szr.last(), hdata);
+			    SwimTest.printSummary("Last for swimZ", szr.size(), pTot, szr.last(), hdata);
 
 
 				

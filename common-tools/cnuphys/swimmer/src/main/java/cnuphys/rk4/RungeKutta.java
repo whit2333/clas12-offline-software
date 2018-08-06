@@ -25,11 +25,13 @@ public class RungeKutta {
 	// [x,y,z,vx,vy,vz].
 	private static int MAXDIM = 6; // we'll know if this fails!
 	
-	//object cache
-	private ArrayDeque<HalfStepAdvance> _hafStepAdvCache = new ArrayDeque<>();
+	// use a simple half-step advance
+	private IAdvance _advancer = new HalfStepAdvance();
 
-	//object cache
-	private ArrayDeque<double []> _workArrayCache = new ArrayDeque<>(); 
+	//work arrays
+	private double[] yt = new double[MAXDIM];
+	private double[] yt2 = new double[MAXDIM];
+	private double dydt[] = new double[MAXDIM];
 
 	/**
 	 * Create a RungeKutta object that can be used for integration
@@ -189,18 +191,18 @@ public class RungeKutta {
 	 *            the Butcher Tableau
 	 * @return the number of steps used.
 	 */
-	public int uniformStep(double yo[],
-			double to,
-			double tf,
-			double h,
-			IDerivative deriv,
-			IStopper stopper,
-			IRkListener listener,
-			ButcherTableau tableau) {
-
-		ButcherTableauAdvance advancer = new ButcherTableauAdvance(tableau);
-		return driver(yo, to, tf, h, deriv, stopper, listener, advancer);
-	}
+//	public int uniformStep(double yo[],
+//			double to,
+//			double tf,
+//			double h,
+//			IDerivative deriv,
+//			IStopper stopper,
+//			IRkListener listener,
+//			ButcherTableau tableau) {
+//
+//		ButcherTableauAdvance advancer = new ButcherTableauAdvance(tableau);
+//		return driver(yo, to, tf, h, deriv, stopper, listener, advancer);
+//	}
 
 
 	/**
@@ -332,8 +334,7 @@ public class RungeKutta {
 
 		// ButcherTableauAdvance advancer = new ButcherTableauAdvance(tableau);
 		// use a simple half-step advance
-		IAdvance advancer = new HalfStepAdvance();
-		return driver(yo, to, tf, h, deriv, stopper, listener, advancer, relTolerance, hdata);
+		return driver(yo, to, tf, h, deriv, stopper, listener, _advancer, relTolerance, hdata);
 	}
 	
 
@@ -391,16 +392,7 @@ public class RungeKutta {
 		// ButcherTableauAdvance advancer = new ButcherTableauAdvance(tableau);
 		// use a simple half-step advance
 		
-		HalfStepAdvance advancer;
-		if (_hafStepAdvCache.isEmpty()) {
-			advancer = new HalfStepAdvance();
-		}
-		else {
-			advancer = _hafStepAdvCache.pop();
-		}
-
-		int n = driver(yo, yf, to, tf, h, maxH, deriv, stopper, advancer, relTolerance, hdata);
-		_hafStepAdvCache.push(advancer);
+		int n = driver(yo, yf, to, tf, h, maxH, deriv, stopper, _advancer, relTolerance, hdata);
 		return n;
 	}
 
@@ -539,10 +531,8 @@ public class RungeKutta {
 			double yscale[],
 			double hdata[]) throws RungeKuttaException {
 
-		// ButcherTableauAdvance advancer = new ButcherTableauAdvance(tableau);
 		// use a simple half-step advance
-		IAdvance advancer = new HalfStepAdvance();
-		return driver(yo, to, tf, h, deriv, stopper, listener, advancer, eps, yscale, hdata);
+		return driver(yo, to, tf, h, deriv, stopper, listener, _advancer, eps, yscale, hdata);
 	}
 
 	// copy a vector
@@ -857,9 +847,6 @@ public class RungeKutta {
 		// typically [x, y, z, vx, vy, vz] and derivative
 		
 
-		double yt[] = getWorkArrayFromCache();
-		double yt2[] = getWorkArrayFromCache();
-		double dydt[] = getWorkArrayFromCache();
 		System.arraycopy(uo, 0, yt, 0, nDim);
 		
 		// do we compute error?
@@ -916,11 +903,7 @@ public class RungeKutta {
 						if (stopper.terminateIntegration(t, yt)) {
 							System.arraycopy(yt, 0, uf, 0, nDim);
 						}
-						
-						_workArrayCache.push(yt);
-						_workArrayCache.push(yt2);
-						_workArrayCache.push(dydt);
-						
+												
 						return nstep; // actual number of steps taken
 					}
 				}
@@ -937,12 +920,6 @@ public class RungeKutta {
 		if ((hdata != null) && (nstep > 0)) {
 			hdata[1] = hdata[1] / nstep;
 		}
-		
-		_workArrayCache.push(yt);
-		_workArrayCache.push(yt2);
-		_workArrayCache.push(dydt);
-		
-//		System.out.println("  ****** workarray cache size: " + _workArrayCache.size());
 
 		return nstep;
 	}
@@ -1105,235 +1082,107 @@ public class RungeKutta {
 		return nstep;
 	}
 	
-	private double [] getWorkArrayFromCache() {
-		double array[];
-		if (_workArrayCache.isEmpty()) {
-			array = new double[MAXDIM];
-		}
-		else {
-			array = _workArrayCache.pop();
-		}
-		return array;
-	}
 
-	// A uniform step size advancer
-	class UniformAdvance implements IAdvance {
-
-		@Override
-		public void advance(double t,
-				double[] y,
-				double[] dydt,
-				double h,
-				IDerivative deriv,
-				double[] yout,
-				double[] error) {
-			int nDim = y.length;
-
-			// note that dydt (input) is k1
-			double k1[] = dydt; // the current dreivatives
-			// we need some arrays from the pool
-			
-			
-			double k2[] = getWorkArrayFromCache();
-			double k3[] = getWorkArrayFromCache();
-			double k4[] = getWorkArrayFromCache();
-			double ytemp[] = getWorkArrayFromCache();
-
-			double hh = h * 0.5; // half step
-			double h6 = h / 6.0;
-
-			// advance t to mid point
-			double tmid = t + hh;
-
-			// first step: initial derivs to midpoint
-			// after this,
-			for (int i = 0; i < nDim; i++) {
-				ytemp[i] = y[i] + hh * k1[i];
-			}
-			deriv.derivative(tmid, ytemp, k2);
-
-			// second step (like 1st, but use midpoint just computed derivatives
-			// dyt)
-			for (int i = 0; i < nDim; i++) {
-				ytemp[i] = y[i] + hh * k2[i];
-			}
-			deriv.derivative(tmid, ytemp, k3);
-
-			// third (full) step
-			for (int i = 0; i < nDim; i++) {
-				ytemp[i] = y[i] + h * k3[i];
-			}
-			deriv.derivative(t + h, ytemp, k4);
-
-			for (int i = 0; i < nDim; i++) {
-				yout[i] = y[i] + h6 * (k1[i] + +2.0 * k2[i] + 2 * k3[i] + k4[i]);
-			}
-
-			// return the work arrays to the cache
-			// note k1 is NOT a work array
-			_workArrayCache.push(k2);
-			_workArrayCache.push(k3);
-			_workArrayCache.push(k4);
-			_workArrayCache.push(ytemp);
-		}
-
-		@Override
-		public boolean computesError() {
-			return false;
-		}
-	}
-
-	// simple half stepper for adaptive
-	class HalfStepAdvance implements IAdvance {
-
-		private UniformAdvance uniAdvance;
-
-		public HalfStepAdvance() {
-			// get a uniform advancer
-			uniAdvance = new UniformAdvance();
-		}
-
-		@Override
-		public void advance(double t,
-				double[] y,
-				double[] dydt,
-				double h,
-				IDerivative deriv,
-				double[] yout,
-				double[] error) {
-
-			// System.err.println("HALF STEP ADVANCE");
-			// advance the full step
-			int ndim = y.length;
-			double yfull[] = new double[ndim];
-			uniAdvance.advance(t, y, dydt, h, deriv, yfull, null);
-
-			// advance two half steps
-			// double y1[] = new double[ndim];
-			double h2 = h / 2;
-			double tmid = t + h2;
-			// double newdydt[] = new double[ndim];
-			uniAdvance.advance(t, y, dydt, h2, deriv, yout, null);
-			deriv.derivative(tmid, yout, dydt);
-			uniAdvance.advance(tmid, yout, dydt, h2, deriv, yout, null);
-
-			// compute absolute errors
-			for (int i = 0; i < ndim; i++) {
-				error[i] = Math.abs(yfull[i] - yout[i]);
-				
-//				if (error[i] > 1.0e-10) {
-//				error[i] /= Math.max(Math.abs(yfull[i]),  Math.abs(yout[i]));
+//	// a Butcher Tableau advancer
+//	class ButcherTableauAdvance implements IAdvance {
+//
+//		private ButcherTableau tableau;
+//
+//		public ButcherTableauAdvance(ButcherTableau tableau) {
+//			this.tableau = tableau;
+//		}
+//
+//		@Override
+//		public void advance(double t,
+//				double[] y,
+//				double[] dydt,
+//				double h,
+//				IDerivative deriv,
+//				double[] yout,
+//				double[] error) {
+//
+//			// System.err.println("TABLEAU ADVANCE");
+//			int nDim = y.length;
+//			int numStage = tableau.getS();
+//
+//			double ytemp[] = getWorkArrayFromCache();
+//			double k[][] = new double[numStage + 1][];
+//			k[0] = null; // not used
+//
+//			// k1 is just h*dydt
+//			k[1] = getWorkArrayFromCache();
+//			for (int i = 0; i < nDim; i++) {
+//				k[1][i] = h * dydt[i];
+//			}
+//
+//			// fill the numStage k vectors
+//			for (int s = 2; s <= numStage; s++) {
+//				k[s] = getWorkArrayFromCache();
+//
+//				double ts = t + tableau.c(s);
+//				for (int i = 0; i < nDim; i++) {
+//					ytemp[i] = y[i];
+//					for (int ss = 1; ss < s; ss++) {
+//						ytemp[i] += tableau.a(s, ss) * k[ss][i];
+//					}
 //				}
-			}
-		}
-
-		@Override
-		public boolean computesError() {
-			return true;
-		}
-
-	}
-
-	// a Butcher Tableau advancer
-	class ButcherTableauAdvance implements IAdvance {
-
-		private ButcherTableau tableau;
-
-		public ButcherTableauAdvance(ButcherTableau tableau) {
-			this.tableau = tableau;
-		}
-
-		@Override
-		public void advance(double t,
-				double[] y,
-				double[] dydt,
-				double h,
-				IDerivative deriv,
-				double[] yout,
-				double[] error) {
-
-			// System.err.println("TABLEAU ADVANCE");
-			int nDim = y.length;
-			int numStage = tableau.getS();
-
-			double ytemp[] = getWorkArrayFromCache();
-			double k[][] = new double[numStage + 1][];
-			k[0] = null; // not used
-
-			// k1 is just h*dydt
-			k[1] = getWorkArrayFromCache();
-			for (int i = 0; i < nDim; i++) {
-				k[1][i] = h * dydt[i];
-			}
-
-			// fill the numStage k vectors
-			for (int s = 2; s <= numStage; s++) {
-				k[s] = getWorkArrayFromCache();
-
-				double ts = t + tableau.c(s);
-				for (int i = 0; i < nDim; i++) {
-					ytemp[i] = y[i];
-					for (int ss = 1; ss < s; ss++) {
-						ytemp[i] += tableau.a(s, ss) * k[ss][i];
-					}
-				}
-				deriv.derivative(ts, ytemp, k[s]);
-				for (int i = 0; i < nDim; i++) {
-					k[s][i] *= h;
-				}
-			}
-
-			for (int i = 0; i < nDim; i++) {
-				double sum = 0.0;
-				for (int s = 1; s <= numStage; s++) {
-					sum += tableau.b(s) * k[s][i];
-				}
-				yout[i] = y[i] + sum;
-			}
-
-			// compute error?
-
-			if (tableau.isAugmented() && (error != null)) {
-
-				// absolute error
-				for (int i = 0; i < nDim; i++) {
-					error[i] = 0.0;
-					// error diff 4th and 5th order
-					for (int s = 1; s <= numStage; s++) {
-						error[i] += tableau.bdiff(s) * k[s][i]; // abs error
-					}
-				}
-
-				// relative error
-				// for (int i = 0; i < nDim; i++) {
-				// double sum = 0.0;
-				// for (int s = 1; s <= numStage; s++) {
-				// sum += tableau.bstar(s)*k[s][i];
-				// }
-				// double ystar = y[i] + sum;
-				// error[i] = relativeDiff(yout[i], ystar);
-				// }
-
-				// for (int i = 0; i < nDim; i++) {
-				// System.out.print(String.format("[%-12.5e] ", error[i]));
-				// }
-				// System.out.println();
-
-			}
-
-			// //return the work arrays
-			_workArrayCache.push(ytemp);
-			for (int s = 1; s <= numStage; s++) {
-				_workArrayCache.push((k[s]));
-			}
-		}
-
-		@Override
-		public boolean computesError() {
-			return tableau.isAugmented();
-		}
-
-	}
+//				deriv.derivative(ts, ytemp, k[s]);
+//				for (int i = 0; i < nDim; i++) {
+//					k[s][i] *= h;
+//				}
+//			}
+//
+//			for (int i = 0; i < nDim; i++) {
+//				double sum = 0.0;
+//				for (int s = 1; s <= numStage; s++) {
+//					sum += tableau.b(s) * k[s][i];
+//				}
+//				yout[i] = y[i] + sum;
+//			}
+//
+//			// compute error?
+//
+//			if (tableau.isAugmented() && (error != null)) {
+//
+//				// absolute error
+//				for (int i = 0; i < nDim; i++) {
+//					error[i] = 0.0;
+//					// error diff 4th and 5th order
+//					for (int s = 1; s <= numStage; s++) {
+//						error[i] += tableau.bdiff(s) * k[s][i]; // abs error
+//					}
+//				}
+//
+//				// relative error
+//				// for (int i = 0; i < nDim; i++) {
+//				// double sum = 0.0;
+//				// for (int s = 1; s <= numStage; s++) {
+//				// sum += tableau.bstar(s)*k[s][i];
+//				// }
+//				// double ystar = y[i] + sum;
+//				// error[i] = relativeDiff(yout[i], ystar);
+//				// }
+//
+//				// for (int i = 0; i < nDim; i++) {
+//				// System.out.print(String.format("[%-12.5e] ", error[i]));
+//				// }
+//				// System.out.println();
+//
+//			}
+//
+//			// //return the work arrays
+//			_workArrayCache.push(ytemp);
+//			for (int s = 1; s <= numStage; s++) {
+//				_workArrayCache.push((k[s]));
+//			}
+//		}
+//
+//		@Override
+//		public boolean computesError() {
+//			return tableau.isAugmented();
+//		}
+//
+//	}
 
 	/**
 	 * Set the maximum step size

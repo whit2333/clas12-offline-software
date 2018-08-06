@@ -3,9 +3,9 @@ package cnuphys.swimtest;
 import java.util.Random;
 
 import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
+import cnuphys.swim.Trajectory;
 
 public class SmallDZTest {
 
@@ -28,7 +28,7 @@ public class SmallDZTest {
 		double zTarg[] = new double[num];
 		double stepSizeCM[] = new double[num];
 
-		SwimZStateVector szV[] = new SwimZStateVector[num];
+		StateVec szV[] = new StateVec[num];
 		
 		SwimZ swimZ = new SwimZ();
 
@@ -53,13 +53,13 @@ public class SmallDZTest {
 			
 			
 			//swimZ uses CM
-			szV[i] = new SwimZStateVector(x0[i], y0[i], z0[i], pTot[i], theta[i], phi[i]);
+			szV[i] = new StateVec(x0[i], y0[i], z0[i], charge[i]/pTot[i], theta[i], phi[i]);
 			
 			stepSizeCM[i] = (zTarg[i] - szV[i].z)/delZMax;
 
 		}
 		
-		SwimZStateVector stopSV = new SwimZStateVector();
+		StateVec stopSV = new StateVec();
 
 		//prime the pump
 		System.err.println("priming pump...");
@@ -67,7 +67,7 @@ public class SmallDZTest {
 			try {
 //				System.err.println("[" + (i+1) + "] Swim from z = " + szV[i].z + " to " + zTarg[i]);
 //				
-				int numStep = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], stopSV, zTarg[i], stepSizeCM[i], hdata);
+				int numStep = swimZ.adaptiveRK(szV[i], stopSV, zTarg[i], stepSizeCM[i], hdata);
 //				SwimTest.printSwimZCM(szTraj[i].last(), "Last for swimZ");
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -83,8 +83,8 @@ public class SmallDZTest {
 		
 		for (int i = 0; i < num; i++) {
 			try {
-				int numStep = swimZ.adaptiveRK(charge[i],pTot[i], szV[i], stopSV, zTarg[i], stepSizeCM[i], hdata);
-			} catch (SwimZException e) {
+				int numStep = swimZ.adaptiveRK(szV[i], stopSV, zTarg[i], stepSizeCM[i], hdata);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}
@@ -95,8 +95,8 @@ public class SmallDZTest {
 		time = System.currentTimeMillis();
 		for (int i = 0; i < num; i++) {
 			try {
-				swimZ.parabolicEstimate(charge[i], pTot[i], szV[i], stopSV, zTarg[i]);
-			} catch (SwimZException e) {
+				swimZ.parabolicEstimate(pTot[i], szV[i], stopSV, zTarg[i]);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}

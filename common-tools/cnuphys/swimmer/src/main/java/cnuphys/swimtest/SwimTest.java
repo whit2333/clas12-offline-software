@@ -29,11 +29,11 @@ import cnuphys.magfield.MagneticFieldInitializationException;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
 import cnuphys.swim.SwimMenu;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swim.Swimming;
-import cnuphys.swimZ.SwimZStateVector;
 
 public class SwimTest {
 	
@@ -113,6 +113,8 @@ public class SwimTest {
 		final JMenuItem oneVtwoItem = new JMenuItem("Swimmer vs. SwimZ Test");
 		final JMenuItem polyItem = new JMenuItem("SwimZ vs. Poly Approx Test");
 		final JMenuItem specialItem = new JMenuItem("Special Trouble Cases");
+		final JMenuItem sectorTiltedItem = new JMenuItem("Compare Sector and Tilted Swim");
+		final JMenuItem backwardsItem = new JMenuItem("Backwards Test");
 
 		final JMenuItem planeItem = new JMenuItem("Swim To Plane Test");
 		ActionListener al = new ActionListener() {
@@ -131,11 +133,14 @@ public class SwimTest {
 				else if (e.getSource() == planeItem) {
 					PlaneTest.planeTest();
 				}
+				else if (e.getSource() == backwardsItem) {
+					BackwardsTest.backwardsTest();
+				}
 				else if (e.getSource() == oneVtwoItem) {
 					CompareSwimmers.swimmerVswimmer2Test(3344632211L, 10000);
 				}
 				else if (e.getSource() == specialItem) {
-					CompareSwimmers.specialCaseTest();;
+					CompareSwimmers.specialCaseTest();
 				}
 				else if (e.getSource() == polyItem) {
 					SmallDZTest.smallDZTest(3344632211L, 10000, 100);
@@ -143,11 +148,16 @@ public class SwimTest {
 				else if (e.getSource() == reconfigItem) {
 					MagneticFields.getInstance().removeMapOverlap();
 				}
+				else if (e.getSource() == sectorTiltedItem) {
+					SectorAndTiltedTest.sectorAndTiltedTest();
+				}
+
 				
 			}
 			
 		};
 		
+		backwardsItem.addActionListener(al);	
 		threadItem.addActionListener(al);	
 		createTrajItem.addActionListener(al);	
 		oneVtwoItem.addActionListener(al);	
@@ -155,14 +165,17 @@ public class SwimTest {
 		testSectorItem.addActionListener(al);	
 		reconfigItem.addActionListener(al);	
 		specialItem.addActionListener(al);	
-		planeItem.addActionListener(al);	
+		planeItem.addActionListener(al);
+		sectorTiltedItem.addActionListener(al);
 		menu.add(createTrajItem);
 		menu.add(oneVtwoItem);
-		menu.add(polyItem);
+	//	menu.add(polyItem);
 		menu.add(testSectorItem);
 		menu.add(reconfigItem);
 		menu.add(threadItem);
 		menu.add(specialItem);
+		menu.add(sectorTiltedItem);
+		menu.add(backwardsItem);
 		
 		menu.add(planeItem);
 		return menu;
@@ -334,7 +347,7 @@ public class SwimTest {
 	 * @param v the double vector
 	 * @param s an info string
 	 */
-	public static void printSwimZ(SwimZStateVector v, String s) {
+	public static void printSwimZ(StateVec v, String s) {
 				
 		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f] [%-12.5f, %-12.5f]", s, v.x/100., v.y/100., v.z/100., v.tx, v.ty);
 		System.out.println(out);
@@ -345,7 +358,7 @@ public class SwimTest {
 	 * @param v the double vector
 	 * @param s an info string
 	 */
-	public static void printSwimZCM(SwimZStateVector v, String s) {
+	public static void printSwimZCM(StateVec v, String s) {
 				
 		String out = String.format("%s [%-12.5f, %-12.5f, %-12.5f] [%-12.5f, %-12.5f]", s, v.x, v.y, v.z, v.tx, v.ty);
 		System.out.println(out);
@@ -401,12 +414,12 @@ public class SwimTest {
 	}
 	
 	/**
-	 * Compute the distance between a vector and a SwimZStateVector
+	 * Compute the distance between a vector and a StateVec
 	 * @param v1 the vector (in m)
-	 * @param szv the SwimZStateVector (assumed in cm)
+	 * @param szv the StateVec (assumed in cm)
 	 * @return the euclidean distance between two vectors in meters
 	 */
-	public static double locDiff(double v1[], SwimZStateVector szv) {
+	public static double locDiff(double v1[], StateVec szv) {
 		double dx = szv.x/100. - v1[0];
 		double dy = szv.y/100. - v1[1];
 		double dz = szv.z/100. - v1[2];
@@ -429,9 +442,9 @@ public class SwimTest {
 		}
 		System.out
 				.println(String
-						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
-								y[0], y[1], y[2], R, P * y[3], P * y[4], P
-										* y[5], P));
+						.format("TRAD R: (%9.6f, %9.6f, %9.6f) |R|: %9.6f cm\nP: [%9.6e, %9.6e, %9.6e] |P|:  %9.6e GeV/c\ntx:  %-9.6f  ty:  %-9.6f",
+								100*y[0], 100*y[1], 100*y[2], 100*R, P * y[3], P * y[4], P
+										* y[5], P, y[3]/y[5], y[4]/y[5]));
 		
 		
 		
@@ -439,17 +452,14 @@ public class SwimTest {
 		System.out.println("--------------------------------------\n");
 	}
 	
-	public static void printSummary(String message, int nstep, double momentum, double theta0,
-			SwimZStateVector sv, double hdata[]) {
+	public static void printSummary(String message, int nstep, double momentum,
+			StateVec sv, double hdata[]) {
 		System.out.println(message);
 		double R = Math.sqrt(sv.x * sv.x +sv.y * sv.y + sv.z * sv.z);
 		
-		double pz = momentum/Math.sqrt(1. + sv.tx*sv.tx + sv.ty*sv.ty);
-		double px = sv.tx*pz;
-		double py = sv.ty*pz;
+		double pv[] = sv.getThreeMomentum();
 		
-		double norm = Math.sqrt(px*px + py*py + pz*pz)/momentum;
-		double P = momentum * norm;
+		double norm = sv.getP()/momentum;
 
 		System.out.println("Number of steps: " + nstep);
 
@@ -458,10 +468,12 @@ public class SwimTest {
 			System.out.println("avg stepsize: " + hdata[1]);
 			System.out.println("max stepsize: " + hdata[2]);
 		}
+		
+//		System.out.println(sv.toString());
 		System.out
 				.println(String
-						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f m\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c",
-								sv.x/100, sv.y/100, sv.z/100, R/100, px, py, pz, P));
+						.format("R = [%9.6f, %9.6f, %9.6f] |R| = %9.6f cm\nP = [%9.6e, %9.6e, %9.6e] |P| =  %9.6e GeV/c\nPz sign: %d   tx: %-8.5f  ty: tx: %-8.5f",
+								sv.x, sv.y, sv.z, R, pv[0], pv[1], pv[2], sv.getP(), sv.pzSign, sv.tx, sv.ty));
 		System.out.println("norm (should be 1): " + norm);
 		System.out.println("--------------------------------------\n");
 	}

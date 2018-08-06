@@ -287,6 +287,7 @@ public class MagneticFields {
 
 	}
 
+	private static final double TINY = 1.0e-5;
 	/**
 	 * Shift the solenoid along Z for misplacement. A negative shift moved the
 	 * solenoid upstream.
@@ -295,8 +296,14 @@ public class MagneticFields {
 	 *            the shift in cm
 	 */
 	public void setSolenoidShift(double shiftZ) {
+		
 		if (_solenoid != null) {
+			if ((Math.abs(_solenoid._shiftZ - shiftZ) > TINY)) {
 			_solenoid.setShiftZ(shiftZ);
+			}
+			else {
+				System.out.println("Ignored inconsequential shift change for solenoid.");
+			}
 		}
 	}
 
@@ -450,7 +457,11 @@ public class MagneticFields {
 	 *            one of the enum values
 	 */
 	public void setActiveField(FieldType ftype) {
-		// init();
+		
+		if (ftype == getActiveFieldType()) {
+			return;
+		}
+		
 		switch (ftype) {
 		case TORUS:
 			_activeField = _torus;
@@ -1781,8 +1792,35 @@ public class MagneticFields {
 		
 		return s;
 	}
-
 	
+	public String getCurrentConfigurationMultiLine() {
+		String s = getActiveFieldType().name() + "\n";
+				
+		//TORUS, SOLENOID, COMPOSITE, COMPOSITEROTATED, ZEROFIELD
+		switch (getActiveFieldType()) {
+		case TORUS:
+			s += String.format("Torus [%s] scale: %-7.3f\n", _torus.getBaseFileName(), _torus.getScaleFactor());
+			break;
+		case SOLENOID:
+			s += String.format("Solenoid [%s] scale: %-7.3f\n", _solenoid.getBaseFileName(), _solenoid.getScaleFactor());
+			break;
+		case COMPOSITE: case COMPOSITEROTATED:
+			s += String.format("Solenoid [%s] scale: %-7.3f\n", _solenoid.getBaseFileName(), _solenoid.getScaleFactor());
+			s += String.format("Torus [%s] scale: %-7.3f\n", _torus.getBaseFileName(), _torus.getScaleFactor());
+			break;
+		case ZEROFIELD:
+			s += " zero field";
+			break;
+		}
+		
+		return s;
+	}
+
+
+	/**
+	 * Print a one line version of the magnetic field configuration
+	 * @param ps the print stream
+	 */
 	public void printCurrentConfiguration(PrintStream ps) {
 		ps.println("Current magfied configuration: ");
 		getActiveField().printConfiguration(ps);

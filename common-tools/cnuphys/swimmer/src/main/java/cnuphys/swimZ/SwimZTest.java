@@ -5,8 +5,11 @@ import cnuphys.magfield.FastMath;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
 import cnuphys.rk4.RungeKuttaException;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
+import cnuphys.swim.Trajectory;
 
 /**
  * A set of methods for testing the swim Z package
@@ -55,7 +58,6 @@ public class SwimZTest {
 //		testAdaptiveEndpointOnly(numTest);
 //		testCovMatProp(numTest);
 //		testAdaptive(numTest);
-		testUniform(numTest);
 	}
 
 	private static void header(String s) {
@@ -76,17 +78,17 @@ public class SwimZTest {
 		header("SwimZ PARABOLIC APPROX");
 
 		// the new swimmer
-		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
+		StateVec start = new StateVec(xo, yo, zo, Q/p, theta, phi);
 
-		SwimZResult result = null;
-		SwimZStateVector last = null;
+		Trajectory result = null;
+		StateVec last = null;
 
 		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				result = sz.parabolicEstimate(Q, p, start, zf, parabolicStepSize);
-			} catch (SwimZException e) {
+				result = sz.parabolicEstimate(start, zf, parabolicStepSize);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}
@@ -96,46 +98,22 @@ public class SwimZTest {
 	}
 	
 
-	// test the new SwimZ uniform integrator
-	private static void testUniform(int numTimes) {
-//
-//		header("SwimZ UNIFORM");
-//
-//		// the new swimmer
-//		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
-//
-//		SwimZResult result = null;
-//		SwimZStateVector last = null;
-//
-//		SwimZ sz = new SwimZ();
-//		long startTime = System.currentTimeMillis();
-//		for (int i = 0; i < numTimes; i++) {
-//			try {
-//				result = sz.uniformRK4(Q, p, start, zf, uniformStepSize);
-//			} catch (SwimZException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//		double timePerSwim = ((double) (System.currentTimeMillis() - startTime)) / numTimes;
-//		partialReport(result, timePerSwim, "Z UNIFORM");
-//		footer("SwimZ UNIFORM");
-	}
 
 	private static void testAdaptive(int numTimes) {
 		header("SwimZ ADAPTIVE");
 
 		// the new swimmer
-		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
+		StateVec start = new StateVec(xo, yo, zo, Q/p, theta, phi);
 
-		SwimZResult result = null;
+		Trajectory result = null;
 		double hdata[] = new double[3];
 
 		SwimZ sz = new SwimZ();
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				result = sz.adaptiveRK(Q, p, start, zf, adaptiveInitStepSize, hdata);
-			} catch (SwimZException e) {
+				result = sz.adaptiveRK(start, zf, adaptiveInitStepSize, hdata);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}
@@ -144,41 +122,12 @@ public class SwimZTest {
 		hdataReport(hdata, 1);
 		footer("SwimZ ADAPTIVE");
 	}
-	private static void testCovMatProp(int numTimes) {
-		header("SwimZ COV MAT PROP");
-
-		// the new swimmer
-		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
-		SwimZStateVector stop = new SwimZStateVector(xo, yo, zo, p, theta, phi);
-
-		double hdata[] = new double[3];
-		int numStep = 0;
-
-		SwimZ sz = new SwimZ();
-		long startTime = System.currentTimeMillis();
-		
-		
-		Matrix covMat = new Matrix(5, 5);
-		
-		for (int i = 0; i < numTimes; i++) {
-			try {
-				numStep = sz.transport(Q, p, start, stop, covMat, zf, adaptiveInitStepSize, hdata);
-			} catch (SwimZException e) {
-				e.printStackTrace();
-			}
-		}
-		double timePerSwim = ((double) (System.currentTimeMillis() - startTime)) / numTimes;
-		System.out.println("Number of steps: " + numStep);
-		partialReport(start, stop, timePerSwim, "Z ADAPTIVE");
-		hdataReport(hdata, 1);
-		footer("SwimZ COV MAT PROP");
-	}
 	private static void testAdaptiveEndpointOnly(int numTimes) {
 		header("SwimZ ADAPTIVE ENDPOINT ONLY");
 
 		// the new swimmer
-		SwimZStateVector start = new SwimZStateVector(xo, yo, zo, p, theta, phi);
-		SwimZStateVector stop = new SwimZStateVector(xo, yo, zo, p, theta, phi);
+		StateVec start = new StateVec(xo, yo, zo, Q/p, theta, phi);
+		StateVec stop = new StateVec(xo, yo, zo, Q/p, theta, phi);
 
 		double hdata[] = new double[3];
 		int numStep = 0;
@@ -187,8 +136,8 @@ public class SwimZTest {
 		long startTime = System.currentTimeMillis();
 		for (int i = 0; i < numTimes; i++) {
 			try {
-				numStep = sz.adaptiveRK(Q, p, start, stop, zf, adaptiveInitStepSize, hdata);
-			} catch (SwimZException e) {
+				numStep = sz.adaptiveRK(start, stop, zf, adaptiveInitStepSize, hdata);
+			} catch (SwimException e) {
 				e.printStackTrace();
 			}
 		}
@@ -224,7 +173,7 @@ public class SwimZTest {
 		footer("Old Swimmer UNIFORM");
 	}
 
-	private static void partialReport(SwimZResult result, double timePerSwim, String name) {
+	private static void partialReport(Trajectory result, double timePerSwim, String name) {
 		double p3v[] = result.getFinalThreeMomentum();
 		// check
 		double pf = Math.sqrt(p3v[0] * p3v[0] + p3v[1] * p3v[1] + p3v[2] * p3v[2]);
@@ -243,7 +192,7 @@ public class SwimZTest {
 		System.out.println("p: " + pf + " GeV/c" + " time/swim: " + timePerSwim + " ms");
 	}
 	
-	private static void partialReport(SwimZStateVector start, SwimZStateVector stop, double timePerSwim, String name) {
+	private static void partialReport(StateVec start, StateVec stop, double timePerSwim, String name) {
 //		double p3v[] = result.getFinalThreeMomentum();
 //		// check
 //		double pf = Math.sqrt(p3v[0] * p3v[0] + p3v[1] * p3v[1] + p3v[2] * p3v[2]);

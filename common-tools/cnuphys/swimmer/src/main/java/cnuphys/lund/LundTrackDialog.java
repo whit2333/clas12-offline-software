@@ -29,13 +29,13 @@ import cnuphys.magfield.FastMath;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.rk4.RungeKuttaException;
 import cnuphys.swim.DefaultSwimStopper;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.SwimException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swim.Swimming;
+import cnuphys.swim.Trajectory;
 import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
 
 @SuppressWarnings("serial")
 public class LundTrackDialog extends JDialog {
@@ -274,13 +274,13 @@ public class LundTrackDialog extends JDialog {
 					SwimTrajectory traj = null;
 					if (_swimZ.isSelected()) {
 						System.err.println("SwimZ swimmer");
-						SwimZStateVector start = new SwimZStateVector(xo * 100, yo * 100, zo * 100, momentum, theta,
+						StateVec start = new StateVec(xo * 100, yo * 100, zo * 100, lid.getCharge()/momentum, theta,
 								phi);
 						SwimZ sz = new SwimZ();
 
 						double adaptiveInitStepSize = 0.5;
 
-						SwimZResult result = sz.adaptiveRK(lid.getCharge(), momentum, start, ztarget,
+						Trajectory result = sz.adaptiveRK(start, ztarget,
 								adaptiveInitStepSize, hdata);
 						partialReport(result, "Z ADAPTIVE");
 						traj = result.toSwimTrajectory();
@@ -305,12 +305,12 @@ public class LundTrackDialog extends JDialog {
 			} catch (RungeKuttaException e) {
 				e.printStackTrace();
 			}
-		} catch (SwimZException e) {
+		} catch (SwimException e) {
 			System.err.println("Swimming failed. See the log for more details.");
 		}
 	}
 
-	private static void partialReport(SwimZResult result, String name) {
+	private static void partialReport(Trajectory result, String name) {
 		double p3v[] = result.getFinalThreeMomentum();
 		// check
 		double pf = Math.sqrt(p3v[0] * p3v[0] + p3v[1] * p3v[1] + p3v[2] * p3v[2]);

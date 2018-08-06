@@ -14,9 +14,9 @@ import cnuphys.rk4.RungeKuttaException;
 import cnuphys.swim.SwimTrajectory;
 import cnuphys.swim.Swimmer;
 import cnuphys.swimZ.SwimZ;
-import cnuphys.swimZ.SwimZException;
-import cnuphys.swimZ.SwimZResult;
-import cnuphys.swimZ.SwimZStateVector;
+import cnuphys.swim.SwimException;
+import cnuphys.swim.Trajectory;
+import cnuphys.swim.StateVec;
 import cnuphys.magfield.TorusMap;
 import org.jlab.rec.dc.Constants;
 import org.jlab.utils.CLASResources;
@@ -193,8 +193,8 @@ public class DCSwimmer2 {
             return null;
         }
         
-        //use a SwimZResult instead of a trajectory (dph)
-        SwimZResult szr = null;
+        //use a Trajectory instead of a SwimTrajectory (dph)
+        Trajectory szr = null;
         
         SwimTrajectory traj = null;
         double hdata[] = new double[3];
@@ -210,11 +210,11 @@ public class DCSwimmer2 {
 				double stepSizeCM = stepSize * 100; // convert to cm
 				
 				//create the starting SwimZ state vector
-				SwimZStateVector start = new SwimZStateVector(_x0 * 100, _y0 * 100, _z0 * 100, _pTot, _theta, _phi);
+				StateVec start = new StateVec(_x0 * 100, _y0 * 100, _z0 * 100, _charge/_pTot, _theta, _phi);
 
 				try {
-					szr = tiltedZSwimmer.sectorAdaptiveRK(sector, _charge, _pTot, start, z_cm, stepSizeCM, hdata);
-				} catch (SwimZException e) {
+					szr = tiltedZSwimmer.sectorAdaptiveRK(sector, start, z_cm, stepSizeCM, hdata);
+				} catch (SwimException e) {
 					szr = null;
 					System.err.println("[WARNING] Tilted SwimZ Failed for p = " + _pTot);
 				}
@@ -224,8 +224,8 @@ public class DCSwimmer2 {
 				double bdl = szr.sectorGetBDL(sector, tiltedZSwimmer.getProbe());
 				double pathLength = szr.getPathLength(); // already in cm
 
-				SwimZStateVector last = szr.last();
-				double p3[] = szr.getThreeMomentum(last);
+				StateVec last = szr.last();
+				double p3[] = last.getThreeMomentum();
 
 				value[0] = last.x; // xf in cm
 				value[1] = last.y; // yz in cm
@@ -275,8 +275,8 @@ public class DCSwimmer2 {
         SwimTrajectory traj = null;
         double hdata[] = new double[3];
         
-        //use a SwimZResult instead of a trajectory (dph)
-        SwimZResult szr = null;
+        //use a Trajectory instead of a SwimTrajectory (dph)
+        Trajectory szr = null;
 
         try {
          	
@@ -289,11 +289,11 @@ public class DCSwimmer2 {
 				double stepSizeCM = stepSize * 100; // convert to cm
 
 				//create the starting SwimZ state vector
-				SwimZStateVector start = new SwimZStateVector(_x0 * 100, _y0 * 100, _z0 * 100, _pTot, _theta, _phi);
+				StateVec start = new StateVec(_x0 * 100, _y0 * 100, _z0 * 100, _charge/_pTot, _theta, _phi);
 
 				try {
-					szr = labZSwimmer.adaptiveRK(_charge, _pTot, start, z_cm, stepSizeCM, hdata);
-				} catch (SwimZException e) {
+					szr = labZSwimmer.adaptiveRK(start, z_cm, stepSizeCM, hdata);
+				} catch (SwimException e) {
 					szr = null;
 					System.err.println("[WARNING] SwimZ Failed for p = " + _pTot);
 
@@ -304,8 +304,8 @@ public class DCSwimmer2 {
 				double bdl = szr.getBDL(labZSwimmer.getProbe());
 				double pathLength = szr.getPathLength(); // already in cm
 
-				SwimZStateVector last = szr.last();
-				double p3[] = szr.getThreeMomentum(last);
+				StateVec last = szr.last();
+				double p3[] = last.getThreeMomentum();
 
 				value[0] = last.x; // xf in cm
 				value[1] = last.y; // yz in cm

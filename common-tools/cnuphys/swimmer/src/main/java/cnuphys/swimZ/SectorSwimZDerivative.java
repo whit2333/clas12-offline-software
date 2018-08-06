@@ -28,7 +28,6 @@ public class SectorSwimZDerivative extends SwimZDerivative {
 	 */
 	public void set(int sector, int Q, double p, FieldProbe probe) {
 		_sector = sector;
-		_probe = probe;
 		set(Q, p, probe);
 	}
 

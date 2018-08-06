@@ -18,6 +18,9 @@ public class SwimZDerivative implements IDerivative {
 	//hold the mag field
 	protected float B[] = new float[3];
 
+	/**
+	 * Null constructor
+	 */
 	public SwimZDerivative() {
 		set(0, Double.NaN, null);
 	}
@@ -49,7 +52,7 @@ public class SwimZDerivative implements IDerivative {
 	public void set(int Q, double p, FieldProbe probe) {
 		_q = Q / p;
 		_probe = probe;
-		_qv = _q * SwimZ.C;
+		_qv = _q * SwimZ.speedLight;
 	}
 
 	/**
@@ -78,11 +81,8 @@ public class SwimZDerivative implements IDerivative {
 		double txsq = tx * tx;
 		double tysq = ty * ty;
 		double fact = FastMath.sqrt(1 + txsq + tysq);
-//		double txty = tx*ty;
 		double Ax = fact * (ty * (tx * B[0] + B[2]) - (1 + txsq) * B[1]);
 		double Ay = fact * (-tx * (ty * B[1] + B[2]) + (1 + tysq) * B[0]);
-//		double Ax = fact * (txty * B[0] + ty*B[2] - (1 + txsq) * B[1]);
-//		double Ay = fact * (-txty * B[1] - tx*B[2] + (1 + tysq) * B[0]);
 
 		dxdz[0] = tx;
 		dxdz[1] = ty;

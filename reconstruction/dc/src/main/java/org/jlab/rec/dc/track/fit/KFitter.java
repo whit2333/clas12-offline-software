@@ -6,8 +6,12 @@ import java.util.List;
 import org.jlab.clas.swimtools.Swim;
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.rec.dc.track.Track;
-import org.jlab.rec.dc.track.fit.StateVecs.CovMat;
-import org.jlab.rec.dc.track.fit.StateVecs.StateVec;
+//import org.jlab.rec.dc.track.fit.StateVecs.CovMat;
+//import org.jlab.rec.dc.track.fit.StateVecs.StateVec;
+
+import cnuphys.swim.CovMat;
+import cnuphys.swim.StateVec;
+
 
 public class KFitter {
 
