@@ -26,7 +26,7 @@ public class RungeKuttaS {
 
 	//think in cm
 	public static double DEFMINSTEPSIZE = 1.0e-3;
-	public static double DEFMAXSTEPSIZE = 40;
+	public static double DEFMAXSTEPSIZE = 1;
 	
 	private double _minStepSize = DEFMINSTEPSIZE;
 	private double _maxStepSize = DEFMAXSTEPSIZE;

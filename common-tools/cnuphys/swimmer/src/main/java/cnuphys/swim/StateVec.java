@@ -47,7 +47,7 @@ public class StateVec {
 	//fails catastrophically for trajectories in which particles change
 	//direction in Z (loopers)
 	public int pzSign = +1;
-
+	
 	/**
 	 * Create a state vector for the SwimZ package
 	 * with all NaNs for the components and +1 for sign of pZ
@@ -191,8 +191,8 @@ public class StateVec {
 		this.z = z;
 		x = v[0];
 		y = v[1];
-		tx = v[0];
-		ty = v[1];
+		tx = v[2];
+		ty = v[3];
 	}
 
 	/**
@@ -346,7 +346,7 @@ public class StateVec {
 		double py = pz*ty;
 
 		sb.append(String.format("R = [%-10.7f, %-10.7f, %-10.7f] |R| = %7.4f cm  ", x, y, z, r));
-		sb.append("B: " + B);
+		sb.append("\nB: " + B + " dPath: " + deltaPath);
 		sb.append(String.format("\npvec = [%-10.7f, %-10.7f, %-10.7f] Gev/c  ", px, py, pz));
 		sb.append(String.format("\np: %-9.6f GeV/c   theta: %-9.6f   phi: %-9.6f  ", getP(), getTheta(), getPhi()));
 		sb.append(String.format("\nQ: %-9.6f  tx: %-10.7f  ty: %-10.7f    charge: %d  pzSign: %d", Q, tx, ty, getCharge(), pzSign));

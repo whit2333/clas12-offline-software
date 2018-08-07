@@ -4,6 +4,7 @@ import Jama.Matrix;
 import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.IMagField;
 import cnuphys.magfield.MagneticField;
+import cnuphys.magfield.RotatedCompositeProbe;
 
 /**
  * A base class for both SwimZ and Swim S
@@ -140,5 +141,17 @@ public abstract class Swim {
 		System.out.println();
 
 	}	
+	
+	// compute the field in Tesla
+	public static void teslaField(RotatedCompositeProbe probe, int sector, double x, double y, double z,
+			float[] result) {
+		probe.field(sector, (float) x, (float) y, (float) z, result);
+
+		// to tesla from kG
+		for (int i = 0; i < 3; i++) {
+			result[i] /= 10;
+		}
+	}
+
 
 }

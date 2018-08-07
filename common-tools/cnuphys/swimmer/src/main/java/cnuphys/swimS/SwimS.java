@@ -1,18 +1,13 @@
 package cnuphys.swimS;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import Jama.Matrix;
+import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.IMagField;
 import cnuphys.magfield.MagneticField;
-import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.RotatedCompositeProbe;
-import cnuphys.magfield.MagneticFields.FieldType;
 import cnuphys.rk4.IStopper;
 import cnuphys.rk4.RungeKuttaException;
 import cnuphys.rk4.RungeKuttaS;
-import cnuphys.swim.CovMat;
-import cnuphys.swim.CovMatTransport;
 import cnuphys.swim.StateVec;
 import cnuphys.swim.Swim;
 import cnuphys.swim.SwimException;
@@ -34,9 +29,6 @@ import cnuphys.swim.Trajectory;
  */
 public class SwimS extends Swim {
 	
-	/** Argon radiation length in cm used for reconstruction */
-	public static final double ARGONRADLEN = 14.;
-
 	// need an integrator
 	private RungeKuttaS _rkS = new RungeKuttaS();
 	
@@ -84,8 +76,18 @@ public class SwimS extends Swim {
 	public SwimS(IMagField magneticField) {
 		super(magneticField);
 	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field probe
+	 * 
+	 * @param probe
+	 *            the magnetic field probe
+	 */
+	public SwimS(FieldProbe probe) {
+		super(probe);
+	}
 
-
+	
 	/**
 	 * Set the tolerance used by the CLAS_Tolerance array
 	 * 
@@ -420,86 +422,6 @@ public class SwimS extends Swim {
 		System.out.println(String.format("(%-9.6f, %-9.6f, %-9.6f, %-9.6f, %-9.6f, %-9.6f)", u[0], u[1], u[2], u[3], u[4], u[5]));
 	}
 	
-
-
-	private static void transportTest() {
-		System.out.println("Testing transport");
-		MagneticFields.getInstance().initializeMagneticFields();
-		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
-		MagneticFields.getInstance().getTorus().setScaleFactor(-0.5);
-		MagneticFields.getInstance().getSolenoid().setScaleFactor(0);
-		System.out.println(MagneticFields.getInstance().getCurrentConfigurationMultiLine());
-
-		
-		RotatedCompositeProbe rcp = new RotatedCompositeProbe(MagneticFields.getInstance().getRotatedCompositeField());
-		int sector = 1;
-		System.out.println("sector: " + sector);
-		
-		double zi = 528.8406160000001;
-		double zf = 229.23648;
-		int pzSign = (zf > zi) ? 1 : -1;
-		
-		// momentum and charge
-		double p = 1.2252495;
-		int q = -1;
-
-		double Q = q/p;
-
-		// the initial state vector
-		StateVec iv = new StateVec(-119.8901385, 0.5410029 , zi, -0.0287247,
-				-0.0083868, Q, pzSign);
-				
-		
-		System.out.println("Initial State Vector TILTED): " + iv);
-		
-
-			double array[][] = { { 5.26357439  , -1.64761026 , 0.04338227  , -0.00814181 , 0.01041586 },
-					{ -1.64761026 , 304.13559440, -0.04366342 , 1.24484383  , 0.00310091 },
-					{0.04338227  , -0.04366342 , 0.00091018  , -0.00020141 , 0.00011534 },
-					{-0.00814181 , 1.24484383  , -0.00020141 , 0.00702420  , 0.00000639},
-					{0.01041586  , 0.00310091  , 0.00011534  , 0.00000639  , 0.00132762} };
-
-			Matrix m = new Matrix(array);
-			CovMat covMat = new CovMat(10, m);
-			CovMat covMat2 = new CovMat(covMat);
-			printCovMatrix("Initial cov matrix", covMat);
-
-			// OK let's try the real transport
-
-			double[] A = new double[2];
-			double[] dA = new double[4];
-			
-			HashMap<Integer, StateVec> trajMap = new HashMap<>();
-			HashMap<Integer, CovMat> matMap = new HashMap<>();
-
-			StateVec fb = CovMatTransport.basicTransport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-			System.out.println("\nTRANSPORT fV:\n" + fb);
-
-			printCovMatrix("\nfinal cov matrix BASIC", covMat);
-			
-			StateVec fv = CovMatTransport.transport(rcp, sector, 0, 0, iv, covMat2, zf, trajMap, matMap, A, dA);	
-			
-			System.out.println("TRANSPORT fV:\n" + fv);
-			printCovMatrix("\nfinal cov matrix TRANSPORT", covMat2);	
-			
-			System.out.println("\n\nFinal Vec from Swimming\n");
-			SwimS swimS = new SwimS();
-			iv = new StateVec(-119.8901385, 0.5410029 , zi, -0.0287247,
-					-0.0083868, Q, pzSign);
-			
-			double[] hdata = new double[3];
-			try {
-				Trajectory traj = swimS.sectorAdaptiveRK(sector, iv, zf, 0.01, hdata);
-				StateVec last = traj.last();
-				System.out.println(last);
-			} catch (SwimException e) {
-				e.printStackTrace();
-			}
-	}
-
-	public static void main(String arg[]) {
-		transportTest();
-	}
 
 
 }
