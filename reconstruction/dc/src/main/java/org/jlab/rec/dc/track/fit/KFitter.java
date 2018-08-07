@@ -76,12 +76,12 @@ public class KFitter {
                 sv.transport(sector, k, k + 1, sv.trackTraj.get(k), sv.trackCov.get(k));
                 //sv.trackTraj.add(k+1, sv.StateVec); 
                 //sv.trackCov.add(k+1, sv.CovMat);
-                // System.out.println((k)+"] trans "+sv.trackTraj.get(k).x+","+sv.trackTraj.get(k).y+","+
-                //		sv.trackTraj.get(k).z+","+sv.trackTraj.get(k).tx+","+sv.trackTraj.get(k).ty+" "+1./sv.trackTraj.get(k).Q); 
+//               System.out.println((k)+"] trans "+sv.trackTraj.get(k).x+","+sv.trackTraj.get(k).y+","+
+//                		sv.trackTraj.get(k).z+","+sv.trackTraj.get(k).tx+","+sv.trackTraj.get(k).ty+" "+1./sv.trackTraj.get(k).Q); 
                 if(useFilter)
                     this.filter(k + 1);
             }
-            if(i>1) {
+            if(i>=1) {
                 //this.calcFinalChisq();
                 //if(this.chi2>1000000) {
                 //    i = totNumIter;
