@@ -5,23 +5,16 @@ import java.util.Map;
 import Jama.Matrix;
 import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.RotatedCompositeProbe;
-import cnuphys.swim.halfstep.AAdvancingObject;
+import cnuphys.swim.halfstep.AdvancingObject;
+import cnuphys.swimS.SwimS;
+import cnuphys.swimZ.SectorSwimZDerivative;
 import cnuphys.swim.halfstep.Advance;
 
 public class CovMatTransport {
 
-	public static final double ERROR = 0.1;
+	public static final double ERROR = 0.01;
 	public static final double MINSTEP = 1.0e-5; // cm
-
-	/**
-	 * Veronique's basic transport
-	 * 
-	 * @param sector
-	 * @param i
-	 * @param f
-	 * @param iVec
-	 * @param covMat
-	 */
+	
 	static boolean DEBUG = false;
 
 	public static StateVec transport(final RotatedCompositeProbe probe, final int sector, final int i, int f,
@@ -31,41 +24,46 @@ public class CovMatTransport {
 																						// signed
 																						// step-size
 
-		CovMatAdvancer advancer = new CovMatAdvancer(probe, sector, i, f, iVec, covMat, zf, trackTraj, trackCov, A, dA);
-		int numComputes = Advance.advance(advancer, iVec.z, zf, Math.abs(zf - iVec.z) / 10, ERROR, MINSTEP);
-		System.out.println("\n**Number of computes = " + numComputes);
-		return advancer.fV;
+		if (iVec == null) {
+			return null;
+		}
 
+		//the original iVec is unchanged
+		StateVec start = new StateVec(iVec);
+		
+		CovMatAdvancer advancer = new CovMatAdvancer(probe, sector, i, f, start, covMat, zf, trackTraj, trackCov, A, dA);
+		int numComputes = Advance.advance(advancer, start.z, zf, Math.abs(zf - start.z) / 10, ERROR, MINSTEP);
+		System.out.println("\n**Number of computes = " + numComputes);
+		return advancer.getEnd();
+		
 	}
 
-	public static StateVec oneStep(RotatedCompositeProbe probe, int sector, int i, int f, StateVec iVec, CovMat covMat,
+	public static void oneStep(RotatedCompositeProbe probe, int sector, int i, int f, StateVec start, StateVec end, CovMat covMat,
 			double zf, Map<Integer, StateVec> trackTraj, Map<Integer, CovMat> trackCov, double[] A, double[] dA) {
 
 	//	System.out.println("CALLING ONE STEP");
-		
-		if (iVec == null)
-			return null;
 
 		double[][] u = new double[5][5];
 		double[][] C = new double[5][5];
 
-		double x = iVec.x;
-		double y = iVec.y;
-		double tx = iVec.tx;
-		double ty = iVec.ty;
-		double Q = iVec.Q;
-
+		//iVec is only used for its current values. It remains unchanged
+		double x = start.x;
+		double y = start.y;
+		double tx = start.tx;
+		double ty = start.ty;
+		double Q = start.Q;
+		
 		float[] bf = new float[3];
 
-		double diff = zf - iVec.z;
-		boolean PRINT = (diff < -100);
+//		double diff = zf - start.z;
 
-		double s = (zf - iVec.z);
-		double z = iVec.z;
+		double s = (zf - start.z);
+		double z = start.z;
 		double dPath = 0;
 
 		// get the sign of the step
-		s = Math.signum(zf - iVec.z) * Math.abs(z - zf);
+		s = Math.signum(zf - start.z) * Math.abs(z - zf);
+		System.out.println("S = " + s);
 
 		// B bf = new B(i, z, x, y, tx, ty, s);
 		// bfieldPoints.add(bf);
@@ -86,31 +84,21 @@ public class CovMatTransport {
 		double dely_delQ = 0.5 * Swim.speedLight * s * s * A[1];
 		double delty_delQ = Swim.speedLight * s * A[1];
 
-		// double transpStateJacobian00=1;
-		// double transpStateJacobian01=0;
 		double transpStateJacobian02 = delx_deltx0;
 		double transpStateJacobian03 = delx_delty0;
 		double transpStateJacobian04 = delx_delQ;
-		// double transpStateJacobian10=0;
-		// double transpStateJacobian11=1;
+
 		double transpStateJacobian12 = dely_deltx0;
 		double transpStateJacobian13 = dely_delty0;
 		double transpStateJacobian14 = dely_delQ;
-		// double transpStateJacobian20=0;
-		// double transpStateJacobian21=0;
-		// double transpStateJacobian22=1;
+
 		double transpStateJacobian23 = deltx_delty0;
 		double transpStateJacobian24 = deltx_delQ;
-		// double transpStateJacobian30=0;
-		// double transpStateJacobian31=0;
+
 		double transpStateJacobian32 = delty_deltx0;
-		// double transpStateJacobian33=1;
+
 		double transpStateJacobian34 = delty_delQ;
-		// double transpStateJacobian40=0;
-		// double transpStateJacobian41=0;
-		// double transpStateJacobian42=0;
-		// double transpStateJacobian43=0;
-		// double transpStateJacobian44=1;
+
 
 		// covMat = FCF^T; u = FC;
 		for (int j1 = 0; j1 < 5; j1++) {
@@ -144,7 +132,7 @@ public class CovMatTransport {
 		double px = tx * pz;
 		double py = ty * pz;
 
-		double t_ov_X0 = Math.signum(zf - iVec.z) * s / Swim.ARGONRADLEN; 
+		double t_ov_X0 = Math.signum(zf - start.z) * s / Swim.ARGONRADLEN; 
 
 		// double mass = this.MassHypothesis(this.massHypo); // assume given
 		// mass hypothesis
@@ -172,48 +160,60 @@ public class CovMatTransport {
 			C[3][3] += cov_tyty;
 		}
 
+		//update the covariance matrix
 		covMat.covMat = new Matrix(C);
+		
+//		Swim.printCovMatrix("UPDATED COV MAT", covMat);
+		
+		SectorSwimZDerivative szd = new SectorSwimZDerivative();
+		szd.set(sector, start.getCharge(), pathLength, probe);
+		double xx[] = {x, y, tx, ty};
+		double dd[] = new double[4];
+		szd.derivative(z, xx, dd);
+		double dx = dd[0]*s;
+		double dy = dd[1]*s;
+		double dtx = dd[2]*s;
+		double dty = dd[3]*s;
+		x -= dx;
+		y -= dy;
+		tx -= dtx;
+		ty -= dty;
+		
 		// transport stateVec
-		double dx = tx * s + 0.5 * Q * Swim.speedLight * A[0] * s * s;
-		x += dx;
-		double dy = ty * s + 0.5 * Q * Swim.speedLight * A[1] * s * s;
-		y += dy;
-		tx += Q * Swim.speedLight * A[0] * s;
-		ty += Q * Swim.speedLight * A[1] * s;
+//		double dx = tx * s + 0.5 * Q * Swim.speedLight * A[0] * s * s;
+//		x += dx;
+//		double dy = ty * s + 0.5 * Q * Swim.speedLight * A[1] * s * s;
+//		y += dy;
+//		tx += Q * Swim.speedLight * A[0] * s;
+//		ty += Q * Swim.speedLight * A[1] * s;
 
 		z += s;
 		dPath += Math.sqrt(dx * dx + dy * dy + s * s);
+		
+		end.z = zf;
+		end.x = x;
+		end.y = y;
+		end.tx = tx;
+		end.ty = ty;
+		end.Q = Q;
+		end.B = Math.sqrt(bf[0] * bf[0] + bf[1] * bf[1] + bf[2] * bf[2]);
+		end.deltaPath = dPath;
+//		if (covMat.covMat != null) {
+//			CovMat fCov = new CovMat(f);
+//			fCov.covMat = covMat.covMat;
+//		}
+		
+	} // end onestep
 
-		StateVec fVec = new StateVec(f);
-		fVec.z = zf;
-		fVec.x = x;
-		fVec.y = y;
-		fVec.tx = tx;
-		fVec.ty = ty;
-		fVec.Q = Q;
-		fVec.B = Math.sqrt(bf[0] * bf[0] + bf[1] * bf[1] + bf[2] * bf[2]);
-		fVec.deltaPath = dPath;
-		// StateVec = fVec;
-		trackTraj.put(f, fVec);
-
-		// if(transpStateJacobian!=null) {
-		// F = new Matrix(transpStateJacobian);
-		// }
-		if (covMat.covMat != null) {
-			CovMat fCov = new CovMat(f);
-			fCov.covMat = covMat.covMat;
-			// CovMat = fCov;
-			trackCov.put(f, fCov);
-
-		}
-
-		if (PRINT && DEBUG) {
-			DEBUG = false;
-		}
-
-		return fVec;
-	}
-
+	/**
+	 * Veronique's basic transport
+	 * 
+	 * @param sector the sec
+	 * @param i
+	 * @param f
+	 * @param iVec
+	 * @param covMat
+	 */
 	public static StateVec basicTransport(RotatedCompositeProbe probe, int sector, int i, int f, StateVec iVec,
 			CovMat covMat, double zf, Map<Integer, StateVec> trackTraj, Map<Integer, CovMat> trackCov, double[] A,
 			double[] dA) { // s = signed step-size
@@ -438,7 +438,7 @@ public class CovMatTransport {
 
 			z += s;
 			dPath += Math.sqrt(dx * dx + dy * dy + s * s);
-		}
+		} //end loop over nsteps
 
 		StateVec fVec = new StateVec(f);
 		fVec.z = zf;

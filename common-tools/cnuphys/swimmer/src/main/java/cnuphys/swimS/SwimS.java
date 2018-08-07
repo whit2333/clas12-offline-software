@@ -432,7 +432,7 @@ public class SwimS extends Swim {
 
 		
 		RotatedCompositeProbe rcp = new RotatedCompositeProbe(MagneticFields.getInstance().getRotatedCompositeField());
-		int sector = 2;
+		int sector = 1;
 		System.out.println("sector: " + sector);
 		
 		double zi = 528.8406160000001;
@@ -441,7 +441,7 @@ public class SwimS extends Swim {
 		
 		// momentum and charge
 		double p = 1.2252495;
-		int q = 1;
+		int q = -1;
 
 		double Q = q/p;
 
@@ -465,24 +465,36 @@ public class SwimS extends Swim {
 			printCovMatrix("Initial cov matrix", covMat);
 
 			// OK let's try the real transport
-			StateVec stop = new StateVec(0);
 
 			double[] A = new double[2];
 			double[] dA = new double[4];
-
 			
 			HashMap<Integer, StateVec> trajMap = new HashMap<>();
 			HashMap<Integer, CovMat> matMap = new HashMap<>();
 
-			CovMatTransport.basicTransport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-			printCovMatrix("final cov matrix BASIC", covMat);
-			
-			StateVec fv = CovMatTransport.transport(rcp, sector, 0, 0, iv, covMat2, zf, trajMap, matMap, A, dA);
-			printCovMatrix("final cov matrix TRANSPORT", covMat2);
-			
-			System.out.println("FINAL SV:\n" + fv);
+			StateVec fb = CovMatTransport.basicTransport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
+			System.out.println("\nTRANSPORT fV:\n" + fb);
 
-
+			printCovMatrix("\nfinal cov matrix BASIC", covMat);
+			
+			StateVec fv = CovMatTransport.transport(rcp, sector, 0, 0, iv, covMat2, zf, trajMap, matMap, A, dA);	
+			
+			System.out.println("TRANSPORT fV:\n" + fv);
+			printCovMatrix("\nfinal cov matrix TRANSPORT", covMat2);	
+			
+			System.out.println("\n\nFinal Vec from Swimming\n");
+			SwimS swimS = new SwimS();
+			iv = new StateVec(-119.8901385, 0.5410029 , zi, -0.0287247,
+					-0.0083868, Q, pzSign);
+			
+			double[] hdata = new double[3];
+			try {
+				Trajectory traj = swimS.sectorAdaptiveRK(sector, iv, zf, 0.01, hdata);
+				StateVec last = traj.last();
+				System.out.println(last);
+			} catch (SwimException e) {
+				e.printStackTrace();
+			}
 	}
 
 	public static void main(String arg[]) {

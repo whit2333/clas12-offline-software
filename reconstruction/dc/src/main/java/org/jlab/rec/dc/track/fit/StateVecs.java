@@ -111,11 +111,13 @@ public class StateVecs {
      * @param covMat state covariance matrix at the initial index
      */
     
-    static boolean USESWIMCOVMATTRANSPORT = true;
+    static boolean USESWIMCOVMATTRANSPORT = false;
     
     static boolean DEBUG = true;
     public void transport(int sector, int i, int f, StateVec iVec, CovMat covMat) { // s = signed step-size
     	
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
+
     	if (USESWIMCOVMATTRANSPORT) {
     		if (iVec == null) {
     			return;
@@ -174,7 +176,7 @@ public class StateVecs {
         
         
 
-        if (PRINT && DEBUG) {
+        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
             System.out.println("\nTRANSPORT from Zi = " + Z[i] + " to  Zf = " + Z[f]);
             System.out.println("Mag Field Config:");
             System.out.println(MagneticFields.getInstance().getCurrentConfigurationMultiLine());
@@ -215,7 +217,7 @@ public class StateVecs {
         
         int nSteps = (int) (Math.abs((Z[i] - Z[f]) / stepSize) + 1);
         
-        if (PRINT && DEBUG) {
+        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
         	System.out.println("\nNum Steps = " + nSteps);
         }
         
@@ -363,7 +365,7 @@ public class StateVecs {
             //CovMat = fCov;
             this.trackCov.put(f, fCov);
             
-            if (PRINT && DEBUG) {
+            if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
             	printStateVec("Final State Vec:", fVec);
                 printCovMatrix("\nFinal Covariance Matrix:", fCov);
                 
@@ -376,14 +378,14 @@ public class StateVecs {
 
         }
         
-        if (PRINT && DEBUG) {
+        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
           	DEBUG = false;
         }
         
     }
 
     private void printStateVec(String s, StateVec v) {
-    	System.out.println(s);
+    	System.out.println("\n" + s);
     	double r = Math.sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
     	System.out.println(String.format("(%-10.7f, %-10.7f, %-10.7f) |R| = %-8.4f  tx: %-10.7f  ty: %-10.7f  q = %d  p = %-10.7f", 
     			v.x, v.y, v.z, r, v.tx, v.ty, (v.Q > 0) ? 1 : -1, Math.abs(1. / v.Q)));

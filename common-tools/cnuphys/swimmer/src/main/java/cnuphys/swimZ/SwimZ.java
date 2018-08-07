@@ -21,6 +21,7 @@ import cnuphys.swim.StateVec;
 import cnuphys.swim.Swim;
 import cnuphys.swim.SwimException;
 import cnuphys.swim.Trajectory;
+import cnuphys.swimtest.SwimTest;
 
 /**
  * The swimZ integration follows the method described for the HERA-B magnet
@@ -1333,7 +1334,7 @@ public class SwimZ extends Swim {
 		
 		// momentum and charge
 		double p = 1.2252495;
-		int q = 1;
+		int q = -1;
 
 		double Q = q/p;
 
@@ -1354,6 +1355,13 @@ public class SwimZ extends Swim {
 
 		try {
 
+			Trajectory traj = swimZ.sectorAdaptiveRK(sector, iv, zf, 0.01, hdata);
+			System.out.println("\n\nFinal Vec from Swimming  NP = "+ traj.size() + "\n");
+		StateVec last = traj.last();
+        SwimTest.printSummary("Last for swimZ", traj.size(), p, last, hdata);
+
+			
+			
 
 			double array[][] = { { 5.26357439  , -1.64761026 , 0.04338227  , -0.00814181 , 0.01041586 },
 					{ -1.64761026 , 304.13559440, -0.04366342 , 1.24484383  , 0.00310091 },
@@ -1363,7 +1371,7 @@ public class SwimZ extends Swim {
 
 			Matrix m = new Matrix(array);
 			CovMat covMat = new CovMat(10, m);
-			printCovMatrix("Initial cov matrix", covMat);
+			printCovMatrix("\nInitial cov matrix", covMat);
 
 			// OK let's try the real transport
 			StateVec stop = new StateVec(0);

@@ -8,4 +8,10 @@ public interface IAdvance {
 	 * @param h the complete step (can be < 0)
 	 */
 	public void advance(double z, double h);
+	
+	/**
+	 * A substep has been accepted
+	 * @param z the value of z for the substep
+	 */
+	public void acceptedSubstep(double z);
 }

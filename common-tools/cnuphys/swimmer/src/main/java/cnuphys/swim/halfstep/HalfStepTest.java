@@ -28,7 +28,7 @@ public class HalfStepTest {
 		System.out.println("APPROX: x = " + gAdvancer.x[0] + "  v = " + gAdvancer.x[1]);
 	}
 	
-	class GAdvancer extends AAdvancingObject {
+	class GAdvancer extends AdvancingObject {
 		
 		
 		double x[] = new double[2];
@@ -48,7 +48,7 @@ public class HalfStepTest {
 		}
 
 		@Override
-		public double difference(AAdvancingObject aobj) {
+		public double difference(AdvancingObject aobj) {
 			GAdvancer sg = (GAdvancer)aobj;
 			double d0 = Math.abs(sg.x[0]-x[0]);
 			System.out.println("d0 = " + d0);
@@ -56,16 +56,43 @@ public class HalfStepTest {
 		}
 
 		@Override
-		public AAdvancingObject copy() {
+		public AdvancingObject copy() {
 			return new GAdvancer(x[0], x[1]);
 		}
 
 		@Override
-		public void copyFrom(AAdvancingObject source) {
+		public void copyFrom(AdvancingObject source) {
 			GAdvancer sg = (GAdvancer)source;
 			x[0] = sg.x[0];
 			x[1] = sg.x[1];
 		}
+
+		@Override
+		public void acceptedSubstep(double z) {
+			System.out.println("accepted substep z = " + z);
+		}
+
+		@Override
+		public void copyEndToStart(AdvancingObject source) {
+			GAdvancer sg = (GAdvancer)source;
+			x[0] = sg.x[0];
+			x[1] = sg.x[1];
+		}
+
+		@Override
+		public void copyEndToEnd(AdvancingObject source) {
+			GAdvancer sg = (GAdvancer)source;
+			x[0] = sg.x[0];
+			x[1] = sg.x[1];
+		}
+
+		@Override
+		public void copyStartToStart(AdvancingObject source) {
+			GAdvancer sg = (GAdvancer)source;
+			x[0] = sg.x[0];
+			x[1] = sg.x[1];
+		}
+
 		
 	}
 

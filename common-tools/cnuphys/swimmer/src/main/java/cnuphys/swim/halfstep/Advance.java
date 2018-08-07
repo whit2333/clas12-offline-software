@@ -7,51 +7,56 @@ public class Advance {
 	private static double TINY = 1.0e-8;
 	
 	/**
-	 * Adaptive advance of an object over a range
+	 * Adaptive advance of an object over a range from zo to zf 
 	 * @param object the object to advance
-	 * @param to the starting value of an independent variable
-	 * @param tf the ending value of an independent variable (can be < to)
-	 * @param initialStep the initial step size (positive)
-	 * @param absoluteError the absolute error (positive)
+	 * @param zo the starting value of an independent variable
+	 * @param zf the ending value of an independent variable (can be < zo)
+	 * @param initialStep the initial step size (forced to be positive)
+	 * @param tolerance the absolute error (positive)
 	 * @param minStep the minimum step size (if the the step gets smaller than this we are in an error condition)
 	 * @return the number of times an advance is called. There are three calls per step attempted. If
 	 * this number is negative, it indicates an error condition where the minimum step size was reached 
 	 */
-	public static int advance(AAdvancingObject object, double to, double tf, double initialStep, double absoluteError, double minStep) {
+	public static int advance(AdvancingObject object, double zo, double zf, double initialStep, double tolerance, double minStep) {
 		
+		//how many times do we try to advance. This is at least three times for each step
 		int nComputes = 0;
+		
 		boolean done = false;
 		int sign;
 		
+		//force positives. The sign variable will handle going "backwards"
 		initialStep = Math.abs(initialStep);
 		minStep = Math.abs(minStep);
 		
-		sign = (tf > to) ? 1 : -1;
+		sign = (zf > zo) ? 1 : -1;
 
-		double del = Math.abs(tf - to);
+		double del = Math.abs(zf - zo);
 		
 		double h = Math.min(initialStep, del/2);
 		h = Math.max(h, Math.abs(del/100.));
 		h = sign*h;
 		
-		double t = to;
+		double z = zo;
 		
-		AAdvancingObject half1 = object.copy();
-		AAdvancingObject half2 = object.copy();
-		AAdvancingObject full = object.copy();
+		AdvancingObject half1 = object.copy();
+		AdvancingObject half2 = object.copy();
+		AdvancingObject full = object.copy();
+		AdvancingObject current = object.copy();
 		
 		while (!done) {
 			
-			System.out.println("h = " + h);
+//			System.out.println("h = " + h);
 			
 			double halfStep = h/2;
-			half1.advance(t, halfStep);
+			half1.advance(z, halfStep);
 			
-			half2.copyFrom(half1);
-			half2.advance(t + halfStep, halfStep);
+			//start half2 where half1 ended
+			half2.copyEndToStart(half1);
+			half2.advance(z + halfStep, halfStep);
 			
 			//full step
-			full.advance(t, h);
+			full.advance(z, h);
 			
 			//computed an advance three times
 			nComputes += 3;
@@ -59,31 +64,42 @@ public class Advance {
 			//accept this step or not?
 			double diff = full.difference(half2);
 			
-			boolean acceptStep = diff < absoluteError;
+			boolean acceptStep = diff < tolerance;
 			
 			if (acceptStep) {
-				//copy2 should be more accurate than full
-				object.copyFrom(half2);
-				t += h;
-				done = Math.abs(tf - t) < TINY;
+				//half2 should be more accurate than full
+
+				z += h;
+				
+				//let the object know a substep was accepted
+				object.acceptedSubstep(z);
+
+				done = Math.abs(zf - z) < TINY;
 				
 				if (!done) {
 					System.out.println("HGROW");
 					h *= HGROW;
-					double remaining = tf - t;
+					double remaining = zf - z;
 					if (Math.abs(remaining) < Math.abs(h)) {
 						h = remaining;
 					}
 					
 					//reset
-					half1.copyFrom(half2);
-					full.copyFrom(half2);
+					half1.copyEndToStart(half2);
+					full.copyEndToStart(half2);
+					current = full.copy();
+				}
+				else {
+				  System.out.println("DONE");
+				  object.copyEndToEnd(half2);
 				}
 			}
-			else { //dif not accept
-				half1.copyFrom(object);
-				half2.copyFrom(object);
-				full.copyFrom(object);
+			else { //did not accept, so we shrink h
+				
+				//reset
+				half1 = current.copy();
+				half2 = current.copy();
+				full = current.copy();
 				System.out.println("HSHRINK");
 
 				h *= HSHRINK;
