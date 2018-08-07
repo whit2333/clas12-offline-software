@@ -13,10 +13,10 @@ import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.MagneticFields.FieldType;
 
 import cnuphys.swim.CovMat;
-import cnuphys.swim.CovMatTransport;
 import cnuphys.swim.StateVec;
 import cnuphys.swimS.SwimS;
 import cnuphys.swim.SwimException;
+import cnuphys.swim.BasicCovMatTransport;
 
 public class StateVecs {
     private double Bmax = 2.366498; // averaged
@@ -111,46 +111,28 @@ public class StateVecs {
      * @param covMat state covariance matrix at the initial index
      */
     
-    static boolean USESWIMCOVMATTRANSPORT = false;
+    static boolean USESWIMCOVMATTRANSPORT = true;
     
     static boolean DEBUG = true;
+    BasicCovMatTransport basicTransporter;
+    
     public void transport(int sector, int i, int f, StateVec iVec, CovMat covMat) { // s = signed step-size
-    	
-		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
-
-    	if (USESWIMCOVMATTRANSPORT) {
-    		if (iVec == null) {
-    			return;
-    		}
-
-    		iVec.z = Z[i];
-    		
-    		CovMatTransport.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
-    		
-    		
-    		
-//        	SwimS swimS = dcSwim.getRCF_s();
-        	
-       	
-//        	try {
-//    			iVec.pzSign = (Z[f] > iVec.z) ? 1 : -1;
-//    			StateVec start = new StateVec(iVec);
-//       	        swimS.sectorTransport(sector, i, f, start, covMat, Z[f], trackTraj, trackCov, A, dA);
-//        	}
-//        	catch (SwimException e) {
-//        		System.out.println("\nTRANSPORT FAIL " + e.getMessage());
-//        		System.out.println("zi = " + iVec.z);
-//        		System.out.println("zf = " + Z[f]);
-//        		System.out.println("WAS CHARGE FLIPPED: " + dcSwim.isChargeFlipped());
-//       	    	System.out.println("iVec:\n" + iVec);
-//        		e.printStackTrace();
-//        		//e.printStackTrace();
-//        	}
-//   	    	return;
-    	}
     	
         if(iVec==null)
             return;
+
+		iVec.pzSign = (Z[f] > Z[i]) ? 1 : -1;
+		MagneticFields.getInstance().setActiveField(FieldType.COMPOSITEROTATED);
+
+    	if (USESWIMCOVMATTRANSPORT) {
+    		if (basicTransporter == null) {
+    			basicTransporter = new BasicCovMatTransport();
+    		}
+    //		basicTransporter.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+   		basicTransporter.rkTransport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+    		return;
+    	}
+    	
         //StateVec iVec = trackTraj.get(i);
         //bfieldPoints = new ArrayList<B>();
        // CovMat covMat = icovMat;
@@ -172,17 +154,17 @@ public class StateVecs {
  //       boolean PRINT = (Math.abs(Z[i]-491.90442) < .001) && (Math.abs(Z[f]-494.70984) < 0.001) ;
         
         double diff = Z[f]-Z[i];
-        boolean PRINT = (diff < -100);
+        boolean PRINT = (diff > 100);
         
         
 
-        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
+        if (PRINT && DEBUG) {
             System.out.println("\nTRANSPORT from Zi = " + Z[i] + " to  Zf = " + Z[f]);
             System.out.println("Mag Field Config:");
             System.out.println(MagneticFields.getInstance().getCurrentConfigurationMultiLine());
         	System.out.println("sector = " + sector);
         	System.out.println("WAS CHARGE FLIPPED: " + dcSwim.isChargeFlipped());
-          	printStateVec("Initial State Vec:", iVec);
+          	System.out.println("Initial State Vec:\n" + iVec);
             printCovMatrix("\nInitial Covariance Matrix:", covMat);
         }
         
@@ -217,7 +199,7 @@ public class StateVecs {
         
         int nSteps = (int) (Math.abs((Z[i] - Z[f]) / stepSize) + 1);
         
-        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
+        if (PRINT && DEBUG) {
         	System.out.println("\nNum Steps = " + nSteps);
         }
         
@@ -365,7 +347,7 @@ public class StateVecs {
             //CovMat = fCov;
             this.trackCov.put(f, fCov);
             
-            if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
+            if (PRINT && DEBUG) {
             	printStateVec("Final State Vec:", fVec);
                 printCovMatrix("\nFinal Covariance Matrix:", fCov);
                 
@@ -378,7 +360,7 @@ public class StateVecs {
 
         }
         
-        if (PRINT && DEBUG && (Math.abs(iVec.x+119.89) < 0.1)) {
+        if (PRINT && DEBUG) {
           	DEBUG = false;
         }
         
