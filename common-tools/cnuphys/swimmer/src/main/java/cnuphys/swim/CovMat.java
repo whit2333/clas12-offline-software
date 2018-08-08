@@ -18,7 +18,7 @@ public class CovMat {
     
     public CovMat(int k, Matrix m) {
         this.k = k;
-        this.covMat = m;
+        this.covMat = m.copy();
     }
     
     public CovMat(CovMat c) {
@@ -45,5 +45,29 @@ public class CovMat {
         
     	sb.append("\n");
     	return sb.toString();
+    }
+    
+    public double diff(CovMat c2) {
+    	//use four upper left elements. A guess.
+    	Matrix cmat2 = c2.covMat;
+    	double diff = 0;
+    	
+    	diff = Math.max(diff, fractDiff(covMat.get(0, 0), cmat2.get(0, 0)));
+       	diff = Math.max(diff, fractDiff(covMat.get(0, 1), cmat2.get(0, 1)));
+       	diff = Math.max(diff, fractDiff(covMat.get(1, 0), cmat2.get(1, 0)));
+       	diff = Math.max(diff, fractDiff(covMat.get(1, 1), cmat2.get(1, 1)));
+           	
+    	return diff;
+    }
+    
+    private static final double TINY = 1.0e-20;
+    private double fractDiff(double v1, double v2) {
+    	double numer = Math.abs(v2-v1);
+    	double denom = Math.max(Math.abs(v1), Math.abs(v2));
+    	
+    	if (denom < TINY) {
+    		return 1;
+    	}
+    	return numer/denom;
     }
 }

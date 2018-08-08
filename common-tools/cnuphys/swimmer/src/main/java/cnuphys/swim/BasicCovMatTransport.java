@@ -45,6 +45,8 @@ public class BasicCovMatTransport {
         probe.field((float)(rho*Math.cos(phi)), (float)(rho*Math.sin(phi)), (float)z, lbf);
         Bmax = Math.sqrt(lbf[0]*lbf[0]+lbf[1]*lbf[1]+lbf[2]*lbf[2]) *(2.366498/4.322871999651699); // scales according to torus scale by reading the map and averaging the value
     }
+    
+    
 	
     /**
      * Veronique's original transport
@@ -121,7 +123,7 @@ public class BasicCovMatTransport {
             Swim.teslaField(probe, sector, x, y, z, bf);
 
             double v[] = {x, y, z, tx, ty};
-            dPath+= oneStep(probe, sector, del, v, Q, s, covMat, C, u, bf);
+            dPath += oneStep(probe, sector, del > 0 ? 1 : -1, v, Q, s, covMat, C, u, bf);
             x = v[0];
             y = v[1];
             z = v[2];
@@ -149,10 +151,67 @@ public class BasicCovMatTransport {
             //CovMat = fCov;
             trackCov.put(f, fCov);
         }
+        
+//       	Trajectory traj = getTrajectory(probe, sector, iVec, zf);
+//fVec = traj.last();
                 
         return fVec;
     }
     
+    
+    private Trajectory getTrajectory(final RotatedCompositeProbe probe, int sector, StateVec iVec, double zf) {
+    	
+    	SwimS swimS = new SwimS(probe);
+    	swimS.setAbsoluteTolerance(1.0e-3);
+    	boolean flipped = false;
+    	double hdata[] = new double[3];
+    	Trajectory traj = null;
+
+      	try {
+    		StateVec start = new StateVec(iVec);
+    		
+    		double del = zf - start.z;
+    		
+    		if (del < 0) {
+    			flipped = true;
+    			start.Q  = -start.Q;
+    		}
+
+
+    		double stepSize = Math.abs(zf - start.z)/10;
+			traj = swimS.sectorAdaptiveRK(sector, start, zf, stepSize, hdata);
+			//System.out.println("NSTEPS " + traj.size());
+		} catch (SwimException e) {
+			e.printStackTrace();
+			return null;
+		}
+      	
+   	
+		if ((traj != null) && flipped) {
+			for (StateVec sv : traj) {
+				sv.Q = iVec.Q;
+				sv.pzSign = iVec.pzSign;
+			}
+		}
+      	
+      	return traj;
+    }
+    
+    /**
+     * 
+     * @param probe
+     * @param sector
+     * @param i
+     * @param f
+     * @param iVec
+     * @param covMat
+     * @param zf
+     * @param trackTraj
+     * @param trackCov
+     * @param A
+     * @param dA
+     * @return
+     */
     public StateVec rkTransport(final RotatedCompositeProbe probe, final int sector, int i, int f, StateVec iVec, CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj,
 			final Map<Integer, CovMat> trackCov, final double[] A, final double[] dA) { // s = signed step-size
     	
@@ -174,33 +233,11 @@ public class BasicCovMatTransport {
 
 
     	SwimS swimS = new SwimS(probe);
-    	swimS.setAbsoluteTolerance(1.0e-5);
+    	swimS.setAbsoluteTolerance(1.0e-3);
     	StateVec fVec = null;
-    	Trajectory traj = null;
+    	Trajectory traj = getTrajectory(probe, sector, iVec, zf);
     	
-    	boolean flipped = false;
-    	
-    	try {
-    		StateVec start = new StateVec(iVec);
-    		
-//    		if (start.signFlip && (del < 0)) {
-//    			start.Q  = -start.Q;
-//    		}
-    		
-    		if (del < 0) {
-    			flipped = true;
-    			start.Q  = -start.Q;
-    		}
-
-
-    		double stepSize = Math.abs(zf - start.z)/10;
-			traj = swimS.sectorAdaptiveRK(sector, start, zf, stepSize, hdata);
-	//		System.out.println("NSTEPS " + traj.size());
-		} catch (SwimException e) {
-			e.printStackTrace();
-			return null;
-		}
-    	
+     	
     	if (traj == null) {
     		System.out.println("Null TRAJECTORY!");
     		return null;
@@ -217,7 +254,7 @@ public class BasicCovMatTransport {
     		
             Swim.teslaField(probe, sector, x, y, z, bf);
             double v[] = {x, y, z, tx, ty};
-            dPath+= oneStep(probe, sector, del, v, Q, s, covMat, C, u, bf);
+            dPath+= oneStep(probe, sector, del > 0 ? 1 : -1, v, Q, s, covMat, C, u, bf);
             x = sv.x;
             y = sv.y;
             z = sv.z;
@@ -226,12 +263,7 @@ public class BasicCovMatTransport {
     	}
      	
      	fVec = new StateVec(traj.last());
-     	
-		if (flipped) {
-			fVec.Q = iVec.Q;
-			fVec.pzSign = iVec.pzSign;
-		}
-    	
+     	    	
         fVec.B = Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]);
         fVec.deltaPath = dPath;
         //StateVec = fVec;
@@ -248,7 +280,105 @@ public class BasicCovMatTransport {
     	return fVec;
     }
     
-	public double oneStep(final RotatedCompositeProbe probe, final int sector, final double del,
+    /**
+     * 
+     * @param probe
+     * @param sector
+     * @param i
+     * @param f
+     * @param iVec
+     * @param covMat
+     * @param zf
+     * @param trackTraj
+     * @param trackCov
+     * @param A
+     * @param dA
+     * @return
+     */
+    public StateVec halfStepTransport(final RotatedCompositeProbe probe, final int sector, int i, int f, StateVec iVec, CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj,
+			final Map<Integer, CovMat> trackCov, final double[] A, final double[] dA) { // s = signed step-size
+    	
+        if(iVec==null)
+            return null;
+
+        double[][] u = new double[5][5];       
+        double[][] C = new double[5][5];
+ 
+        double x = iVec.x;
+        double y = iVec.y;
+        double tx = iVec.tx;
+        double ty = iVec.ty;
+        double Q = iVec.Q;
+        
+        double del = zf - iVec.z;
+        int direction = (del > 0) ? 1 : -1;
+
+        double dPath=0;
+
+
+    	SwimS swimS = new SwimS(probe);
+    	swimS.setAbsoluteTolerance(1.0e-3);
+    	StateVec fVec = null;
+    	Trajectory traj = getTrajectory(probe, sector, iVec, zf);
+    	
+     	
+    	if (traj == null) {
+    		System.out.println("Null TRAJECTORY!");
+    		return null;
+    	}
+    	
+        double z = iVec.z;
+        
+     	for (int index = 1; index < traj.size(); index++) {
+    		StateVec sv = traj.get(index);
+    		
+    		double s = sv.z - z;
+    		
+    	//	System.out.println("  s = " + s);
+    		
+            Swim.teslaField(probe, sector, x, y, z, bf);
+            double v[] = {x, y, z, tx, ty};
+            dPath+= halfStep(probe, sector, direction, v, Q, s, covMat, C, u, bf);
+            x = sv.x;
+            y = sv.y;
+            z = sv.z;
+            tx = sv.tx;
+            ty = sv.ty;
+    	}
+     	
+     	fVec = new StateVec(traj.last());
+     	   	
+        fVec.B = Math.sqrt(bf[0]*bf[0]+bf[1]*bf[1]+bf[2]*bf[2]);
+        fVec.deltaPath = dPath;
+        //StateVec = fVec;
+        trackTraj.put(f, fVec);
+
+        if (covMat.covMat != null) {
+            CovMat fCov = new CovMat(f);
+            fCov.covMat = covMat.covMat;
+            //CovMat = fCov;
+            trackCov.put(f, fCov);
+        }
+
+    	
+    	return fVec;
+    }
+    
+    /**
+     * 
+     * @param probe
+     * @param sector
+     * @param direction the overall sign of Zf - Zi
+     * @param v
+     * @param Q
+     * @param s the signed step size
+     * @param covMat
+     * @param C
+     * @param u
+     * @param field
+     * @return
+     */
+	public double oneStep(final RotatedCompositeProbe probe, final int sector, final int direction,
 			double[] v, double Q, double s, CovMat covMat, double C[][], double u[][], float field[]) {
 
         //B bf = new B(i, z, x, y, tx, ty, s);
@@ -316,7 +446,7 @@ public class BasicCovMatTransport {
         double px = tx * pz;
         double py = ty * pz;
         
-        double t_ov_X0 = Math.signum(del) * s / ARGONRADLEN; //path length in radiation length units = t/X0 [true path length/ X0] ; Ar radiation length = 14 cm
+        double t_ov_X0 = direction * s / ARGONRADLEN; //path length in radiation length units = t/X0 [true path length/ X0] ; Ar radiation length = 14 cm
 
         //double mass = this.MassHypothesis(this.massHypo); // assume given mass hypothesis
         double mass = 0.000510998; // assume given mass hypothesis
@@ -362,6 +492,92 @@ public class BasicCovMatTransport {
         return Math.sqrt(dx*dx+dy*dy+s*s);
     }
     
+	private final double TOLERANCE = 1000;
+	
+	private static final double CLOSE = 1.0e-10;
+	public double halfStep(final RotatedCompositeProbe probe, final int sector, final int direction,
+			double[] v, double Q, double s, CovMat covMat, double C[][], double u[][], float field[]) {
+		
+		boolean done = false;
+		
+		
+		double zf = v[2] + s;
+		
+		CovMat curCovMat = new CovMat(covMat);
+		double tempV[] = new double[v.length];
+		double currentV[] = new double[v.length];
+		float fieldHalf[] = new float[3];
+		
+	    System.arraycopy(v, 0, currentV, 0, v.length);
+		
+		double C1[][] = new double[5][5];
+		double C2[][] = new double[5][5];
+				
+		double h = s;
+		
+		double ds = 0;
+		
+		while (!done) {
+
+			//make a copy of the current V
+		    System.arraycopy(currentV, 0, tempV, 0, v.length);
+			CovMat tempCovMat = new CovMat(curCovMat);
+			
+			//first half step, changes currentV and currentCovMat
+			double ds1 = oneStep(probe, sector, direction, currentV, Q, h/2, curCovMat, C1, u, field);
+	
+			//get the field in the middle
+		    Swim.teslaField(probe, sector, currentV[0], currentV[1], currentV[2], fieldHalf);
+
+			//second half step keeps changing currentV and currentCovMat
+			double ds2 = oneStep(probe, sector, direction, currentV, Q, h/2, curCovMat, C2, u, fieldHalf);
+			
+			//full step changes tempV and tempCovMat
+			oneStep(probe, sector, direction, tempV, Q, h, tempCovMat, C, u, fieldHalf);
+			
+			double diff = tempCovMat.diff(curCovMat);
+			
+			
+			boolean accept = diff < TOLERANCE;
+			System.out.println("diff = " + diff + "   h = " + h + "  z = " + v[2] + "  accept: " + accept);
+		
+			if (accept) {
+				//the good results are in currentV and currentCovMat
+				//so copy them to the "real" objects
+				
+			    System.arraycopy(currentV, 0, v, 0, v.length);
+				covMat = new CovMat(curCovMat);
+
+				
+				ds += (ds1 + ds2);
+				double zNew = currentV[2];
+				done  = Math.abs(zf - zNew) < CLOSE;
+			
+				//grow h
+				if (!done) {
+					double hmax = zf - zNew;
+					h = Math.min(hmax, 1.2*h);
+				}
+			}
+			else {
+				//failed so have to set  cuurent back to
+				//the starting values
+			    System.arraycopy(v, 0, currentV, 0, v.length);
+				curCovMat = new CovMat(covMat);
+			
+				//shrink
+				h = h/2;
+
+				
+			}
+			
+			
+			
+
+		}
+		
+		return ds;
+	}
 
 	public static void A(double tx, double ty, double Bx, double By, double Bz, double[] a) {
 
@@ -395,7 +611,7 @@ public class BasicCovMatTransport {
 		System.out.println(MagneticFields.getInstance().getCurrentConfigurationMultiLine());
 		
 		RotatedCompositeProbe rcp = new RotatedCompositeProbe(MagneticFields.getInstance().getRotatedCompositeField());
-		int sector = 1;
+		int sector = 2;
 		System.out.println("sector: " + sector);
 		
 		double zi = 528.8406160000001;
@@ -574,7 +790,7 @@ public class BasicCovMatTransport {
 		
 		header("New Transport");		
 		
-		fb = basicTransporter.rkTransport(rcp, sector, 0, 0, iv, covMat2, zf, trajMap, matMap, A, dA);
+		fb = basicTransporter.halfStepTransport(rcp, sector, 0, 0, iv, covMat2, zf, trajMap, matMap, A, dA);
 		System.out.println("\nTRANSPORT FINAL vector:\n" + fb);
 		Swim.printCovMatrix("\nfinal cov matrix TRANSPORT", covMat2);
 
