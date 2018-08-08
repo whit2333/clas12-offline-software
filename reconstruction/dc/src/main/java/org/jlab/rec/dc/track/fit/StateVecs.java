@@ -118,7 +118,8 @@ public class StateVecs {
     
     public void transport(int sector, int i, int f, StateVec iVec, CovMat covMat) { // s = signed step-size
     	
-        if(iVec==null)
+
+    	if(iVec==null)
             return;
 
 		iVec.pzSign = (Z[f] > Z[i]) ? 1 : -1;
@@ -128,8 +129,8 @@ public class StateVecs {
     		if (basicTransporter == null) {
     			basicTransporter = new BasicCovMatTransport();
     		}
-    //		basicTransporter.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
-   		basicTransporter.rkTransport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+    		basicTransporter.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+   	//	    basicTransporter.rkTransport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
     		return;
     	}
     	

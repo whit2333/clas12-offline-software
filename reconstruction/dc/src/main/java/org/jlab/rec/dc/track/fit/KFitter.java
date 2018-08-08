@@ -62,6 +62,8 @@ public class KFitter {
         }
         sv.init(trk, sv.Z[0], this);
     }
+    
+    static int DEBUGCOUNT = 0;
     public boolean useFilter =true;
     public void runFitter(int sector) {
         this.chi2 = 0;
@@ -76,6 +78,14 @@ public class KFitter {
                 sv.transport(sector, k, k + 1, sv.trackTraj.get(k), sv.trackCov.get(k));
                 //sv.trackTraj.add(k+1, sv.StateVec); 
                 //sv.trackCov.add(k+1, sv.CovMat);
+                
+//                if ((DEBUGCOUNT < 4) && (i == 2)) {
+//                	System.out.println("sv[" + k + "]\n" + sv.trackTraj.get(k));
+//                	cnuphys.swim.Swim.printCovMatrix("covMat\n", sv.trackCov.get(k));
+//                  	System.out.println("sv[" + (k+1) + "]\n" + sv.trackTraj.get(k+1));
+//                	cnuphys.swim.Swim.printCovMatrix("covMat\n", sv.trackCov.get(k+1));
+//               	DEBUGCOUNT++;
+//                }
 //               System.out.println((k)+"] trans "+sv.trackTraj.get(k).x+","+sv.trackTraj.get(k).y+","+
 //                		sv.trackTraj.get(k).z+","+sv.trackTraj.get(k).tx+","+sv.trackTraj.get(k).ty+" "+1./sv.trackTraj.get(k).Q); 
                 if(useFilter)
