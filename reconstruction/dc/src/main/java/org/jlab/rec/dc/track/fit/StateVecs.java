@@ -129,8 +129,8 @@ public class StateVecs {
     		if (basicTransporter == null) {
     			basicTransporter = new BasicCovMatTransport();
     		}
-    		basicTransporter.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
-   	//	    basicTransporter.rkTransport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+    //		basicTransporter.transport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
+   		    basicTransporter.halfStepTransport(dcSwim.getRCP(), sector, i, f, iVec, covMat, Z[f], trackTraj, trackCov, A, dA);
     		return;
     	}
     	
