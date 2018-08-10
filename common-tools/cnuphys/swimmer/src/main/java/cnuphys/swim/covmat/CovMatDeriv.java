@@ -1,0 +1,339 @@
+package cnuphys.swim.covmat;
+
+import java.util.Map;
+
+import Jama.Matrix;
+import cnuphys.magfield.FieldProbe;
+import cnuphys.magfield.MagneticFields;
+import cnuphys.magfield.RotatedCompositeProbe;
+import cnuphys.magfield.MagneticFields.FieldType;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.Swim;
+
+
+public class CovMatDeriv extends Matrix {
+	
+	/** The speed of light in these units: (GeV/c)(1/T)(1/cm) */
+	public static final double speedLight = 2.99792458e-03;
+
+	private double Bmax; // averaged
+
+	/** Argon radiation length in cm */
+	public static final double ARGONRADLEN = 14.;
+	
+	/** Mag field probe */
+	private final RotatedCompositeProbe probe;
+	
+	//this is NOT thread safe
+	//EVERY thread should have its own CovMatDeriv
+	private double a[] = new double[2];
+	private double dA[] = new double[4];
+	double[][] u = new double[5][5];
+	double[][] C = new double[5][5];
+
+	public CovMatDeriv(RotatedCompositeProbe probe) {
+		super(5, 5);
+		this.probe = probe;
+		
+		// Max Field Location: (phi, rho, z) = (29.50000, 44.00000, 436.00000)
+		// get the maximum value of the B field
+		double phi = Math.toRadians(29.5);
+		double rho = 44.0;
+		double z = 436.0;
+		
+		
+		FieldProbe cprobe = FieldProbe.factory(MagneticFields.getInstance().getIField(FieldType.COMPOSITE));
+		Bmax = cprobe.fieldMagnitude((float) (rho * Math.cos(phi)), (float) (rho * Math.sin(phi)), (float) z);
+		Bmax = Bmax * (2.366498 / 4.322871999651699); // scales according to
+														// torus scale by
+														// reading the map and
+														// averaging the value
+		// convert to tesla
+		Bmax = Bmax / 10;
+	}
+	
+
+	
+	/**
+	 * Based on the Spiridonov paper defined here:
+	 * here: http://arxiv.org/pdf/physics/0511177v1.pdf<br>
+	 * @param probe to compute the field
+	 * @param sector the sector 1..6
+	 * @param s the step in cm
+	 * @param direction the overall sign of Zf - Zi
+	 * @param vi the starting state vector (input)
+	 * @param vf the ending state vector (output)
+	 * @param bf the field components in Tesla for vi (input) the vf (output)
+	 * @return pathlength increment
+	 */
+	private double step(int sector, int direction, double v[], double Q, double s,
+			float bf[], CovMat cmi, CovMat cmf) {
+				
+		//for convenience
+		double x = v[0];
+		double y = v[1];
+		double z = v[2];
+		double tx = v[3];
+		double ty = v[4];
+		
+		//get the underling matrices inside the CovMat wraper
+		Matrix mi = cmi.covMat;
+		
+		//the input field fieldIn[] should already be calculated 
+		computeAandDA(tx, ty, bf[0], bf[1], bf[2], a, dA);
+		
+		
+		//non zero (and non unity)  Jacobian (5x5) elements
+		double j02, j03, j04; 
+		double j12, j13, j14; 
+		double j23, j24;
+		double j32, j34;
+		
+		//compute some derivatives from approximation B of the
+		// Spiridonov paper
+		
+		double s2 = s * s;
+		double QCs = Q * speedLight * s;
+		double hCs2 = 0.5 * speedLight * s2;
+		double QCs2 = Q * hCs2;
+		double Cs = speedLight * s;
+		
+		double delx_deltx0 = s;
+		double dely_deltx0 = QCs2 * dA[2];
+		double deltx_delty0 = QCs * dA[1];
+		double delx_delQ = hCs2 * a[0];
+		double deltx_delQ = Cs * a[0];
+		double delx_delty0 = QCs2 * dA[1];
+		double dely_delty0 = s;
+		double delty_deltx0 = QCs * dA[2];
+		double dely_delQ = hCs2 * a[1];
+		double delty_delQ = Cs * a[1];
+
+		//get the nontrivial Jacobian elements
+		j02 = delx_deltx0;
+		j03 = delx_delty0;
+		j04 = delx_delQ;
+
+		j12 = dely_deltx0;
+		j13 = dely_delty0;
+		j14 = dely_delQ;
+
+		j23 = deltx_delty0;
+		j24 = deltx_delQ;
+
+		j32 = delty_deltx0;
+		j34 = delty_delQ;
+		
+		// covMat = FCF^T; u = FC;
+		for (int i = 0; i < 5; i++) {
+			u[0][i] = mi.get(0, i) + mi.get(2, i) * j02 + mi.get(3, i) * j03 + mi.get(4, i) * j04;
+			u[1][i] = mi.get(1, i) + mi.get(2, i) * j12 + mi.get(3, i) * j13 + mi.get(4, i) * j14;
+			u[2][i] = mi.get(2, i) + mi.get(3, i) * j23 + mi.get(4, i) * j24;
+			u[3][i] = mi.get(3, i) + mi.get(2, i) * j32 + mi.get(4, i) * j34;
+			u[4][i] = mi.get(4, i);
+		}
+
+		for (int i = 0; i < 5; i++) {
+			C[i][0] = u[i][0] + u[i][2] * j02 + u[i][3] * j03 + u[i][4] * j04;
+			C[i][1] = u[i][1] + u[i][2] * j12 + u[i][3] * j13 + u[i][4] * j14;
+			C[i][2] = u[i][2] + u[i][3] * j23 + u[i][4] * j24;
+			C[i][3] = u[i][2] * j32 + u[i][3] + u[i][4] * j34;
+			C[i][4] = u[i][4];
+		}
+
+		// Q process noise matrix estimate
+		double p = Math.abs(1. / Q);
+
+		double pz = p / Math.sqrt(1 + tx * tx + ty * ty);
+		double px = tx * pz;
+		double py = ty * pz;
+
+		//path length in radiation length units = t/X0 [true path length/ X0]
+		double t_ov_X0 = direction * s / ARGONRADLEN; 
+		
+		// double mass = this.MassHypothesis(this.massHypo); // assume given
+		// mass hypothesis
+		double mass = 0.000510998; // assume given mass hypothesis
+		if (Q > 0) {
+			mass = 0.938272029;
+		}
+
+		double beta = p / Math.sqrt(p * p + mass * mass); // use particle
+															// momentum
+		double cosEntranceAngle = Math.abs((x * px + y * py + z * pz) / (Math.sqrt(x * x + y * y + z * z) * p));
+		double pathLength = t_ov_X0 / cosEntranceAngle;
+
+		double sctRMS = (0.0136 / (beta * p)) * Math.sqrt(pathLength) * (1 + 0.038 * Math.log(pathLength)); // Highland-Lynch-Dahl
+																											// formula
+
+		double fact = (1 + tx * tx + ty * ty) * sctRMS * sctRMS; 
+		double cov_txtx = (1 + tx * tx) * fact;
+		double cov_tyty = (1 + ty * ty) * fact;
+		double cov_txty = tx * ty * fact;
+
+		if (s > 0) {
+			C[2][2] += cov_txtx;
+			C[2][3] += cov_txty;
+			C[3][2] += cov_txty;
+			C[3][3] += cov_tyty;
+		}
+		
+		cmf.covMat = new Matrix(C);
+		
+		// transport stateVec
+		double dx = tx * s + 0.5 * Q * speedLight * a[0] * s2;
+		x += dx;
+		double dy = ty * s + 0.5 * Q * speedLight * a[1] * s2;
+		y += dy;
+		tx += Q * speedLight * a[0] * s;
+		ty += Q * speedLight * a[1] * s;
+
+		z += s;
+
+		v[0] = x;
+		v[1] = y;
+		v[2] = z;
+		v[3] = tx;
+		v[4] = ty;
+
+		return Math.sqrt(dx * dx + dy * dy + s * s);
+	}
+
+	/**
+	 * This is the 2-element A[2] with A[0] = Ax and A[1] = Ay
+	 * Based on the Spiridonov paper defined here:
+	 * here: http://arxiv.org/pdf/physics/0511177v1.pdf<br>
+	 * all indices: (x, y, tx, ty) == (0, 1, 2, 3)
+	 * @param tx px/pz
+	 * @param ty py/pz
+	 * @param Bx x component of field in Tesla
+	 * @param By y component of field in Tesla
+	 * @param Bz z component of field in Tesla
+	 * @param a a two element vector that will hold Ax and Ay as defined in the Spiridonov paper
+	 * @param dela_delt a four element vector ∂Ax/∂tx, ∂Ax/∂ty, ∂Ay/∂tx, ∂Ay/∂ty as defined in the Spiridonov paper
+	 */
+	private void computeAandDA(double tx, double ty, double Bx, double By, double Bz, double a[], double dela_delt[]) {
+
+		double C2 = 1 + tx * tx + ty * ty;
+		double C = Math.sqrt(C2);
+		a[0] = C * (ty * (tx * Bx + Bz) - (1 + tx * tx) * By);
+		a[1] = C * (-tx * (ty * By + Bz) + (1 + ty * ty) * Bx);
+		
+		dela_delt[0] = tx * a[0] / C2 + C * (ty * Bx - 2 * tx * By); // delAx_deltx
+		dela_delt[1] = ty * a[0] / C2 + C * (tx * Bx + Bz); // delAx_delty
+		dela_delt[2] = tx * a[1] / C2 + C * (-ty * By - Bz); // delAy_deltx
+		dela_delt[3] = ty * a[1] / C2 + C * (-tx * By + 2 * ty * Bx); // delAy_delty
+
+	}
+	
+
+	
+
+	public StateVec euler( final int sector, int i, int f, StateVec vi,
+			CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj, final Map<Integer, CovMat> trackCov) {
+		
+		if (vi == null) {
+			return null;
+		}
+		
+		double x = vi.x;
+		double y = vi.y;
+		double tx = vi.tx;
+		double ty = vi.ty;
+		double Q = vi.Q;
+
+			
+		//get the initial field and create space for the final
+		float b[] = new float[3];
+		Swim.teslaField(probe, sector, vi.x, vi.y, vi.z, b);
+		double stepSize = 0.2;  //cm
+		
+		StateVec vf = new StateVec();
+		
+		// if (bfieldPoints.size() > 0) {
+		// double B = new Vector3D(bfieldPoints.get(bfieldPoints.size() - 1).Bx,
+		// bfieldPoints.get(bfieldPoints.size() - 1).By,
+		// bfieldPoints.get(bfieldPoints.size() - 1).Bz).mag();
+		if (b != null) { // get the step size used in swimming as a function of
+							// the field intensity in the region traversed
+			double B = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+			
+			//Veronique's estimate of the stepsize
+			if (B / Bmax > 0.01) {
+				stepSize = 0.15 * 4;
+			}
+			if (B / Bmax > 0.02) {
+				stepSize = 0.1 * 3;
+			}
+			if (B / Bmax > 0.05) {
+				stepSize = 0.075 * 2;
+			}
+			if (B / Bmax > 0.1) {
+				stepSize = 0.05 * 2;
+			}
+			if (B / Bmax > 0.5) {
+				stepSize = 0.02;
+			}
+			if (B / Bmax > 0.75) {
+				stepSize = 0.01;
+			}
+		}
+
+		double del = zf - vi.z;
+		int direction = (zf > vi.z) ? 1 : -1;
+		
+		int nSteps = (int) (Math.abs((del) / stepSize) + 1);
+
+		double s = del / (double) nSteps;
+		double z = vi.z;
+		double dPath = 0;
+		
+		CovMat deriv = new CovMat(covMat.k, new Matrix(5, 5));
+
+		for (int j = 0; j < nSteps; j++) {
+			// get the sign of the step
+			if (j == nSteps - 1) {
+				s = Math.signum(del) * Math.abs(z - zf);
+			}
+			
+//			public double step(int sector, int direction, double v[], double Q, double s,
+//					float bf[], CovMat cmi, CovMat cmf) {
+
+			double v[] = { x, y, z, tx, ty };
+		    dPath += step(sector, direction, v, Q, s, b, covMat, covMat);
+		    
+			x = v[0];
+			y = v[1];
+			z = v[2];
+			tx = v[3];
+			ty = v[4];
+			
+			Swim.teslaField(probe, sector, x, y, z, b);
+
+
+
+		} // loop over nsteps
+
+		vf.z = zf;
+		vf.x = x;
+		vf.y = y;
+		vf.tx = tx;
+		vf.ty = ty;
+		vf.Q = Q;
+		vf.B = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+		vf.deltaPath = dPath;
+		vf.pzSign = vi.pzSign;
+
+		trackTraj.put(f, vf);
+
+		if (covMat.covMat != null) {
+			CovMat fCov = new CovMat(f);
+			fCov.covMat = covMat.covMat;
+			// CovMat = fCov;
+			trackCov.put(f, fCov);
+		}		
+		
+		return vf;
+	}
+
+}

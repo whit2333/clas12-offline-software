@@ -461,5 +461,25 @@ public class StateVec {
 		pzSign = (pz < 0) ? -1 : 1;
 		
 	}
+	
+	/**
+	 * Set the values of the state vector
+	 * @param x the x coordinate in cm
+	 * @param y the y coordinate in cm
+	 * @param z the z coordinate in cm
+	 * @param tx px/pz
+	 * @param yy py/pz
+	 * @param Q the integer charge divided by the momentum in GeV/c
+	 * @param pzSign the sign of pz
+	 */
+	public void set(double x, double y, double z, double tx, double ty, double Q, int pzSign) {
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.tx = tx;
+		this.ty = ty;
+		this.Q = Q;
+		this.pzSign = pzSign;
+	}
 
 }

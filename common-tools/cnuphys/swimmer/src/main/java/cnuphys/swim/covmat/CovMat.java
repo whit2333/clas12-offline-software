@@ -1,4 +1,4 @@
-package cnuphys.swim;
+package cnuphys.swim.covmat;
 
 import Jama.Matrix;
 
@@ -30,6 +30,16 @@ public class CovMat {
     	k = source.k;
     	covMat = source.covMat.copy();
     }
+    
+    public double get(int i, int j) {
+    	return covMat.get(i, j);
+    }
+    
+    
+    public void set(int i, int j, double val) {
+    	covMat.set(i, j, val);
+    }
+    
 
     @Override
     public String toString() {

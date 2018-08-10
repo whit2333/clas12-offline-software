@@ -5,6 +5,7 @@ import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.IMagField;
 import cnuphys.magfield.MagneticField;
 import cnuphys.magfield.RotatedCompositeProbe;
+import cnuphys.swim.covmat.CovMat;
 
 /**
  * A base class for both SwimZ and Swim S
