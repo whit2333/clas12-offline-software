@@ -45,7 +45,7 @@ public class SwimS extends Swim {
 	private double _SMAX = 900;
 	
 	//the default accuracy in cm
-	private double _ACCURACY = 1.0e-3; //10 microns
+	private double _accuracy = 1.0e-3; //10 microns
 	
 	/**
 	 * SwimZ null constructor. Here we create a Swimmer that will use the current active
@@ -136,7 +136,7 @@ public class SwimS extends Swim {
 	 * @param accuracy the fixed z accuracy in cm
 	 */
 	public void setAccuracy(double accuracy) {
-		_ACCURACY = accuracy;
+		_accuracy = accuracy;
 	}
 
 	/**
@@ -184,7 +184,7 @@ public class SwimS extends Swim {
 		// normally we swim from small z to a larger z cutoff.
 		// but we can handle either
 		final boolean normalDirection = (zf > start.z);
-		IStopper stopper = new ZStopper(0, _SMAX, zf, _ACCURACY, normalDirection);
+		IStopper stopper = new ZStopper(0, _SMAX, zf, _accuracy, normalDirection);
 
 		//initial state array from the SwimZ state vector
 		double u0[] = new double[6];
@@ -300,7 +300,7 @@ public class SwimS extends Swim {
 		// normally we swim from small z to a larger z cutoff.
 		// but we can handle either
 		final boolean normalDirection = (zf > start.z);
-		IStopper stopper = new ZStopper(0, _SMAX, zf, _ACCURACY, normalDirection);
+		IStopper stopper = new ZStopper(0, _SMAX, zf, _accuracy, normalDirection);
 
 		//initial state array from the SwimZ state vector
 		double u0[] = new double[6];
@@ -422,6 +422,44 @@ public class SwimS extends Swim {
 		System.out.println(String.format("(%-9.6f, %-9.6f, %-9.6f, %-9.6f, %-9.6f, %-9.6f)", u[0], u[1], u[2], u[3], u[4], u[5]));
 	}
 	
+
+	/**
+	 * Set the maximum step size
+	 * 
+	 * @param maxSS
+	 *            the maximum stepsize is whatever units you are using
+	 */
+	public void setMaxStepSize(double maxSS) {
+		_rkS.setMaxStepSize(maxSS);
+	}
+
+	/**
+	 * Set the minimum step size
+	 * 
+	 * @param maxSS
+	 *            the minimum stepsize is whatever units you are using
+	 */
+	public void setMinStepSize(double minSS) {
+		_rkS.setMinStepSize(minSS);
+	}
+
+	/**
+	 * Get the maximum step size
+	 * 
+	 * @return the maximum stepsize is whatever units you are using
+	 */
+	public double getMaxStepSize() {
+		return _rkS.getMaxStepSize();
+	}
+	
+	/**
+	 * Get the minimum step size
+	 * 
+	 * @return the minimum stepsize is whatever units you are using
+	 */
+	public double getMinStepSize() {
+		return _rkS.getMinStepSize();
+	}
 
 
 }

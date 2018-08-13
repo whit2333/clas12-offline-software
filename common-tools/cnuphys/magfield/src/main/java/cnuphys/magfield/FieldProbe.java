@@ -271,6 +271,7 @@ public abstract class FieldProbe implements IField {
 	}
 	
 	
+	private static int ZEROPROBEWARNINGCOUNT = 0;
 	/**
 	 * Get the appropriate probe for the given field
 	 * @return the probe for the given field
@@ -293,7 +294,11 @@ public abstract class FieldProbe implements IField {
 			}
 		}
 
-		System.err.println("WARNING: creating a Zero probe");
+		//give limited number of warnings
+		if (ZEROPROBEWARNINGCOUNT < 3) {
+			System.err.println("WARNING: creating a Zero probe");
+			ZEROPROBEWARNINGCOUNT++;
+		}
 		
 		return new ZeroProbe();
 	}

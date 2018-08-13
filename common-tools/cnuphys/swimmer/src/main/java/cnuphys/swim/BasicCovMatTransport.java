@@ -269,6 +269,8 @@ public class BasicCovMatTransport {
 
 		return fVec;
 	}
+	
+
 
 	/**
 	 * 
@@ -285,7 +287,7 @@ public class BasicCovMatTransport {
 	 * @param dA
 	 * @return
 	 */
-	public StateVec halfStepTransport(final RotatedCompositeProbe probe, final int sector, int i, int f, StateVec iVec,
+	public StateVec YhalfStepTransport(final RotatedCompositeProbe probe, final int sector, int i, int f, StateVec iVec,
 			CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj, final Map<Integer, CovMat> trackCov,
 			final double[] A, final double[] dA) { // s = signed step-size
 
@@ -719,6 +721,7 @@ public class BasicCovMatTransport {
 		Matrix m = new Matrix(array);
 		CovMat covMat = new CovMat(10, m);
 		CovMat covMat2 = new CovMat(10, m);
+		CovMat covMat3 = new CovMat(10, m);
 		Swim.printCovMatrix("Initial covariance matrix", covMat);
 
 		// OK let's try the real transport
@@ -747,8 +750,12 @@ public class BasicCovMatTransport {
 		System.out.println("COVMATDERIV final vector:\n" + fb);
 		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
 		
+		header("CovMatDeriv State Vec Transport");
+		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
 
-		System.exit(1);
+
 
 		zi = 245.96332;
 		zf = 353.40971799999994;
@@ -773,15 +780,25 @@ public class BasicCovMatTransport {
 
 		m = new Matrix(array2);
 		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(covMat); // copy
+		covMat2 = new CovMat(10, m);
+		covMat3 = new CovMat(10, m);
 		Swim.printCovMatrix("Initial covariance matrix", covMat);
 
 		header("Basic Transport");
+
 		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
 		System.out.println("BASIC final vector:\n" + fb);
+		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
 
-		Swim.printCovMatrix("\nBASIC final covariance matrix", covMat);
-
+		header("CovMatDeriv Transport");
+		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
+		
+		header("CovMatDeriv State Vec Transport");
+		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
 
 		zi = 525.9066700000001;
 		zf = 229.23648;
@@ -804,16 +821,27 @@ public class BasicCovMatTransport {
 				{ -0.01480981, 0.20976464, -0.00082367, 0.00405705, 0.00000578 },
 				{ -0.00002965, 0.00034266, -0.00000209, 0.00000578, 0.00025341 } };
 
-		m = new Matrix(array3);
+		m = new Matrix(array2);
 		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(covMat); // copy
+		covMat2 = new CovMat(10, m);
+		covMat3 = new CovMat(10, m);
 		Swim.printCovMatrix("Initial covariance matrix", covMat);
 
 		header("Basic Transport");
+
 		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
 		System.out.println("BASIC final vector:\n" + fb);
-
 		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
+
+		header("CovMatDeriv Transport");
+		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
+		
+		header("CovMatDeriv State Vec Transport");
+		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
 
 
 		zi = 245.96332000000004;
@@ -837,19 +865,30 @@ public class BasicCovMatTransport {
 				{ -0.00099076, -0.03981038, 0.00000421, 0.00163020, -0.00004374 },
 				{ -0.00037266, 0.00186852, -0.00005127, -0.00004374, 0.00065393 } };
 
-		m = new Matrix(array4);
+		m = new Matrix(array2);
 		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(covMat); // copy
+		covMat2 = new CovMat(10, m);
+		covMat3 = new CovMat(10, m);
 		Swim.printCovMatrix("Initial covariance matrix", covMat);
 
 		header("Basic Transport");
+
 		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-		System.out.println("\nBASIC TRANSPORT final vector:\n" + fb);
+		System.out.println("BASIC final vector:\n" + fb);
+		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
 
-		Swim.printCovMatrix("\nBASIC final covariance matrix", covMat);
-
+		header("CovMatDeriv Transport");
+		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
+		
+		header("CovMatDeriv State Vec Transport");
+		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
 
 	}
+
 
 	private static void header(String s) {
 		System.out.println("\n------------------------------------------");

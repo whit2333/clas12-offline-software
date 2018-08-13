@@ -40,7 +40,9 @@ public class ZStopper implements IStopper {
 		}
 		
 		//within accuracy?
-		if (Math.abs(_currentZ - _targetZ) < _accuracy) {
+		
+		double diff = Math.abs(_currentZ - _targetZ);
+		if (diff < _accuracy) {
 			return true;
 		}
 		
@@ -100,7 +102,11 @@ public class ZStopper implements IStopper {
 	 */
 	@Override
 	public boolean terminateIntegration(double t, double y[]) {
-		return Math.abs(_currentZ - _targetZ) < _accuracy;
+		double diff = Math.abs(_currentZ - _targetZ);
+		if (diff < _accuracy) {
+			return true;
+		}
+		return false;
 	}
 	
 	public void setS0(double s0) {
@@ -114,6 +120,11 @@ public class ZStopper implements IStopper {
 	public void setTargetZ(double targetZ) {
 		_targetZ = targetZ;
 	}
+	
+	public double getTargetZ() {
+		return _targetZ;
+	}
+
 	
 	public void setAccuracy(double accuracy) {
 		_accuracy = accuracy;
