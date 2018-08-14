@@ -308,7 +308,7 @@ public class TrackDictionaryMaker extends DCEngine{
                         if (hits != null && hits.size() > 0) {
                             for (DetHit hit : hits) {
                                 FTOFDetHit fhit = new FTOFDetHit(hit);
-                                if(fhit.getLayer()==1 || fhit.getLayer()==3)
+                                if(fhit.getLayer()==2 || fhit.getLayer()==3)
                                     paddle = fhit.getPaddle();
                             }
                         }
