@@ -572,8 +572,8 @@ public class MagneticFieldCanvas extends JComponent implements IComponentZoomabl
 
 					double bmag = Math.sqrt(Bx * Bx + By * By + Bz * Bz);
 					s = String.format(
-							"  xyz ( %-4.2f,  %-4.2f,  %-4.2f) cyl ( %-4.2f,  %-4.2f,  %-4.2f) B %-4.2f (%-4.2f, %-4.2f,  %-4.2f)",
-							xyz[0], xyz[1], xyz[2], phi, rho, xyz[2], bmag / 10, Bx / 10, By / 10, Bz / 10);
+							"  xyz ( %-5.3f,  %-5.3f,  %-5.3f) cyl ( %-5.3f,  %-5.3f,  %-5.3f) B %-5.3f (%-5.3f, %-5.3f,  %-5.3f)  kG",
+							xyz[0], xyz[1], xyz[2], phi, rho, xyz[2], bmag, Bx, By, Bz);
 
 					_field.gradient((float) (_workPoint.y), 0f, (float) (_workPoint.x), _workResult);
 					float gx = _workResult[0];
@@ -581,9 +581,9 @@ public class MagneticFieldCanvas extends JComponent implements IComponentZoomabl
 					float gz = _workResult[2];
 					double gmag = Math.sqrt(gx * gx + gy * gy + gz * gz);
 
-					s += String.format(" Grad %-4.2f T/m", gmag * 10);
+					s += String.format(" Grad %-5.3f T/m", gmag * 10);
 
-					s += " inS " + inSolenoid + " inT " + inTorus;
+					s += " inSol " + inSolenoid + " inTor " + inTorus;
 
 					break;
 				// case YZ:

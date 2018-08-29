@@ -12,17 +12,19 @@ import cnuphys.swim.Swim;
 import cnuphys.swim.SwimException;
 import cnuphys.swim.Trajectory;
 import cnuphys.swimS.SwimS;
+import cnuphys.swimZ.SwimZ;
 
-
-public class CovMatDeriv extends Matrix {
+/**
+ * For transporting the covariance matrix
+ * @author heddle
+ *
+ */
+public class CovMatTransport extends Matrix {
 	
 	/** The speed of light in these units: (GeV/c)(1/T)(1/cm) */
 	public static final double speedLight = 2.99792458e-03;
 
 	private double Bmax; // averaged
-
-	/** Argon radiation length in cm */
-	public static final double ARGONRADLEN = 14.;
 	
 	/** Mag field probe */
 	private final RotatedCompositeProbe probe;
@@ -34,14 +36,20 @@ public class CovMatDeriv extends Matrix {
 	double[][] u = new double[5][5];
 	double[][] C = new double[5][5];
 	
-	private SwimS swimS;
+	// might use a SwimS swimmer
+	private SwimS _swimS;
+	
+	//might use a SwimZ swimmer
+	private SwimZ _swimZ;
 
-	public CovMatDeriv(RotatedCompositeProbe probe) {
+	/**
+	 * Create an object with multiple ways to transport a covariance matrix
+	 * @param rcprobe must be a RotatedCompositeProbe
+	 */
+	public CovMatTransport(RotatedCompositeProbe rcprobe) {
 		super(5, 5);
-		this.probe = probe;
-		
-		swimS = new SwimS(probe);
-		
+		probe = rcprobe;
+				
 		// Max Field Location: (phi, rho, z) = (29.50000, 44.00000, 436.00000)
 		// get the maximum value of the B field
 		double phi = Math.toRadians(29.5);
@@ -156,7 +164,7 @@ public class CovMatDeriv extends Matrix {
 		double py = ty * pz;
 
 		//path length in radiation length units = t/X0 [true path length/ X0]
-		double t_ov_X0 = direction * s / ARGONRADLEN; 
+		double t_ov_X0 = direction * s / Swim.ARGONRADLEN; 
 		
 		// double mass = this.MassHypothesis(this.massHypo); // assume given
 		// mass hypothesis
@@ -300,7 +308,7 @@ public class CovMatDeriv extends Matrix {
 		double py = ty * pz;
 
 		//path length in radiation length units = t/X0 [true path length/ X0]
-		double t_ov_X0 = direction * s / ARGONRADLEN; 
+		double t_ov_X0 = direction * s / Swim.ARGONRADLEN; 
 		
 		// double mass = this.MassHypothesis(this.massHypo); // assume given
 		// mass hypothesis
@@ -483,15 +491,15 @@ public class CovMatDeriv extends Matrix {
 
 	}
 		
-	
-	public StateVec halfStep( final int sector, int i, int f, StateVec svi,
+	private static final double MAXZWIMSSTEP = 2; //cm
+	public StateVec halfStepZ( final int sector, int i, int f, StateVec svi,
 			CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj, final Map<Integer, CovMat> trackCov) {
 		
-		swimS.setMaxStepSize(2);
+		if (_swimZ == null) {
+			_swimZ = new SwimZ(probe);
+			_swimZ.setMaxStepSize(MAXZWIMSSTEP);
+		}
 		
-		double accuracy = 1.0e-06;
-		swimS.setAccuracy(accuracy);
-		swimS.setMinStepSize(accuracy);
 		
 		int direction = (zf > svi.z) ? 1 : -1;
 		
@@ -503,9 +511,73 @@ public class CovMatDeriv extends Matrix {
 		
 		double hdata[] = new double[3];
 		try {
-			traj = swimS.sectorAdaptiveRK(sector, svi, zf, 0.2, hdata);
-			System.out.println("zf: " + zf + "   NUM STEPS: " + traj.size() +  
-					"  zlast: " + traj.last().z + "  dellast z: " + Math.abs(traj.last().z-zf));
+			traj = _swimZ.sectorAdaptiveRK(sector, svi, zf, 0.2, hdata);
+//			System.out.println("zf: " + zf + "   NUM STEPS: " + traj.size() +  
+//					"  zlast: " + traj.last().z + "  dellast z: " + Math.abs(traj.last().z-zf));
+		} catch (SwimException e) {
+			e.printStackTrace();
+		}
+		
+		if ((traj == null) || (traj.isEmpty())) {
+			return null;
+		}
+		
+		if (direction < 0) {
+			svi.Q = -svi.Q;  //reset
+		}
+		double Q = svi.Q;
+
+		float bf[] = new float[3];
+		
+		//Now advance the covariance matrix
+		
+		StateVec now = svi;
+		int len = traj.size();
+		
+		for (int indx = 1; indx < len; indx++) {
+			StateVec next = traj.get(indx);
+			if (direction < 0) {
+				next.Q = -next.Q;  //reset
+			}
+
+			Swim.teslaField(probe, sector, now.x, now.y, now.z, bf);
+			stepCovMat(sector, direction, now, Q, next.z - now.z, bf, covMat);
+			
+			now = next;
+			
+		}
+		return traj.last();
+	}
+
+	private static final double MAXSWIMSSTEP = 2; //cm
+	public StateVec halfStepS( final int sector, int i, int f, StateVec svi,
+			CovMat covMat, final double zf, final Map<Integer, StateVec> trackTraj, final Map<Integer, CovMat> trackCov) {
+		
+		if (_swimS == null) {
+			_swimS = new SwimS(probe);
+			_swimS.setMaxStepSize(MAXSWIMSSTEP);
+			
+			double accuracy = 1.0e-06;
+			_swimS.setAccuracy(accuracy);
+			
+			//since swimming to fixed S, the min step size should be no bigger than the accuracy
+			_swimS.setMinStepSize(accuracy);
+		}
+		
+		
+		int direction = (zf > svi.z) ? 1 : -1;
+		
+		if (direction < 0) {
+			svi.Q = -svi.Q;
+		}
+		
+		Trajectory traj = null;
+		
+		double hdata[] = new double[3];
+		try {
+			traj = _swimS.sectorAdaptiveRK(sector, svi, zf, 0.2, hdata);
+//			System.out.println("zf: " + zf + "   NUM STEPS: " + traj.size() +  
+//					"  zlast: " + traj.last().z + "  dellast z: " + Math.abs(traj.last().z-zf));
 		} catch (SwimException e) {
 			e.printStackTrace();
 		}

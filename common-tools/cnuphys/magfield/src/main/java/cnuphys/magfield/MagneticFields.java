@@ -9,6 +9,7 @@ import java.io.PrintStream;
 import java.text.SimpleDateFormat;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
+import java.util.Vector;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JFileChooser;
@@ -1384,7 +1385,10 @@ public class MagneticFields {
 
 				float[] result = new float[3];
 
-				FieldProbe probe = FieldProbe.factory(_solenoid);
+				FieldProbe solProbe = FieldProbe.factory(_solenoid);
+				FieldProbe torProbe = FieldProbe.factory(_torus);
+				
+				Vector<Integer> usedIndices = new Vector<Integer>();
 
 				for (int nPhi = 0; nPhi < _torus.getQ1Coordinate().getNumPoints(); nPhi++) {
 					double phi = _torus.getQ1Coordinate().getValue(nPhi);
@@ -1399,10 +1403,23 @@ public class MagneticFields {
 							// System.err.println("Z = " + z);
 
 							// get the solenoid field
-							probe.fieldCylindrical(phi, rho, z, result);
+							solProbe.fieldCylindrical(phi, rho, z, result);
 
 							// composite index
 							int index = _torus.getCompositeIndex(nPhi, nRho, nZ);
+							
+							if (usedIndices.contains(index)) {
+								System.out.println("DUPLICATE INDEX " + index);
+								System.exit(1);
+							} else {
+								System.out.println("adding " + index);
+								usedIndices.add(index);
+							}
+							
+							if ((Math.abs(phi) < 0.1) && (Math.abs(rho - 1.2) < 0.1) && (Math.abs(z-300) < 0.1)) {
+								System.out.println("HEY MAN phi = " + phi + "  rho = " + rho + "  z = " + z);
+								System.out.println("Solenoid field: [" + result[0] + ", " + result[1] + ", " + result[2] + "]");
+							}
 							_torus.addToField(index, result);
 
 						}

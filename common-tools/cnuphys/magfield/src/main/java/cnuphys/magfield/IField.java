@@ -24,8 +24,7 @@ public interface IField {
      * @param z
      *            coordinate in cm
      * @param result
-     *            the result
-     * @result a Cartesian vector holding the calculated field in kiloGauss.
+     *            the result a Cartesian vector that will the calculated field in kiloGauss.
      */
     public void fieldCylindrical(double phi, double rho, double z,
 	    float result[]);

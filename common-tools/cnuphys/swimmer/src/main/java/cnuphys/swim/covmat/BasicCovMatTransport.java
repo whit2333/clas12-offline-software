@@ -1,4 +1,4 @@
-package cnuphys.swim;
+package cnuphys.swim.covmat;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,8 +9,10 @@ import cnuphys.magfield.MagneticFields;
 import cnuphys.magfield.RotatedCompositeProbe;
 import cnuphys.swimS.SwimS;
 import cnuphys.magfield.MagneticFields.FieldType;
-import cnuphys.swim.covmat.CovMat;
-import cnuphys.swim.covmat.CovMatDeriv;
+import cnuphys.swim.StateVec;
+import cnuphys.swim.Swim;
+import cnuphys.swim.SwimException;
+import cnuphys.swim.Trajectory;
 
 /**
  * Veronique's original transporter
@@ -30,7 +32,6 @@ public class BasicCovMatTransport {
 	private final double[] A = new double[2];
 	private final double[] dA = new double[4];
 	private final float[] bf = new float[3];
-	private final float[] lbf = new float[3];
 
 	double hdata[] = new double[3];
 
@@ -696,6 +697,10 @@ public class BasicCovMatTransport {
 		RotatedCompositeProbe rcp = new RotatedCompositeProbe(MagneticFields.getInstance().getRotatedCompositeField());
 		int sector = 2;
 		System.out.println("sector: " + sector);
+		
+		HashMap<Integer, StateVec> trajMap = new HashMap<>();
+		HashMap<Integer, CovMat> matMap = new HashMap<>();
+
 
 		double zi = 528.8406160000001;
 		double zf = 229.23648;
@@ -705,57 +710,18 @@ public class BasicCovMatTransport {
 		double p = 1.2252495;
 		int q = 1;
 
-		double Q = q / p;
-
 		// the initial state vector
-		StateVec iv = new StateVec(-119.8901385, 0.5410029, zi, -0.0287247, -0.0083868, Q, (zf > zi) ? 1 : -1);
-
-		System.out.println("Initial State Vector TILTED): " + iv);
+		StateVec svi = new StateVec(-119.8901385, 0.5410029, zi, -0.0287247, -0.0083868, q/p, (zf > zi) ? 1 : -1);
 
 		double array[][] = { { 5.26357439, -1.64761026, 0.04338227, -0.00814181, 0.01041586 },
 				{ -1.64761026, 304.13559440, -0.04366342, 1.24484383, 0.00310091 },
 				{ 0.04338227, -0.04366342, 0.00091018, -0.00020141, 0.00011534 },
 				{ -0.00814181, 1.24484383, -0.00020141, 0.00702420, 0.00000639 },
 				{ 0.01041586, 0.00310091, 0.00011534, 0.00000639, 0.00132762 } };
-
-		Matrix m = new Matrix(array);
-		CovMat covMat = new CovMat(10, m);
-		CovMat covMat2 = new CovMat(10, m);
-		CovMat covMat3 = new CovMat(10, m);
-		Swim.printCovMatrix("Initial covariance matrix", covMat);
-
-		// OK let's try the real transport
-
-		double[] A = new double[2];
-		double[] dA = new double[4];
-
-		HashMap<Integer, StateVec> trajMap = new HashMap<>();
-		HashMap<Integer, CovMat> matMap = new HashMap<>();
-
-		BasicCovMatTransport basicTransporter = new BasicCovMatTransport();
 		
-		//to compare
-		CovMatDeriv  cmDeriv= new CovMatDeriv(rcp);
+		doTest(rcp, sector, svi, zf, trajMap, matMap, array);
 
-		StateVec fb = null;
-		
-		header("Basic Transport");
-
-		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-		System.out.println("BASIC final vector:\n" + fb);
-		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
-
-		header("CovMatDeriv Transport");
-		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
-		
-		header("CovMatDeriv State Vec Transport");
-		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
-
-
+		System.exit(1);
 
 		zi = 245.96332;
 		zf = 353.40971799999994;
@@ -765,40 +731,17 @@ public class BasicCovMatTransport {
 		p = 1.203859;
 		q = 1;
 
-		Q = q / p;
-
 		// the initial state vector
-		iv = new StateVec(-77.3874623, 3.6370810, zi, -0.3743674, 0.0056915, Q, (zf > zi) ? 1 : -1);
-
-		System.out.println("Initial State Vector TILTED): " + iv);
+		svi = new StateVec(-77.3874623, 3.6370810, zi, -0.3743674, 0.0056915, q/p, (zf > zi) ? 1 : -1);
 
 		double array2[][] = { { 1.39050442, -0.60880155, 0.00758016, -0.03796520, 0.00000122 },
 				{ -0.60880155, 125.40922609, -0.04350925, 0.58199222, -0.00000562 },
 				{ 0.00758016, -0.04350925, 0.00100377, -0.00001820, 0.00000029 },
 				{ -0.03796520, 0.58199222, -0.00001820, 0.07081348, -0.00000013 },
 				{ 0.01041586, 0.00310091, 0.00011534, 0.00000639, 0.00132762 } };
-
-		m = new Matrix(array2);
-		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(10, m);
-		covMat3 = new CovMat(10, m);
-		Swim.printCovMatrix("Initial covariance matrix", covMat);
-
-		header("Basic Transport");
-
-		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-		System.out.println("BASIC final vector:\n" + fb);
-		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
-
-		header("CovMatDeriv Transport");
-		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
 		
-		header("CovMatDeriv State Vec Transport");
-		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
+		doTest(rcp, sector, svi, zf, trajMap, matMap, array2);
+
 
 		zi = 525.9066700000001;
 		zf = 229.23648;
@@ -808,12 +751,8 @@ public class BasicCovMatTransport {
 		p = 0.504176;
 		q = -1;
 
-		Q = q / p;
-
 		// the initial state vector
-		iv = new StateVec(6.8033300, 62.6135951, zi, -0.16484314, 0.0529304, Q, (zf > zi) ? 1 : -1);
-
-		System.out.println("Initial State Vector TILTED): " + iv);
+		svi = new StateVec(6.8033300, 62.6135951, zi, -0.16484314, 0.0529304, q/p, (zf > zi) ? 1 : -1);
 
 		double array3[][] = { { 0.55745442, -1.76379746, 0.02411801, -0.01480981, -0.00002965 },
 				{ -1.76379746, 27.38677719, -0.11588196, 0.20976464, 0.00034266 },
@@ -821,27 +760,7 @@ public class BasicCovMatTransport {
 				{ -0.01480981, 0.20976464, -0.00082367, 0.00405705, 0.00000578 },
 				{ -0.00002965, 0.00034266, -0.00000209, 0.00000578, 0.00025341 } };
 
-		m = new Matrix(array2);
-		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(10, m);
-		covMat3 = new CovMat(10, m);
-		Swim.printCovMatrix("Initial covariance matrix", covMat);
-
-		header("Basic Transport");
-
-		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-		System.out.println("BASIC final vector:\n" + fb);
-		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
-
-		header("CovMatDeriv Transport");
-		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
-		
-		header("CovMatDeriv State Vec Transport");
-		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
+		doTest(rcp, sector, svi, zf, trajMap, matMap, array3);
 
 
 		zi = 245.96332000000004;
@@ -852,41 +771,63 @@ public class BasicCovMatTransport {
 		p = 1.051625;
 		q = -1;
 
-		Q = q / p;
-
 		// the initial state vector
-		iv = new StateVec(-9.3661347, 38.1486121, zi, -0.0183989, 0.1716338, Q, (zf > zi) ? 1 : -1);
+		svi = new StateVec(-9.3661347, 38.1486121, zi, -0.0183989, 0.1716338, q/p, (zf > zi) ? 1 : -1);
 
-		System.out.println("Initial State Vector TILTED): " + iv);
-
+		
 		double array4[][] = { { 0.13673342, 0.02140961, 0.00065784, -0.00099076, -0.00037266 },
 				{ 0.02140961, 10.56046595, -0.00486797, -0.03981038, 0.00186852 },
 				{ 0.00065784, -0.00486797, 0.00019551, 0.00000421, -0.00005127 },
 				{ -0.00099076, -0.03981038, 0.00000421, 0.00163020, -0.00004374 },
 				{ -0.00037266, 0.00186852, -0.00005127, -0.00004374, 0.00065393 } };
 
-		m = new Matrix(array2);
-		covMat = new CovMat(10, m);
-		covMat2 = new CovMat(10, m);
-		covMat3 = new CovMat(10, m);
-		Swim.printCovMatrix("Initial covariance matrix", covMat);
+		doTest(rcp, sector, svi, zf, trajMap, matMap, array4);
+	}
+	
+	private static void doTest(RotatedCompositeProbe rcp, int sector, StateVec svi, double zf, 
+			Map<Integer, StateVec> trajMap, Map<Integer, CovMat> matMap, double array[][]) {
+		
+		double[] A = new double[2];
+		double[] dA = new double[4];
 
-		header("Basic Transport");
+		Matrix m = new Matrix(array);
+//		CovMat covMat = new CovMat(10, m);
+		CovMat covMat2 = new CovMat(10, m);
+		CovMat covMat3 = new CovMat(10, m);
+		CovMat covMat4 = new CovMat(10, m);
+		
+		
+		System.out.println("Initial State Vector TILTED): " + svi);
 
-		fb = basicTransporter.transport(rcp, sector, 0, 0, iv, covMat, zf, trajMap, matMap, A, dA);
-		System.out.println("BASIC final vector:\n" + fb);
-		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
+		Swim.printCovMatrix("Initial covariance matrix", covMat2);
+		
+//		BasicCovMatTransport basicTransporter = new BasicCovMatTransport();
+		
+		//to compare
+		CovMatTransport  cmDeriv= new CovMatTransport(rcp);
+
+		StateVec fb;
+		
+//		header("Basic Transport");
+//		fb = basicTransporter.transport(rcp, sector, 0, 0, svi, covMat, zf, trajMap, matMap, A, dA);
+//		System.out.println("BASIC final vector:\n" + fb);
+//		Swim.printCovMatrix("\nBASIC final covariance matrix BASIC", covMat);
 
 		header("CovMatDeriv Transport");
-		fb = cmDeriv.euler(sector, 0, 0, iv, covMat2, zf, trajMap, matMap);
+		fb = cmDeriv.euler(sector, 0, 0, svi, covMat2, zf, trajMap, matMap);
 		System.out.println("COVMATDERIV final vector:\n" + fb);
 		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat2);
 		
-		header("CovMatDeriv State Vec Transport");
-		fb = cmDeriv.halfStep(sector, 0, 0, iv, covMat3, zf, trajMap, matMap);
-		System.out.println("COVMATDERIV State Vec Transport final vector:\n" + fb);
-		Swim.printCovMatrix("\nCOVMATDERIV final covariance matrix", covMat3);
+		header("CovMatDeriv State Vec TransportS");
+		fb = cmDeriv.halfStepS(sector, 0, 0, svi, covMat3, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec TransportS final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final TransportS covariance matrix", covMat3);
 
+		header("CovMatDeriv State Vec TransportZ");
+		fb = cmDeriv.halfStepZ(sector, 0, 0, svi, covMat4, zf, trajMap, matMap);
+		System.out.println("COVMATDERIV State Vec TransportZ final vector:\n" + fb);
+		Swim.printCovMatrix("\nCOVMATDERIV final TransportZ covariance matrix", covMat4);
+		
 	}
 
 

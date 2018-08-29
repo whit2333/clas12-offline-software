@@ -1,6 +1,8 @@
 package cnuphys.swimZ;
 
 import java.util.ArrayList;
+
+import cnuphys.magfield.FieldProbe;
 import cnuphys.magfield.IMagField;
 import cnuphys.magfield.MagneticField;
 import cnuphys.magfield.RotatedCompositeProbe;
@@ -36,9 +38,6 @@ import cnuphys.swim.Trajectory;
  */
 public class SwimZ extends Swim {
 
-	/** Argon radiation length in cm */
-	public static final double ARGONRADLEN = 14.;
-
 	// create a do nothing stopper for now
 	private IStopper _stopper = new DefaultStopper();
 
@@ -53,10 +52,10 @@ public class SwimZ extends Swim {
 
 	// the derivatives (i.e., the ODEs)
 	private SwimZDerivative _deriv;
-	
+
 	/**
-	 * SwimZ null constructor. Here we create a Swimmer that will use the current active
-	 * magnetic field.
+	 * SwimZ null constructor. Here we create a Swimmer that will use the
+	 * current active magnetic field.
 	 * 
 	 * @param field
 	 *            interface into a magnetic field
@@ -83,6 +82,17 @@ public class SwimZ extends Swim {
 	public SwimZ(IMagField magneticField) {
 		super(magneticField);
 	}
+	
+	/**
+	 * Create a swimmer specific to a magnetic field probe
+	 * 
+	 * @param probe
+	 *            the magnetic field probe
+	 */
+	public SwimZ(FieldProbe probe) {
+		super(probe);
+	}
+
 
 	/**
 	 * Set the tolerance used by the CLAS_Tolerance array
@@ -103,7 +113,6 @@ public class SwimZ extends Swim {
 		}
 	}
 
-
 	// some initialization
 	@Override
 	protected void initialize() {
@@ -114,7 +123,7 @@ public class SwimZ extends Swim {
 			_deriv = new SwimZDerivative();
 		}
 
-		setAbsoluteTolerance(1.0e-3);
+		setAbsoluteTolerance(1.0e-4);
 	}
 
 	/**
@@ -136,19 +145,18 @@ public class SwimZ extends Swim {
 	 * @return the swim result
 	 * @throws SwimException
 	 */
-	public Trajectory adaptiveRK(StateVec start, final double zf, double stepSize,
-			double hdata[]) throws SwimException {
+	public Trajectory adaptiveRK(StateVec start, final double zf, double stepSize, double hdata[])
+			throws SwimException {
 
 		if (start == null) {
 			throw new SwimException("Null starting state vector in SwimZ adaptiveRK.");
 		}
-		
+
 		if (!start.pzSignCorrect(start.z, zf)) {
-			throw new SwimException("Inconsistent sign for Pz in adaptiveRK" +
-		"\nzi: " + start.z + "  zf: " + zf + "  sign: " + start.pzSign);
+			throw new SwimException("Inconsistent sign for Pz in adaptiveRK" + "\nzi: " + start.z + "  zf: " + zf
+					+ "  sign: " + start.pzSign);
 		}
 
-		
 		int q = start.getCharge();
 
 		// straight line?
@@ -179,33 +187,33 @@ public class SwimZ extends Swim {
 		}
 
 		if (nStep == 0) {
-			
+
 			Trajectory result = new Trajectory();
 			result.add(start);
 			StateVec stop = new StateVec(start);
-			
-			//go in one step
-			
-			double x[] = {start.x, start.y, start.tx, start.ty};
+
+			// go in one step
+
+			double x[] = { start.x, start.y, start.tx, start.ty };
 			double dfdz[] = new double[4];
 			_deriv.derivative(start.z, x, dfdz);
 			double dz = zf - start.z;
-			stop.x = start.x + dfdz[0]*dz;
-			stop.y = start.y + dfdz[1]*dz;
-			stop.tx = start.tx + dfdz[2]*dz;
-			stop.ty = start.ty + dfdz[3]*dz;
+			stop.x = start.x + dfdz[0] * dz;
+			stop.y = start.y + dfdz[1] * dz;
+			stop.tx = start.tx + dfdz[2] * dz;
+			stop.ty = start.ty + dfdz[3] * dz;
 			stop.z = zf;
-			
+
 			result.add(start);
 			result.add(stop);
 			return result;
 		}
 
 		Trajectory result = new Trajectory(nStep);
-		//result.add(start);
+		// result.add(start);
 		for (int i = 0; i < zArray.size(); i++) {
 			double v[] = yArray.get(i);
-						
+
 			StateVec sv = new StateVec(zArray.get(i), v, start.Q, start.pzSign);
 			result.add(sv);
 		}
@@ -216,6 +224,7 @@ public class SwimZ extends Swim {
 
 	/**
 	 * Swim to a fixed z over short distances using RK adaptive stepsize
+	 * This is for swimming in a local, tilted system.
 	 * 
 	 * @param sector
 	 *            the sector [1..6]
@@ -235,8 +244,8 @@ public class SwimZ extends Swim {
 	 * @return the swim result
 	 * @throws SwimException
 	 */
-	public Trajectory sectorAdaptiveRK(int sector, StateVec start, final double zf,
-			double stepSize, double hdata[]) throws SwimException {
+	public Trajectory sectorAdaptiveRK(int sector, StateVec start, final double zf, double stepSize, double hdata[])
+			throws SwimException {
 
 		if (!(_probe instanceof RotatedCompositeProbe)) {
 			System.err.println("Can only call sectorAdaptiveRK with a RotatedComposite Probe");
@@ -247,13 +256,12 @@ public class SwimZ extends Swim {
 		if (start == null) {
 			throw new SwimException("Null starting state vector.");
 		}
-		
+
 		if (!start.pzSignCorrect(start.z, zf)) {
-			throw new SwimException("Inconsistent sign for Pz in sectorAdaptiveRK" +
-		"\nzi: " + start.z + "  zf: " + zf + "  sign: " + start.pzSign);
+			throw new SwimException("Inconsistent sign for Pz in sectorAdaptiveRK" + "\nzi: " + start.z + "  zf: " + zf
+					+ "  sign: " + start.pzSign);
 		}
 
-		
 		int q = start.getCharge();
 
 		// straight line?
@@ -289,33 +297,33 @@ public class SwimZ extends Swim {
 		}
 
 		if (nStep == 0) {
-			
+
 			Trajectory result = new Trajectory(nStep);
 			result.add(start);
 			StateVec stop = new StateVec(start);
-			
-			//go in one step
-			
-			double x[] = {start.x, start.y, start.tx, start.ty};
+
+			// go in one step
+
+			double x[] = { start.x, start.y, start.tx, start.ty };
 			double dfdz[] = new double[4];
 			_deriv.derivative(start.z, x, dfdz);
 			double dz = zf - start.z;
-			stop.x = start.x + dfdz[0]*dz;
-			stop.y = start.y + dfdz[1]*dz;
-			stop.tx = start.tx + dfdz[2]*dz;
-			stop.ty = start.ty + dfdz[3]*dz;
+			stop.x = start.x + dfdz[0] * dz;
+			stop.y = start.y + dfdz[1] * dz;
+			stop.tx = start.tx + dfdz[2] * dz;
+			stop.ty = start.ty + dfdz[3] * dz;
 			stop.z = zf;
-			
+
 			result.add(start);
 			result.add(stop);
-//			System.out.println("start:\n" + start);
-//			System.out.println("stop:\n" + stop);
-//			System.out.println("zf: " + zf + " stepSize: " + stepSize);
+			// System.out.println("start:\n" + start);
+			// System.out.println("stop:\n" + stop);
+			// System.out.println("zf: " + zf + " stepSize: " + stepSize);
 			return result;
 		}
 
 		Trajectory result = new Trajectory(nStep);
-//		result.add(start);
+		// result.add(start);
 		for (int i = 0; i < zArray.size(); i++) {
 			double v[] = yArray.get(i);
 			StateVec sv = new StateVec(zArray.get(i), v, start.Q, start.pzSign);
@@ -343,15 +351,15 @@ public class SwimZ extends Swim {
 	 * @return the number of steps
 	 * @throws SwimException
 	 */
-	public int adaptiveRK(StateVec start, StateVec stop, final double zf,
-			double stepSize, double hdata[]) throws SwimException {
+	public int adaptiveRK(StateVec start, StateVec stop, final double zf, double stepSize, double hdata[])
+			throws SwimException {
 		if (start == null) {
 			throw new SwimException("Null starting state vector.");
 		}
-		
+
 		int q = start.getCharge();
 		double p = start.getP();
-		
+
 		stop.copy(start);
 
 		// straight line?
@@ -389,8 +397,6 @@ public class SwimZ extends Swim {
 
 		return nStep;
 	}
-	
-
 
 	/**
 	 * Swim to a fixed z over short distances using a parabolic estimate,
@@ -410,13 +416,12 @@ public class SwimZ extends Swim {
 	 * @throws SwimException
 	 */
 
-	public void parabolicEstimate(double p, StateVec start, StateVec stop, double zf)
-			throws SwimException {
+	public void parabolicEstimate(double p, StateVec start, StateVec stop, double zf) throws SwimException {
 
 		if (start == null) {
 			throw new SwimException("Null starting state vector.");
 		}
-		
+
 		int Q = start.getCharge();
 
 		// straight line?
@@ -472,16 +477,16 @@ public class SwimZ extends Swim {
 	 * @throws SwimException
 	 */
 
-	public Trajectory parabolicEstimate(StateVec start, double zf, double stepSize)
-			throws SwimException {
+	public Trajectory parabolicEstimate(StateVec start, double zf, double stepSize) throws SwimException {
 
 		if (start == null) {
 			throw new SwimException("Null starting state vector.");
 		}
-		
-		//make sure start has the righ pz sign
-		int pzSign = (zf > start.z) ?  1 : -1;;
-		start.pzSign = (zf > start.z) ?  1 : -1;
+
+		// make sure start has the righ pz sign
+		int pzSign = (zf > start.z) ? 1 : -1;
+		;
+		start.pzSign = (zf > start.z) ? 1 : -1;
 
 		int Q = start.getCharge();
 		double p = start.getP();
@@ -532,7 +537,6 @@ public class SwimZ extends Swim {
 			// double q) {
 
 			StateVec v1 = new StateVec(x1, y1, swimZrange.z(i + 1), tx1, ty1, q, pzSign);
-			
 
 			// add to the resuts
 			result.add(v1);
@@ -543,12 +547,12 @@ public class SwimZ extends Swim {
 	}
 
 	// a straight line just containing the end points
-	//might be charge is zero or might be B is zero
+	// might be charge is zero or might be B is zero
 	private Trajectory straightLineResult(StateVec start, double zf) {
-		
+
 		int pzSign = (zf > start.z) ? 1 : -1;
 		start.pzSign = pzSign;
-		
+
 		Trajectory result = new Trajectory(2);
 		result.add(start);
 		double s = zf - start.z;
@@ -560,7 +564,7 @@ public class SwimZ extends Swim {
 	}
 
 	// straight line returning the end point
-	//might be charge is zero or might be B is zero
+	// might be charge is zero or might be B is zero
 	private void straightLineResult(int Q, double p, StateVec start, StateVec stop, double zf) {
 		double s = zf - start.z;
 		stop.x = start.x + start.tx * s;
@@ -570,14 +574,42 @@ public class SwimZ extends Swim {
 		stop.ty = start.ty;
 	}
 	
-	//compute the field in Tesla
-	private void teslaField(int sector, double x, double y, double z, float[] result) {
-		_probe.field(sector, (float)x, (float)y, (float)z, result);
-		//to tesla from kG
-		for (int i = 0; i < 3; i++) {
-			result[i] /= 10;
-		}
+	/**
+	 * Set the maximum step size
+	 * 
+	 * @param maxSS
+	 *            the maximum stepsize is whatever units you are using
+	 */
+	public void setMaxStepSize(double maxSS) {
+		_rkZ.setMaxStepSize(maxSS);
+	}
+
+	/**
+	 * Set the minimum step size
+	 * 
+	 * @param maxSS
+	 *            the minimum stepsize is whatever units you are using
+	 */
+	public void setMinStepSize(double minSS) {
+		_rkZ.setMinStepSize(minSS);
+	}
+
+	/**
+	 * Get the maximum step size
+	 * 
+	 * @return the maximum stepsize is whatever units you are using
+	 */
+	public double getMaxStepSize() {
+		return _rkZ.getMaxStepSize();
 	}
 	
+	/**
+	 * Get the minimum step size
+	 * 
+	 * @return the minimum stepsize is whatever units you are using
+	 */
+	public double getMinStepSize() {
+		return _rkZ.getMinStepSize();
+	}
 
 }

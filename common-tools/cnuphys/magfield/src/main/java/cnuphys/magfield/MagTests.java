@@ -90,8 +90,8 @@ public class MagTests {
 	public static void samenessTest() {
 		System.err.println("Sameness Test Overlap Removal");
 
-	//	int num = 10000000;
-		int num = 5000000;
+		int num = 10000000;
+//		int num = 5000000;
 
 		float x[] = new float[num];
 		float y[] = new float[num];
