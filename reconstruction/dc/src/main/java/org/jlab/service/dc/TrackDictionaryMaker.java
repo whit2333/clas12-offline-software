@@ -5,12 +5,15 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.math3.util.FastMath;
 import org.jlab.clas.swimtools.MagFieldsEngine;
 import org.jlab.clas.swimtools.Swim;
 import org.jlab.clas.swimtools.Swimmer;
+import org.jlab.detector.base.DetectorType;
+import org.jlab.detector.base.GeometryFactory;
 
 import org.jlab.detector.geant4.v2.DCGeant4Factory;
 import org.jlab.geom.prim.Line3D;
@@ -20,7 +23,9 @@ import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
 import org.jlab.detector.geant4.v2.PCALGeant4Factory;
 import org.jlab.detector.hits.DetHit;
 import org.jlab.detector.hits.FTOFDetHit;
+import org.jlab.geom.base.ConstantProvider;
 import org.jlab.geometry.prim.Line3d;
+import org.jlab.rec.dc.Constants;
 
 import org.jlab.utils.options.OptionParser;
 
@@ -597,9 +602,20 @@ public class TrackDictionaryMaker extends DCEngine{
         this.Wl6 = Wl6;
     }
 
+    private void resetGeom(String geomDBVar) {
+        ConstantProvider provider = GeometryFactory.getConstants(DetectorType.DC, 11, Optional.ofNullable(geomDBVar).orElse("default"));
+        dcDetector = new DCGeant4Factory(provider, DCGeant4Factory.MINISTAGGERON);
+        
+        for(int l=0; l<6; l++) {
+            Constants.wpdist[l] = provider.getDouble("/geometry/dc/superlayer/wpdist", l);
+            System.out.println("****************** WPDIST READ *********FROM RELOADED "+geomDBVar+"**** VARIATION ****** "+provider.getDouble("/geometry/dc/superlayer/wpdist", l));
+        }
+        
+    }
     public static void main(String[] args) {
-        TrackDictionaryMaker tm = new TrackDictionaryMaker();
+        TrackDictionaryMaker tm = new TrackDictionaryMaker();        
         tm.init();
+        
         OptionParser parser = new OptionParser("dict-maker");
 
         parser.addOption("-t","-1.0");
@@ -609,6 +625,7 @@ public class TrackDictionaryMaker extends DCEngine{
         parser.addOption("-phimin","-30.0");
         parser.addOption("-phimax","30.0");
         parser.addOption("-vz","0.0");
+        parser.addOption("-var","default");
         parser.parse(args);
         
         if(parser.hasOption("-t")==true && parser.hasOption("-s")==true){
@@ -619,6 +636,8 @@ public class TrackDictionaryMaker extends DCEngine{
             float phiMin = (float) parser.getOption("-phimin").doubleValue();
             float phiMax = (float) parser.getOption("-phimax").doubleValue();
             float vz = (float) parser.getOption("-vz").doubleValue();
+            String dcVar = parser.getOption("-var").stringValue();
+            tm.resetGeom(dcVar);
             tm.processFile(torus, solenoid, charge, pBinSize, phiMin, phiMax, vz);
         } else {
             System.out.println(" FIELDS NOT SET");
