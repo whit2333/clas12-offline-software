@@ -249,7 +249,7 @@ public class TrackDictionaryMaker extends DCEngine{
                         this.Wl3.clear();
                         this.Wl4.clear();
                         this.Wl5.clear();
-                        this.Wl5.clear();
+                        this.Wl6.clear();
                         this.entry = "";
                         for (int sl = 0; sl < 6; sl++) {
                             sw.SetSwimParameters(rotatedX.x(), rotatedX.y(), rotatedX.z(), rotatedP.x(), rotatedP.y(), rotatedP.z(), q);
@@ -308,7 +308,7 @@ public class TrackDictionaryMaker extends DCEngine{
                         if (hits != null && hits.size() > 0) {
                             for (DetHit hit : hits) {
                                 FTOFDetHit fhit = new FTOFDetHit(hit);
-                                if(fhit.getLayer()==2 || fhit.getLayer()==3)
+                                if(fhit.getLayer()==1 || fhit.getLayer()==3)
                                     paddle = fhit.getPaddle();
                             }
                         }
