@@ -416,7 +416,8 @@ public class TrackDictionaryValidation {
 //        inputFileName = "/Users/devita/out_clas_004013.0.9.hipo";
 //        testFileName  = "/Users/devita/out_clas_004013.0.9.hipo";
 //        wireSmear=2;
-//        maxEvents = 500000;       
+//        maxEvents = 500000;  
+        
         TrackDictionaryValidation tm = new TrackDictionaryValidation();
         tm.init();
         if(parser.hasOption("-d")==true) {
