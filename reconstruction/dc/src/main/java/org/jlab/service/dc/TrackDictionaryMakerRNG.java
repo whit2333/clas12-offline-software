@@ -43,14 +43,16 @@ public class TrackDictionaryMakerRNG extends DCEngine{
         }
         return count;
     }
-    Random random = new Random();
+    Random r = null;
     private Map<ArrayList<Integer>, Integer> dictionary = null;
     
     public TrackDictionaryMakerRNG(){
         super("TDM");
     }
+    
     @Override
     public boolean init() {
+        r = new Random();
         MagFieldsEngine mf = new MagFieldsEngine();
         mf.initializeMagneticFields();
         super.LoadTables();
@@ -198,11 +200,12 @@ public class TrackDictionaryMakerRNG extends DCEngine{
     private List<Integer> Wl6 = new ArrayList<Integer>();
     private String entry;
     
+    
     private double randomDouble(double min, double max) {
         if (min >= max) {
             throw new IllegalArgumentException("max must be greater than min");
         }
-        Random r = new Random();
+        
         return min + (max - min) * r.nextDouble();
     }
     private void Clear(int[] wireArray) {
@@ -210,7 +213,10 @@ public class TrackDictionaryMakerRNG extends DCEngine{
             wireArray[i]=0;
         }
     }
-    public void ProcessTracks(PrintWriter pw,DCGeant4Factory dcDetector, FTOFGeant4Factory ftofDetector, PCALGeant4Factory pcalDetector, Swim sw, int q, int numRandoms, float PhiMin, float PhiMax) {
+    public void ProcessTracks(PrintWriter pw,DCGeant4Factory dcDetector, 
+            FTOFGeant4Factory ftofDetector, PCALGeant4Factory pcalDetector, 
+            Swim sw, int q, int numRandoms, 
+            float PhiMin, float PhiMax) {
         double[] swimVal = new double[8];
         Map<ArrayList<Integer>, Integer> newDictionary = new HashMap<>();
         int[] wireArray = new int[36];
@@ -349,7 +355,7 @@ public class TrackDictionaryMakerRNG extends DCEngine{
                     Wl1.get(4), Wl2.get(4), Wl3.get(4), Wl4.get(4), Wl5.get(4), Wl6.get(4), 
                     Wl1.get(5), Wl2.get(5), Wl3.get(5), Wl4.get(5), Wl5.get(5), Wl6.get(5), 
                     //trkTOF[0], trkTOF[1], trkTOF[2], trkPCAL[0], trkPCAL[1], trkPCAL[2]);
-                    paddle, vzCm); */
+                    paddle, vzCm);  */
                     pw.printf("%d\t%.1f\t %.1f\t %.1f\t "
                     + "%d\t %d\t %d\t %d\t %d\t %d\t "
                     + "%d\t %d\t %d\t %d\t %d\t %d\t "
@@ -630,9 +636,11 @@ public class TrackDictionaryMakerRNG extends DCEngine{
         parser.addOption("-n","10000");
         parser.addOption("-phimin","-30.0");
         parser.addOption("-phimax","30.0");
+        parser.addOption("-seed","10");
         parser.addOption("-var","default");
         parser.parse(args);
         
+
         if(parser.hasOption("-t")==true && parser.hasOption("-s")==true){
             float torus    = (float) parser.getOption("-t").doubleValue();
             float solenoid = (float) parser.getOption("-s").doubleValue();
@@ -640,6 +648,8 @@ public class TrackDictionaryMakerRNG extends DCEngine{
             int n = parser.getOption("-n").intValue();
             float phiMin = (float) parser.getOption("-phimin").doubleValue();
             float phiMax = (float) parser.getOption("-phimax").doubleValue();
+            long seed = (long)parser.getOption("-seed").intValue();
+            tm.r.setSeed(seed);
             String dcVar = parser.getOption("-var").stringValue();
             tm.resetGeom(dcVar);
             tm.processFile(torus, solenoid, charge, n, phiMin, phiMax);
