@@ -15,23 +15,41 @@ import org.jlab.clas.physics.Particle;
 import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
 import org.jlab.groot.graphics.EmbeddedCanvas;
+import org.jlab.groot.graphics.EmbeddedCanvasTabbed;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
 import org.jlab.io.base.DataEvent;
 import org.jlab.io.hipo.HipoDataSource;
+import org.jlab.utils.groups.IndexedList;
 
 import org.jlab.utils.options.OptionParser;
 
 public class TrackDictionaryValidation {
 
     private Map<ArrayList<Integer>, Integer> dictionary = null;
-    private DataGroup                        dataGroup  = new DataGroup(4,2);
-    private EmbeddedCanvas                   canvas     = new EmbeddedCanvas();
+    private IndexedList<DataGroup>           dataGroups = new IndexedList<DataGroup>(1);
+    private EmbeddedCanvasTabbed             canvas     = new EmbeddedCanvasTabbed("Matches","Efficiency");
             
     public TrackDictionaryValidation(){
 
     }
 
+    public void analyzeHistos() {
+        // calculate efficiencies
+        this.effHisto(this.dataGroups.getItem(0).getH2F("hi_ptheta_pos_found"), 
+                      this.dataGroups.getItem(0).getH2F("hi_ptheta_pos_missing"), 
+                      this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_eff"));
+        this.effHisto(this.dataGroups.getItem(0).getH2F("hi_phitheta_pos_found"), 
+                      this.dataGroups.getItem(0).getH2F("hi_phitheta_pos_missing"), 
+                      this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_eff"));
+        this.effHisto(this.dataGroups.getItem(0).getH2F("hi_ptheta_neg_found"), 
+                      this.dataGroups.getItem(0).getH2F("hi_ptheta_neg_missing"), 
+                      this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_eff"));
+        this.effHisto(this.dataGroups.getItem(0).getH2F("hi_phitheta_neg_found"), 
+                      this.dataGroups.getItem(0).getH2F("hi_phitheta_neg_missing"), 
+                      this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_eff"));
+    }
+    
     public void createDictionary(String inputFileName) {
         // create dictionary from event file
         System.out.println("Creating dictionary from file: " + inputFileName);
@@ -123,16 +141,50 @@ public class TrackDictionaryValidation {
         H2F hi_phitheta_pos_missing = new H2F("hi_phitheta_pos_missing", "hi_phitheta_pos_missing", 100, -30, 30, 100, 0.0, 50.0);     
         hi_phitheta_pos_missing.setTitleX("#phi (deg)");
         hi_phitheta_pos_missing.setTitleY("#theta (deg)");
-        this.dataGroup.addDataSet(hi_ptheta_neg_found,     0);
-        this.dataGroup.addDataSet(hi_ptheta_neg_missing,   1);
-        this.dataGroup.addDataSet(hi_phitheta_neg_found,   2);
-        this.dataGroup.addDataSet(hi_phitheta_neg_missing, 3);
-        this.dataGroup.addDataSet(hi_ptheta_pos_found,     4);
-        this.dataGroup.addDataSet(hi_ptheta_pos_missing,   5);
-        this.dataGroup.addDataSet(hi_phitheta_pos_found,   6);
-        this.dataGroup.addDataSet(hi_phitheta_pos_missing, 7);
+        DataGroup dMatches  = new DataGroup(4,2);
+        dMatches.addDataSet(hi_ptheta_neg_found,     0);
+        dMatches.addDataSet(hi_ptheta_neg_missing,   1);
+        dMatches.addDataSet(hi_phitheta_neg_found,   2);
+        dMatches.addDataSet(hi_phitheta_neg_missing, 3);
+        dMatches.addDataSet(hi_ptheta_pos_found,     4);
+        dMatches.addDataSet(hi_ptheta_pos_missing,   5);
+        dMatches.addDataSet(hi_phitheta_pos_found,   6);
+        dMatches.addDataSet(hi_phitheta_pos_missing, 7);
+        this.dataGroups.add(dMatches, 0);
+        // efficiencies
+        H2F hi_ptheta_neg_eff = new H2F("hi_ptheta_neg_eff", "hi_ptheta_neg_eff", 100, 0.0, 10.0, 100, 0.0, 50.0);     
+        hi_ptheta_neg_eff.setTitleX("p (GeV)");
+        hi_ptheta_neg_eff.setTitleY("#theta (deg)");
+        H2F hi_phitheta_neg_eff = new H2F("hi_phitheta_neg_eff", "hi_phitheta_neg_eff", 100, -30, 30, 100, 0.0, 50.0);     
+        hi_phitheta_neg_eff.setTitleX("#phi (deg)");
+        hi_phitheta_neg_eff.setTitleY("#theta (deg)");
+        H2F hi_ptheta_pos_eff = new H2F("hi_ptheta_pos_eff", "hi_ptheta_pos_eff", 100, 0.0, 10.0, 100, 0.0, 50.0);     
+        hi_ptheta_pos_eff.setTitleX("p (GeV)");
+        hi_ptheta_pos_eff.setTitleY("#theta (deg)");
+        H2F hi_phitheta_pos_eff = new H2F("hi_phitheta_pos_eff", "hi_phitheta_pos_eff", 100, -30, 30, 100, 0.0, 50.0);     
+        hi_phitheta_pos_eff.setTitleX("#phi (deg)");
+        hi_phitheta_pos_eff.setTitleY("#theta (deg)");
+        DataGroup dEff  = new DataGroup(2,2);
+        dEff.addDataSet(hi_ptheta_neg_eff,     0);
+        dEff.addDataSet(hi_phitheta_neg_eff,   1);
+        dEff.addDataSet(hi_ptheta_pos_eff,     2);
+        dEff.addDataSet(hi_phitheta_pos_eff,   3);
+        this.dataGroups.add(dEff, 1);
+        
     }    
 
+    private void effHisto(H2F found, H2F miss, H2F eff) {
+        for(int ix=0; ix< found.getDataSize(0); ix++) {
+            for(int iy=0; iy< found.getDataSize(1); iy++) {
+                double fEntry = found.getBinContent(ix, iy);
+                double mEntry = miss.getBinContent(ix, iy);
+                double effValue = 0;
+                if(fEntry+mEntry>0) effValue = fEntry/(fEntry+mEntry);
+                eff.setBinContent(ix, iy, effValue);
+            }   
+        }
+    }
+    
     private boolean findRoad(ArrayList<Integer> wires, int smear) {
         boolean found = false;
         if(smear>0) {
@@ -161,7 +213,7 @@ public class TrackDictionaryValidation {
         return found;
     }
     
-    public EmbeddedCanvas getCanvas() {
+    public EmbeddedCanvasTabbed getCanvas() {
         return canvas;
     }
 
@@ -175,10 +227,15 @@ public class TrackDictionaryValidation {
     }
     
     public void plotHistos() {
-        this.canvas.divide(4, 2);
-        this.canvas.setGridX(false);
-        this.canvas.setGridY(false);
-        this.canvas.draw(dataGroup);
+        this.analyzeHistos();
+        this.canvas.getCanvas("Matches").divide(4, 2);
+        this.canvas.getCanvas("Matches").setGridX(false);
+        this.canvas.getCanvas("Matches").setGridY(false);
+        this.canvas.getCanvas("Matches").draw(dataGroups.getItem(0));
+        this.canvas.getCanvas("Efficiency").divide(2, 2);
+        this.canvas.getCanvas("Efficiency").setGridX(false);
+        this.canvas.getCanvas("Efficiency").setGridY(false);
+        this.canvas.getCanvas("Efficiency").draw(dataGroups.getItem(1));
     }
     
     public void printDictionary() {
@@ -191,61 +248,6 @@ public class TrackDictionaryValidation {
             }
         }
     }
-    
-    public void readDictionary(String fileName) {
-        
-        this.dictionary = new HashMap<>();
-        
-        System.out.println("Reading dictionary from file " + fileName);
-        int nLines = 0;
-        int nDupli = 0;
-        
-        File fileDict = new File(fileName);
-        BufferedReader txtreader = null;
-        try {
-            txtreader = new BufferedReader(new FileReader(fileDict));
-            String line = null;
-            while ((line = txtreader.readLine()) != null) {
-                nLines++;
-                String[] lineValues;
-                lineValues = line.split("\t ");
-                ArrayList<Integer> wires = new ArrayList<Integer>();
-                if(lineValues.length < 40) {
-                    System.out.println("WARNING: dictionary line " + nLines + " incomplete: skipping");
-                }
-                else {
-//                    System.out.println(line);
-                    for(int i=0; i<6; i++) {
-//                        System.out.println(lineValues[i]);
-                        int wire = Integer.parseInt(lineValues[3+i*6]);
-                        wires.add(wire);
-                    }
-                    if(this.dictionary.containsKey(wires)) {
-                        nDupli++;
-                        if(nDupli<10) System.out.println("WARNING: found duplicate road");
-                        else if(nDupli==10) System.out.println("WARNING: reached maximum number of warnings, switching to silent mode");
-//                        for(int wire: wires) System.out.println(wire + " ");
-//                        System.out.println(" ");
-//                        System.out.println(line);
-                        int nRoad = this.dictionary.get(wires) + 1;
-                        this.dictionary.replace(wires, nRoad);
-                    }
-                    else {
-                        this.dictionary.put(wires, 1);
-                    }
-                }
-                if(nLines % 1000000 == 0) System.out.println("Read " + nLines + " roads");
-            }
-            System.out.println("Found " + nLines + " roads with " + nDupli + " duplicates");
-        } 
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } 
-        catch (IOException e) {
-            e.printStackTrace();
-        } 
-   }
-    
     public void processFile(String fileName, int wireSmear, int maxEvents) {
         // testing dictionary on event file
         HipoDataSource reader = new HipoDataSource();
@@ -305,22 +307,22 @@ public class TrackDictionaryValidation {
                         double phi = (Math.toDegrees(part.phi())+180+30)%60-30;
                         if(this.findRoad(wires,wireSmear))  {
                             if(charge==-1) {
-                                this.dataGroup.getH2F("hi_ptheta_neg_found").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroup.getH2F("hi_phitheta_neg_found").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_ptheta_neg_found").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_phitheta_neg_found").fill(phi, Math.toDegrees(part.theta()));
                             }
                             else {
-                                this.dataGroup.getH2F("hi_ptheta_pos_found").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroup.getH2F("hi_phitheta_pos_found").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_ptheta_pos_found").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_phitheta_pos_found").fill(phi, Math.toDegrees(part.theta()));
                             }
                         }
                         else {
                             if(charge==-1) {
-                                this.dataGroup.getH2F("hi_ptheta_neg_missing").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroup.getH2F("hi_phitheta_neg_missing").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_ptheta_neg_missing").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_phitheta_neg_missing").fill(phi, Math.toDegrees(part.theta()));
                             }
                             else {
-                                this.dataGroup.getH2F("hi_ptheta_pos_missing").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroup.getH2F("hi_phitheta_pos_missing").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_ptheta_pos_missing").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(0).getH2F("hi_phitheta_pos_missing").fill(phi, Math.toDegrees(part.theta()));
                             }                    
                         }
                     }
@@ -329,6 +331,61 @@ public class TrackDictionaryValidation {
         }
 
     }
+    
+    
+    public void readDictionary(String fileName) {
+        
+        this.dictionary = new HashMap<>();
+        
+        System.out.println("Reading dictionary from file " + fileName);
+        int nLines = 0;
+        int nDupli = 0;
+        
+        File fileDict = new File(fileName);
+        BufferedReader txtreader = null;
+        try {
+            txtreader = new BufferedReader(new FileReader(fileDict));
+            String line = null;
+            while ((line = txtreader.readLine()) != null) {
+                nLines++;
+                String[] lineValues;
+                lineValues = line.split("\t ");
+                ArrayList<Integer> wires = new ArrayList<Integer>();
+                if(lineValues.length < 40) {
+                    System.out.println("WARNING: dictionary line " + nLines + " incomplete: skipping");
+                }
+                else {
+//                    System.out.println(line);
+                    for(int i=0; i<6; i++) {
+//                        System.out.println(lineValues[i]);
+                        int wire = Integer.parseInt(lineValues[3+i*6]);
+                        wires.add(wire);
+                    }
+                    if(this.dictionary.containsKey(wires)) {
+                        nDupli++;
+                        if(nDupli<10) System.out.println("WARNING: found duplicate road");
+                        else if(nDupli==10) System.out.println("WARNING: reached maximum number of warnings, switching to silent mode");
+//                        for(int wire: wires) System.out.println(wire + " ");
+//                        System.out.println(" ");
+//                        System.out.println(line);
+                        int nRoad = this.dictionary.get(wires) + 1;
+                        this.dictionary.replace(wires, nRoad);
+                    }
+                    else {
+                        this.dictionary.put(wires, 1);
+                    }
+                }
+                if(nLines % 1000000 == 0) System.out.println("Read " + nLines + " roads");
+            }
+            System.out.println("Found " + nLines + " roads with " + nDupli + " duplicates");
+        } 
+        catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } 
+        catch (IOException e) {
+            e.printStackTrace();
+        } 
+   }
     
     private void setDictionary(Map<ArrayList<Integer>, Integer> newDictionary) {
         this.dictionary = newDictionary;
