@@ -406,20 +406,18 @@ public class TrackDictionaryValidation {
             while ((line = txtreader.readLine()) != null) {
                 nLines++;
                 String[] lineValues;
-                String[] lineValues2;
-                lineValues  = line.split("\t ");
-                lineValues2 = line.split("\t");
+                lineValues  = line.split("\t");
                 ArrayList<Integer> wires = new ArrayList<Integer>();
-                if(lineValues.length < 40) {
+                if(lineValues.length < 42) {
                     System.out.println("WARNING: dictionary line " + nLines + " incomplete: skipping");
                 }
                 else {
 //                    System.out.println(line);
-                    int charge   = Integer.parseInt(lineValues2[0]);
-                    double p     = Double.parseDouble(lineValues2[1]);
-                    double theta = Double.parseDouble(lineValues[1]);
-                    double phi   = Double.parseDouble(lineValues[2]);
-                    double vz    = Double.parseDouble(lineValues[40]);
+                    int charge   = Integer.parseInt(lineValues[0]);
+                    double p     = Double.parseDouble(lineValues[1]);
+                    double theta = Double.parseDouble(lineValues[2]);
+                    double phi   = Double.parseDouble(lineValues[3]);
+                    double vz    = Double.parseDouble(lineValues[41]);
                     double px    = p*Math.sin(Math.toRadians(theta))*Math.cos(Math.toRadians(phi));
                     double py    = p*Math.sin(Math.toRadians(theta))*Math.sin(Math.toRadians(phi));
                     double pz    = p*Math.cos(Math.toRadians(theta));
@@ -427,7 +425,7 @@ public class TrackDictionaryValidation {
 //                    System.out.println(p + " " + theta + " " + phi + " " + vz);
                     for(int i=0; i<6; i++) {
 //                        System.out.println(lineValues[i]);
-                        int wire = Integer.parseInt(lineValues[3+i*6]);
+                        int wire = Integer.parseInt(lineValues[4+i*6]);
                         wires.add(wire);
                     }
                     if(this.dictionary.containsKey(wires)) {

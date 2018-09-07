@@ -380,13 +380,13 @@ public class TrackDictionaryMakerRNG extends DCEngine{
                     Wl1.get(5), Wl2.get(5), Wl3.get(5), Wl4.get(5), Wl5.get(5), Wl6.get(5), 
                     //trkTOF[0], trkTOF[1], trkTOF[2], trkPCAL[0], trkPCAL[1], trkPCAL[2]);
                     paddle, vzCm);  */
-                    pw.printf("%d\t%.2f\t%.2f\t%.2f\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
-                    + "%d\t%d\t%d\t%d\t%d\t%d\t "
+                    pw.printf("%d\t%.2f\t%.2f\t%.2f\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
+                    + "%d\t%d\t%d\t%d\t%d\t%d\t"
                     + "%d\t%.2f\t\n",
                     //+ "%.1f\t %.1f\t %.1f\t %.1f\t %.1f\t %.1f\t\n", 
                     q, p, thetaDeg, phiDeg,
