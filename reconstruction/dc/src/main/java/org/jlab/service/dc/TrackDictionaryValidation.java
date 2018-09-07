@@ -26,9 +26,9 @@ import org.jlab.utils.options.OptionParser;
 
 public class TrackDictionaryValidation {
 
-    private Map<ArrayList<Integer>, Integer> dictionary = null;
+    private Map<ArrayList<Integer>, Particle> dictionary = null;
     private IndexedList<DataGroup>           dataGroups = new IndexedList<DataGroup>(1);
-    private EmbeddedCanvasTabbed             canvas     = new EmbeddedCanvasTabbed("Roads", "Matches","Efficiency");
+    private EmbeddedCanvasTabbed             canvas     = new EmbeddedCanvasTabbed("Dictionary", "Matched Roads", "Matched Tracks", "Efficiency");
             
     public TrackDictionaryValidation(){
 
@@ -36,24 +36,24 @@ public class TrackDictionaryValidation {
 
     public void analyzeHistos() {
         // calculate efficiencies
-        this.effHisto(this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_found"), 
-                      this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_missing"), 
-                      this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_eff"));
-        this.effHisto(this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_found"), 
-                      this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_missing"), 
-                      this.dataGroups.getItem(2).getH2F("hi_phitheta_pos_eff"));
-        this.effHisto(this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_found"), 
-                      this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_missing"), 
-                      this.dataGroups.getItem(2).getH2F("hi_ptheta_neg_eff"));
-        this.effHisto(this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_found"), 
-                      this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_missing"), 
-                      this.dataGroups.getItem(2).getH2F("hi_phitheta_neg_eff"));
+        this.effHisto(this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_found"), 
+                      this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_missing"), 
+                      this.dataGroups.getItem(3).getH2F("hi_ptheta_pos_eff"));
+        this.effHisto(this.dataGroups.getItem(2).getH2F("hi_phitheta_pos_found"), 
+                      this.dataGroups.getItem(2).getH2F("hi_phitheta_pos_missing"), 
+                      this.dataGroups.getItem(3).getH2F("hi_phitheta_pos_eff"));
+        this.effHisto(this.dataGroups.getItem(2).getH2F("hi_ptheta_neg_found"), 
+                      this.dataGroups.getItem(2).getH2F("hi_ptheta_neg_missing"), 
+                      this.dataGroups.getItem(3).getH2F("hi_ptheta_neg_eff"));
+        this.effHisto(this.dataGroups.getItem(2).getH2F("hi_phitheta_neg_found"), 
+                      this.dataGroups.getItem(2).getH2F("hi_phitheta_neg_missing"), 
+                      this.dataGroups.getItem(3).getH2F("hi_phitheta_neg_eff"));
     }
     
     public void createDictionary(String inputFileName) {
         // create dictionary from event file
         System.out.println("Creating dictionary from file: " + inputFileName);
-        Map<ArrayList<Integer>, Integer> newDictionary = new HashMap<>();
+        Map<ArrayList<Integer>, Particle> newDictionary = new HashMap<>();
         HipoDataSource reader = new HipoDataSource();
         reader.open(inputFileName);
         int nevent = -1;
@@ -73,7 +73,7 @@ public class TrackDictionaryValidation {
                 for (int i = 0; i < recTrack.rows(); i++) {
                     int charge = recTrack.getByte("q",i);
                      Particle part = new Particle(
-                                        -charge*11,
+                                        charge*211,
                                         recTrack.getFloat("p0_x", i),
                                         recTrack.getFloat("p0_y", i),
                                         recTrack.getFloat("p0_z", i),
@@ -100,12 +100,8 @@ public class TrackDictionaryValidation {
                         }
                     }
                     if(wires.size()==6) {
-                        if(newDictionary.containsKey(wires))  {
-                            int nRoad = newDictionary.get(wires) + 1;
-                            newDictionary.replace(wires, nRoad);
-                        }
-                        else {
-                            newDictionary.put(wires, 1);
+                        if(!newDictionary.containsKey(wires))  {
+                            newDictionary.put(wires, part);
                         }   
                     }
                 }
@@ -115,7 +111,7 @@ public class TrackDictionaryValidation {
     }
     
     public void createHistos() {
-        // roads
+        // roads in dictionary
         H2F hi_ptheta_neg_road = new H2F("hi_ptheta_neg_road", "hi_ptheta_neg_road", 100, 0.0, 10.0, 100, 0.0, 65.0);     
         hi_ptheta_neg_road.setTitleX("p (GeV)");
         hi_ptheta_neg_road.setTitleY("#theta (deg)");
@@ -142,7 +138,34 @@ public class TrackDictionaryValidation {
         dRoads.addDataSet(hi_phitheta_pos_road, 4);
         dRoads.addDataSet(hi_vztheta_pos_road,  5);
         this.dataGroups.add(dRoads, 0);
-        // negative tracks
+        // matched roads
+        H2F hi_ptheta_neg_matchedroad = new H2F("hi_ptheta_neg_matchedroad", "hi_ptheta_neg_matchedroad", 100, 0.0, 10.0, 100, 0.0, 65.0);     
+        hi_ptheta_neg_matchedroad.setTitleX("p (GeV)");
+        hi_ptheta_neg_matchedroad.setTitleY("#theta (deg)");
+        H2F hi_phitheta_neg_matchedroad = new H2F("hi_phitheta_neg_matchedroad", "hi_phitheta_neg_matchedroad", 100, -30, 30, 100, 0.0, 65.0);     
+        hi_phitheta_neg_matchedroad.setTitleX("#phi (deg)");
+        hi_phitheta_neg_matchedroad.setTitleY("#theta (deg)");
+        H2F hi_vztheta_neg_matchedroad = new H2F("hi_vztheta_neg_matchedroad", "hi_vztheta_neg_matchedroad", 100, -15, 15, 100, 0.0, 65.0);     
+        hi_vztheta_neg_matchedroad.setTitleX("vz (cm)");
+        hi_vztheta_neg_matchedroad.setTitleY("#theta (deg)");
+        H2F hi_ptheta_pos_matchedroad = new H2F("hi_ptheta_pos_matchedroad", "hi_ptheta_pos_matchedroad", 100, 0.0, 10.0, 100, 0.0, 65.0);     
+        hi_ptheta_pos_matchedroad.setTitleX("p (GeV)");
+        hi_ptheta_pos_matchedroad.setTitleY("#theta (deg)");
+        H2F hi_phitheta_pos_matchedroad = new H2F("hi_phitheta_pos_matchedroad", "hi_phitheta_pos_matchedroad", 100, -30, 30, 100, 0.0, 65.0);     
+        hi_phitheta_pos_matchedroad.setTitleX("#phi (deg)");
+        hi_phitheta_pos_matchedroad.setTitleY("#theta (deg)");
+        H2F hi_vztheta_pos_matchedroad = new H2F("hi_vztheta_pos_matchedroad", "hi_vztheta_pos_matchedroad", 100, -15, 15, 100, 0.0, 65.0);     
+        hi_vztheta_pos_matchedroad.setTitleX("vz (cm)");
+        hi_vztheta_pos_matchedroad.setTitleY("#theta (deg)");
+        DataGroup dMatchedRoads  = new DataGroup(3,2);
+        dMatchedRoads.addDataSet(hi_ptheta_neg_matchedroad,   0);
+        dMatchedRoads.addDataSet(hi_phitheta_neg_matchedroad, 1);
+        dMatchedRoads.addDataSet(hi_vztheta_neg_matchedroad,  2);
+        dMatchedRoads.addDataSet(hi_ptheta_pos_matchedroad,   3);
+        dMatchedRoads.addDataSet(hi_phitheta_pos_matchedroad, 4);
+        dMatchedRoads.addDataSet(hi_vztheta_pos_matchedroad,  5);
+        this.dataGroups.add(dMatchedRoads, 1);        
+// negative tracks
         H2F hi_ptheta_neg_found = new H2F("hi_ptheta_neg_found", "hi_ptheta_neg_found", 100, 0.0, 10.0, 100, 0.0, 65.0);     
         hi_ptheta_neg_found.setTitleX("p (GeV)");
         hi_ptheta_neg_found.setTitleY("#theta (deg)");
@@ -177,7 +200,7 @@ public class TrackDictionaryValidation {
         dMatches.addDataSet(hi_ptheta_pos_missing,   5);
         dMatches.addDataSet(hi_phitheta_pos_found,   6);
         dMatches.addDataSet(hi_phitheta_pos_missing, 7);
-        this.dataGroups.add(dMatches, 1);
+        this.dataGroups.add(dMatches, 2);
         // efficiencies
         H2F hi_ptheta_neg_eff = new H2F("hi_ptheta_neg_eff", "hi_ptheta_neg_eff", 100, 0.0, 10.0, 100, 0.0, 65.0);     
         hi_ptheta_neg_eff.setTitleX("p (GeV)");
@@ -196,7 +219,7 @@ public class TrackDictionaryValidation {
         dEff.addDataSet(hi_phitheta_neg_eff,   1);
         dEff.addDataSet(hi_ptheta_pos_eff,     2);
         dEff.addDataSet(hi_phitheta_pos_eff,   3);
-        this.dataGroups.add(dEff, 2);
+        this.dataGroups.add(dEff, 3);
         
     }    
 
@@ -212,8 +235,8 @@ public class TrackDictionaryValidation {
         }
     }
     
-    private boolean findRoad(ArrayList<Integer> wires, int smear) {
-        boolean found = false;
+    private Particle findRoad(ArrayList<Integer> wires, int smear) {
+        Particle foundRoad = null;
         if(smear>0) {
             for(int k1=-smear; k1<=smear; k1++) {
             for(int k2=-smear; k2<=smear; k2++) {
@@ -229,22 +252,22 @@ public class TrackDictionaryValidation {
                 wiresCopy.set(4, wires.get(4) + k5);
                 wiresCopy.set(5, wires.get(5) + k6);
                 if(this.dictionary.containsKey(wiresCopy)) {
-                    found=true;
+                    foundRoad=this.dictionary.get(wiresCopy);
                     break;
                 }
             }}}}}}
         }
         else {
-            if(this.dictionary.containsKey(wires)) found=true;
+            if(this.dictionary.containsKey(wires)) foundRoad=this.dictionary.get(wires);
         } 
-        return found;
+        return foundRoad;
     }
     
     public EmbeddedCanvasTabbed getCanvas() {
         return canvas;
     }
 
-    public Map<ArrayList<Integer>, Integer> getDictionary() {
+    public Map<ArrayList<Integer>, Particle> getDictionary() {
         return dictionary;
     }
     
@@ -255,29 +278,35 @@ public class TrackDictionaryValidation {
     
     public void plotHistos() {
         this.analyzeHistos();
-        this.canvas.getCanvas("Roads").divide(3, 2);
-        this.canvas.getCanvas("Roads").setGridX(false);
-        this.canvas.getCanvas("Roads").setGridY(false);
-        this.canvas.getCanvas("Roads").draw(dataGroups.getItem(0));
-        this.canvas.getCanvas("Roads").getPad(0).getAxisZ().setLog(true);
-        this.canvas.getCanvas("Roads").getPad(3).getAxisZ().setLog(true);
-        this.canvas.getCanvas("Matches").divide(4, 2);
-        this.canvas.getCanvas("Matches").setGridX(false);
-        this.canvas.getCanvas("Matches").setGridY(false);
-        this.canvas.getCanvas("Matches").draw(dataGroups.getItem(1));
+        this.canvas.getCanvas("Dictionary").divide(3, 2);
+        this.canvas.getCanvas("Dictionary").setGridX(false);
+        this.canvas.getCanvas("Dictionary").setGridY(false);
+        this.canvas.getCanvas("Dictionary").draw(dataGroups.getItem(0));
+        this.canvas.getCanvas("Dictionary").getPad(0).getAxisZ().setLog(true);
+        this.canvas.getCanvas("Dictionary").getPad(3).getAxisZ().setLog(true);
+        this.canvas.getCanvas("Matched Roads").divide(3, 2);
+        this.canvas.getCanvas("Matched Roads").setGridX(false);
+        this.canvas.getCanvas("Matched Roads").setGridY(false);
+        this.canvas.getCanvas("Matched Roads").draw(dataGroups.getItem(1));
+        this.canvas.getCanvas("Matched Roads").getPad(0).getAxisZ().setLog(true);
+        this.canvas.getCanvas("Matched Roads").getPad(3).getAxisZ().setLog(true);
+        this.canvas.getCanvas("Matched Tracks").divide(4, 2);
+        this.canvas.getCanvas("Matched Tracks").setGridX(false);
+        this.canvas.getCanvas("Matched Tracks").setGridY(false);
+        this.canvas.getCanvas("Matched Tracks").draw(dataGroups.getItem(2));
         this.canvas.getCanvas("Efficiency").divide(2, 2);
         this.canvas.getCanvas("Efficiency").setGridX(false);
         this.canvas.getCanvas("Efficiency").setGridY(false);
-        this.canvas.getCanvas("Efficiency").draw(dataGroups.getItem(2));
+        this.canvas.getCanvas("Efficiency").draw(dataGroups.getItem(3));
     }
     
     public void printDictionary() {
         if(this.dictionary !=null) {
-            for(Map.Entry<ArrayList<Integer>, Integer> entry : this.dictionary.entrySet()) {
+            for(Map.Entry<ArrayList<Integer>, Particle> entry : this.dictionary.entrySet()) {
                 ArrayList<Integer> wires = entry.getKey();
-                int nRoad = entry.getValue();
+                Particle road = entry.getValue();
                 for(int wire: wires) System.out.print(wire + " ");
-                System.out.println(nRoad);
+                System.out.println(road.charge() + " " + road.p() + " " + Math.toDegrees(road.theta()) + " " + Math.toDegrees(road.phi()) + " " + road.vz());
             }
         }
     }
@@ -304,19 +333,21 @@ public class TrackDictionaryValidation {
             }
             if (event.hasBank("MC:Particle")) {
                 mcPart = event.getBank("MC:Particle");
+                System.out.println("aaaaaaaaaaaaaaaaaa");
             }
             if (recTrack != null && recHits != null) {
                 for (int i = 0; i < recTrack.rows(); i++) {
                     int charge = recTrack.getByte("q",i);
                     Particle part = new Particle(
-                                        -charge*11,
+                                        charge*211,
                                         recTrack.getFloat("p0_x", i),
                                         recTrack.getFloat("p0_y", i),
                                         recTrack.getFloat("p0_z", i),
                                         recTrack.getFloat("Vtx0_x", i),
                                         recTrack.getFloat("Vtx0_y", i),
                                         recTrack.getFloat("Vtx0_z", i));
-                    if(Math.abs(part.vz())>15) continue;
+                    boolean goodTrack=true;
+                    if(Math.abs(part.vz())>15) goodTrack=false;
                     if (mcPart != null) {
                         for(int loop = 0; loop < mcPart.rows(); loop++) { 
                             Particle genPart = new Particle(
@@ -327,13 +358,16 @@ public class TrackDictionaryValidation {
                                         mcPart.getFloat("vx", loop),
                                         mcPart.getFloat("vy", loop),
                                         mcPart.getFloat("vz", loop));
-                            if(Math.abs(part.p()-genPart.p())>0.1 ||
+                            if(part.charge()!=genPart.charge() ||
+                               Math.abs(part.p()-genPart.p())>0.1 ||
                                Math.abs(Math.toDegrees(part.phi()-genPart.phi()))>5 ||    
                                Math.abs(Math.toDegrees(part.theta()-genPart.theta()))>1) {
-                                continue;
+                                goodTrack=false;
                             }
+                            if(genPart.charge()>0) System.out.println("aaaaaaaaaaaaaaaaaa");
                         }   
                     }
+                    if(!goodTrack) continue;
                     int[] wireArray = new int[36];
                     int nSL3=0;
                     for (int j = 0; j < recHits.rows(); j++) {
@@ -361,25 +395,37 @@ public class TrackDictionaryValidation {
     //                    System.out.print(charge + " " + wires.size() + " ");
     //                    for(int wire: wires) System.out.print(wire + " ");
     //                    System.out.println(" ");
-                        double phi = (Math.toDegrees(part.phi())+180+30)%60-30;
-                        if(this.findRoad(wires,wireSmear))  {
-                            if(charge==-1) {
-                                this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_found").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_found").fill(phi, Math.toDegrees(part.theta()));
+                        double phi     = (Math.toDegrees(part.phi())+180+30)%60-30;                        
+                        Particle road = this.findRoad(wires,wireSmear);
+                        if(road != null) {
+                            double phiRoad = (Math.toDegrees(road.phi())+180+30)%60-30;
+                            if(road.charge()<0) {
+                                this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_matchedroad").fill(road.p(), Math.toDegrees(road.theta()));
+                                this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_matchedroad").fill(phiRoad, Math.toDegrees(road.theta()));
+                                this.dataGroups.getItem(1).getH2F("hi_vztheta_neg_matchedroad").fill(road.vz(), Math.toDegrees(road.theta()));
                             }
                             else {
-                                this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_found").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_found").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_matchedroad").fill(road.p(), Math.toDegrees(road.theta()));
+                                this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_matchedroad").fill(phiRoad, Math.toDegrees(road.theta()));                            
+                                this.dataGroups.getItem(1).getH2F("hi_vztheta_pos_matchedroad").fill(road.vz(), Math.toDegrees(road.theta()));
+                            }
+                            if(charge==-1) {
+                                this.dataGroups.getItem(2).getH2F("hi_ptheta_neg_found").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_phitheta_neg_found").fill(phi, Math.toDegrees(part.theta()));
+                            }
+                            else {
+                                this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_found").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_phitheta_pos_found").fill(phi, Math.toDegrees(part.theta()));
                             }
                         }
                         else {
                             if(charge==-1) {
-                                this.dataGroups.getItem(1).getH2F("hi_ptheta_neg_missing").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroups.getItem(1).getH2F("hi_phitheta_neg_missing").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_ptheta_neg_missing").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_phitheta_neg_missing").fill(phi, Math.toDegrees(part.theta()));
                             }
                             else {
-                                this.dataGroups.getItem(1).getH2F("hi_ptheta_pos_missing").fill(part.p(), Math.toDegrees(part.theta()));
-                                this.dataGroups.getItem(1).getH2F("hi_phitheta_pos_missing").fill(phi, Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_missing").fill(part.p(), Math.toDegrees(part.theta()));
+                                this.dataGroups.getItem(2).getH2F("hi_phitheta_pos_missing").fill(phi, Math.toDegrees(part.theta()));
                             }                    
                         }
                     }
@@ -396,6 +442,7 @@ public class TrackDictionaryValidation {
         
         System.out.println("Reading dictionary from file " + fileName);
         int nLines = 0;
+        int nFull  = 0;
         int nDupli = 0;
         
         File fileDict = new File(fileName);
@@ -406,18 +453,20 @@ public class TrackDictionaryValidation {
             while ((line = txtreader.readLine()) != null) {
                 nLines++;
                 String[] lineValues;
-                lineValues  = line.split("\t");
+                String[] lineValues2;
+                lineValues  = line.split("\t ");
+                lineValues2  = line.split("\t");
                 ArrayList<Integer> wires = new ArrayList<Integer>();
-                if(lineValues.length < 42) {
+                if(lineValues.length < 41) {
                     System.out.println("WARNING: dictionary line " + nLines + " incomplete: skipping");
                 }
                 else {
 //                    System.out.println(line);
-                    int charge   = Integer.parseInt(lineValues[0]);
-                    double p     = Double.parseDouble(lineValues[1]);
-                    double theta = Double.parseDouble(lineValues[2]);
-                    double phi   = Double.parseDouble(lineValues[3]);
-                    double vz    = Double.parseDouble(lineValues[41]);
+                    int charge   = Integer.parseInt(lineValues2[0]);
+                    double p     = Double.parseDouble(lineValues2[1]);
+                    double theta = Double.parseDouble(lineValues[1]);
+                    double phi   = Double.parseDouble(lineValues[2]);
+                    double vz    = Double.parseDouble(lineValues[40]);
                     double px    = p*Math.sin(Math.toRadians(theta))*Math.cos(Math.toRadians(phi));
                     double py    = p*Math.sin(Math.toRadians(theta))*Math.sin(Math.toRadians(phi));
                     double pz    = p*Math.cos(Math.toRadians(theta));
@@ -425,9 +474,11 @@ public class TrackDictionaryValidation {
 //                    System.out.println(p + " " + theta + " " + phi + " " + vz);
                     for(int i=0; i<6; i++) {
 //                        System.out.println(lineValues[i]);
-                        int wire = Integer.parseInt(lineValues[4+i*6]);
-                        wires.add(wire);
+                        int wire = Integer.parseInt(lineValues[3+i*6]);
+                        if(wire>0) wires.add(wire);
                     }
+                    if(wires.size()!=6) continue;
+                    nFull++;
                     if(this.dictionary.containsKey(wires)) {
                         nDupli++;
                         if(nDupli<10) System.out.println("WARNING: found duplicate road");
@@ -435,11 +486,11 @@ public class TrackDictionaryValidation {
 //                        for(int wire: wires) System.out.println(wire + " ");
 //                        System.out.println(" ");
 //                        System.out.println(line);
-                        int nRoad = this.dictionary.get(wires) + 1;
-                        this.dictionary.replace(wires, nRoad);
+//                        int nRoad = this.dictionary.get(wires) + 1;
+//                        this.dictionary.replace(wires, nRoad);
                     }
                     else {
-                        this.dictionary.put(wires, 1);
+                        this.dictionary.put(wires, road);
                         double phiSec = (Math.toDegrees(road.phi())+180+30)%60-30;
                         if(road.charge()<0) {
                             this.dataGroups.getItem(0).getH2F("hi_ptheta_neg_road").fill(road.p(), Math.toDegrees(road.theta()));
@@ -455,7 +506,7 @@ public class TrackDictionaryValidation {
                 }
                 if(nLines % 1000000 == 0) System.out.println("Read " + nLines + " roads");
             }
-            System.out.println("Found " + nLines + " roads with " + nDupli + " duplicates");
+            System.out.println("Found " + nLines + " roads with " + nFull + " full ones, " + nDupli + " duplicates and " + this.dictionary.keySet().size() + " good ones");
         } 
         catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -465,7 +516,7 @@ public class TrackDictionaryValidation {
         } 
    }
     
-    private void setDictionary(Map<ArrayList<Integer>, Integer> newDictionary) {
+    private void setDictionary(Map<ArrayList<Integer>, Particle> newDictionary) {
         this.dictionary = newDictionary;
     }
     
@@ -547,11 +598,13 @@ public class TrackDictionaryValidation {
         int wireSmear = parser.getOption("-w").intValue();
         int maxEvents = parser.getOption("-n").intValue();
             
-//        dictionaryFileName="/Users/devita/TracksDic_n20000000_newrange.txt";
-//        inputFileName = "/Users/devita/out_clas_004013.0.9.hipo";
-//        testFileName  = "/Users/devita/out_clas_004013.0.9.hipo";
-//        wireSmear=0;
-//        maxEvents = 5000;  
+        dictionaryFileName="/Users/devita/TracksDic_n20000000_newrange.txt";
+        dictionaryFileName="/Users/devita/tt.txt";
+        inputFileName = "/Users/devita/out_clas_004013.0.9.hipo";
+        testFileName  = "/Users/devita/out_clas_004013.0.9.hipo";
+        testFileName  = "/Users/devita/clas12_pi.hipo";
+        wireSmear=0;
+        maxEvents = 50000;  
         
         TrackDictionaryValidation tm = new TrackDictionaryValidation();
         tm.init();
