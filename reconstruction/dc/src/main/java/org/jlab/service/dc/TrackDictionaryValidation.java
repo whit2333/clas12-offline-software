@@ -9,12 +9,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.swing.JFrame;
 import org.jlab.clas.physics.Particle;
-import org.jlab.groot.data.H1F;
 import org.jlab.groot.data.H2F;
-import org.jlab.groot.graphics.EmbeddedCanvas;
 import org.jlab.groot.graphics.EmbeddedCanvasTabbed;
 import org.jlab.groot.group.DataGroup;
 import org.jlab.io.base.DataBank;
@@ -35,7 +34,7 @@ public class TrackDictionaryValidation {
     }
 
     public void analyzeHistos() {
-        // calculate efficiencies
+        // calculate road finding efficiencies
         this.effHisto(this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_found"), 
                       this.dataGroups.getItem(2).getH2F("hi_ptheta_pos_missing"), 
                       this.dataGroups.getItem(3).getH2F("hi_ptheta_pos_eff"));
@@ -52,12 +51,12 @@ public class TrackDictionaryValidation {
     
     public void createDictionary(String inputFileName) {
         // create dictionary from event file
-        System.out.println("Creating dictionary from file: " + inputFileName);
+        System.out.println("\nCreating dictionary from file: " + inputFileName);
         Map<ArrayList<Integer>, Particle> newDictionary = new HashMap<>();
         HipoDataSource reader = new HipoDataSource();
         reader.open(inputFileName);
         int nevent = -1;
-        while(reader.hasEvent() == true && nevent<100000) {
+        while(reader.hasEvent() == true) {
             DataEvent event = reader.getNextEvent();
             nevent++;
             if(nevent%10000 == 0) System.out.println("Analyzed " + nevent + " events");
@@ -93,12 +92,14 @@ public class TrackDictionaryValidation {
                     ArrayList<Integer> wires = new ArrayList<Integer>();
                     for (int k = 0; k < 6; k++) {
                         for (int l=0; l<6; l++) {
+                            // use first non zero wire in superlayer
                             if(wireArray[k*6 +l] != 0) {
                                wires.add(wireArray[k*6+l]);
                                break;
                             }
                         }
                     }
+                    // keep only roads with 6 superlayers
                     if(wires.size()==6) {
                         if(!newDictionary.containsKey(wires))  {
                             newDictionary.put(wires, part);
@@ -165,7 +166,7 @@ public class TrackDictionaryValidation {
         dMatchedRoads.addDataSet(hi_phitheta_pos_matchedroad, 4);
         dMatchedRoads.addDataSet(hi_vztheta_pos_matchedroad,  5);
         this.dataGroups.add(dMatchedRoads, 1);        
-// negative tracks
+        // negative tracks
         H2F hi_ptheta_neg_found = new H2F("hi_ptheta_neg_found", "hi_ptheta_neg_found", 100, 0.0, 10.0, 100, 0.0, 65.0);     
         hi_ptheta_neg_found.setTitleX("p (GeV)");
         hi_ptheta_neg_found.setTitleY("#theta (deg)");
@@ -312,6 +313,9 @@ public class TrackDictionaryValidation {
     }
     public void processFile(String fileName, int wireSmear, int maxEvents) {
         // testing dictionary on event file
+        
+        System.out.println("\nTesting dictionary on file " + fileName);
+
         HipoDataSource reader = new HipoDataSource();
         reader.open(fileName);
         int nevent = -1;
@@ -331,9 +335,8 @@ public class TrackDictionaryValidation {
             if (event.hasBank("TimeBasedTrkg::TBHits")) {
                 recHits = event.getBank("TimeBasedTrkg::TBHits");
             }
-            if (event.hasBank("MC:Particle")) {
-                mcPart = event.getBank("MC:Particle");
-                System.out.println("aaaaaaaaaaaaaaaaaa");
+            if (event.hasBank("MC::Particle")) {
+                mcPart = event.getBank("MC::Particle");
             }
             if (recTrack != null && recHits != null) {
                 for (int i = 0; i < recTrack.rows(); i++) {
@@ -347,7 +350,9 @@ public class TrackDictionaryValidation {
                                         recTrack.getFloat("Vtx0_y", i),
                                         recTrack.getFloat("Vtx0_z", i));
                     boolean goodTrack=true;
-                    if(Math.abs(part.vz())>15) goodTrack=false;
+                    // neglect tracks with bad vertex
+                    if(Math.abs(part.vz())>10) goodTrack=false;
+                    // for mc events, use only well reconstructed tracks
                     if (mcPart != null) {
                         for(int loop = 0; loop < mcPart.rows(); loop++) { 
                             Particle genPart = new Particle(
@@ -361,10 +366,9 @@ public class TrackDictionaryValidation {
                             if(part.charge()!=genPart.charge() ||
                                Math.abs(part.p()-genPart.p())>0.1 ||
                                Math.abs(Math.toDegrees(part.phi()-genPart.phi()))>5 ||    
-                               Math.abs(Math.toDegrees(part.theta()-genPart.theta()))>1) {
+                               Math.abs(Math.toDegrees(part.theta()-genPart.theta()))>5) {
                                 goodTrack=false;
                             }
-                            if(genPart.charge()>0) System.out.println("aaaaaaaaaaaaaaaaaa");
                         }   
                     }
                     if(!goodTrack) continue;
@@ -384,17 +388,15 @@ public class TrackDictionaryValidation {
                     ArrayList<Integer> wires = new ArrayList<Integer>();
                     for (int k = 0; k < 6; k++) {
                         for (int l=0; l<1; l++) {
+                            // use first non zero wire in superlayer
                             if(wireArray[k*6 +l] != 0) {
                                wires.add(wireArray[k*6+l]);
                                break;
                             }
                         }
                     }
-    //                System.out.println("");
+                    // use only tracks with 6 superlayers
                     if(wires.size()==6) {
-    //                    System.out.print(charge + " " + wires.size() + " ");
-    //                    for(int wire: wires) System.out.print(wire + " ");
-    //                    System.out.println(" ");
                         double phi     = (Math.toDegrees(part.phi())+180+30)%60-30;                        
                         Particle road = this.findRoad(wires,wireSmear);
                         if(road != null) {
@@ -440,7 +442,7 @@ public class TrackDictionaryValidation {
         
         this.dictionary = new HashMap<>();
         
-        System.out.println("Reading dictionary from file " + fileName);
+        System.out.println("\nReading dictionary from file " + fileName);
         int nLines = 0;
         int nFull  = 0;
         int nDupli = 0;
@@ -453,41 +455,34 @@ public class TrackDictionaryValidation {
             while ((line = txtreader.readLine()) != null) {
                 nLines++;
                 String[] lineValues;
-                String[] lineValues2;
-                lineValues  = line.split("\t ");
-                lineValues2  = line.split("\t");
+                lineValues  = line.split("\t");
                 ArrayList<Integer> wires = new ArrayList<Integer>();
-                if(lineValues.length < 41) {
+                if(lineValues.length < 42) {
                     System.out.println("WARNING: dictionary line " + nLines + " incomplete: skipping");
                 }
                 else {
 //                    System.out.println(line);
-                    int charge   = Integer.parseInt(lineValues2[0]);
-                    double p     = Double.parseDouble(lineValues2[1]);
-                    double theta = Double.parseDouble(lineValues[1]);
-                    double phi   = Double.parseDouble(lineValues[2]);
-                    double vz    = Double.parseDouble(lineValues[40]);
+                    int charge   = Integer.parseInt(lineValues[0]);
+                    double p     = Double.parseDouble(lineValues[1]);
+                    double theta = Double.parseDouble(lineValues[2]);
+                    double phi   = Double.parseDouble(lineValues[3]);
+                    double vz    = Double.parseDouble(lineValues[41]);
                     double px    = p*Math.sin(Math.toRadians(theta))*Math.cos(Math.toRadians(phi));
                     double py    = p*Math.sin(Math.toRadians(theta))*Math.sin(Math.toRadians(phi));
                     double pz    = p*Math.cos(Math.toRadians(theta));
                     Particle road = new Particle(211*charge, px, py, pz, 0, 0, vz);
-//                    System.out.println(p + " " + theta + " " + phi + " " + vz);
+                    // take wire id of first layer in each superlayer, id>0
                     for(int i=0; i<6; i++) {
-//                        System.out.println(lineValues[i]);
-                        int wire = Integer.parseInt(lineValues[3+i*6]);
+                        int wire = Integer.parseInt(lineValues[4+i*6]);
                         if(wire>0) wires.add(wire);
                     }
+                    // keep only roads with 6 superlayers
                     if(wires.size()!=6) continue;
                     nFull++;
                     if(this.dictionary.containsKey(wires)) {
                         nDupli++;
                         if(nDupli<10) System.out.println("WARNING: found duplicate road");
                         else if(nDupli==10) System.out.println("WARNING: reached maximum number of warnings, switching to silent mode");
-//                        for(int wire: wires) System.out.println(wire + " ");
-//                        System.out.println(" ");
-//                        System.out.println(line);
-//                        int nRoad = this.dictionary.get(wires) + 1;
-//                        this.dictionary.replace(wires, nRoad);
                     }
                     else {
                         this.dictionary.put(wires, road);
@@ -520,69 +515,20 @@ public class TrackDictionaryValidation {
         this.dictionary = newDictionary;
     }
     
-    public ArrayList<Integer> xWires() {
-        ArrayList<Integer> wires = new ArrayList<Integer>();
-        wires.add(41);
-        wires.add(41);
-        wires.add(41);
-        wires.add(41);
-        wires.add(41);
-        wires.add(41);
-        
-        wires.add(37);
-        wires.add(38);
-        wires.add(37);
-        wires.add(38);
-        wires.add(37);
-        wires.add(37);
-        
-        wires.add(38);
-        wires.add(39);
-        wires.add(38);
-        wires.add(39);
-        wires.add(38);
-        wires.add(38);
-        
-        wires.add(34);
-        wires.add(34);
-        wires.add(34);
-        wires.add(34);
-        wires.add(33);
-        wires.add(34);
-        
-        wires.add(34);
-        wires.add(34);
-        wires.add(33);
-        wires.add(34);
-        wires.add(33);
-        wires.add(33);
-        
-        wires.add(30);
-        wires.add(30);
-        wires.add(29);
-        wires.add(30);
-        wires.add(29);
-        wires.add(29);
-//        ArrayList<Integer> wires = null;
-//        if(this.dictionary !=null) {
-//            for(Map.Entry<ArrayList<Integer>, Integer> entry : this.dictionary.entrySet()) {
-//                wires = entry.getKey();
-//                break;
-//            }
-//        }
-        return wires;
-    }
 
     public static void main(String[] args) {
         
         OptionParser parser = new OptionParser("dict-validation");
         parser.addOption("-d","dictionary.txt", "read dictionary from file");
         parser.addOption("-c","input.hipo", "create dictionary from event file");
-        parser.addOption("-i","test.hipo", "set event file for dictionary validation");
+        parser.addRequired("-i","set event file for dictionary validation");
         parser.addOption("-w", "0", "wire smearing in road finding");
         parser.addOption("-n", "-1", "maximum number of events to process");
         parser.parse(args);
         
+        List<String> arguments = new ArrayList<String>();
+        for(String item : args){ arguments.add(item); }
+
         String dictionaryFileName = null;
         if(parser.hasOption("-d")==true){
             dictionaryFileName = parser.getOption("-d").stringValue();
@@ -598,35 +544,39 @@ public class TrackDictionaryValidation {
         int wireSmear = parser.getOption("-w").intValue();
         int maxEvents = parser.getOption("-n").intValue();
             
-        dictionaryFileName="/Users/devita/TracksDic_n20000000_newrange.txt";
-        dictionaryFileName="/Users/devita/tt.txt";
-        inputFileName = "/Users/devita/out_clas_004013.0.9.hipo";
-        testFileName  = "/Users/devita/out_clas_004013.0.9.hipo";
-        testFileName  = "/Users/devita/clas12_pi.hipo";
-        wireSmear=0;
-        maxEvents = 50000;  
+//        dictionaryFileName="/Users/devita/TracksDic_n20000000_newformat.txt";
+//        inputFileName = "/Users/devita/out_clas_004013.0.9.hipo";
+//        testFileName  = "/Users/devita/out_clas_004013.0.9.hipo";
+//        testFileName  = "/Users/devita/clas12_pi.hipo";
+//        wireSmear=0;
+//        maxEvents = 100000;  
         
         TrackDictionaryValidation tm = new TrackDictionaryValidation();
         tm.init();
-        if(parser.hasOption("-d")==true) {
-            tm.readDictionary(dictionaryFileName);
+        if(parser.containsOptions(arguments, "-c") || parser.containsOptions(arguments, "-d")) {
+            if(parser.hasOption("-c")==true) {
+                tm.createDictionary(inputFileName);
+            }
+            else if(parser.hasOption("-d")==true) {
+                tm.readDictionary(dictionaryFileName);                
+            }
+    //        tm.printDictionary();
+            tm.processFile(testFileName,wireSmear,maxEvents);
+
+            JFrame frame = new JFrame("Tracking");
+            Dimension screensize = null;
+            screensize = Toolkit.getDefaultToolkit().getScreenSize();
+            frame.setSize((int) (screensize.getWidth() * 0.8), (int) (screensize.getHeight() * 0.8));
+            frame.add(tm.getCanvas());
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+            tm.plotHistos();
         }
         else {
-            tm.createDictionary(inputFileName);
+            parser.printUsage();
+            System.out.println("\n >>>> error : no dictionary specified: specify the road dictionary or choose to create it from file\n");
+            System.exit(0);       
         }
-//        tm.printDictionary();
-        tm.processFile(testFileName,wireSmear,maxEvents);
-        
-        
-                
-        JFrame frame = new JFrame("Tracking");
-        Dimension screensize = null;
-        screensize = Toolkit.getDefaultToolkit().getScreenSize();
-        frame.setSize((int) (screensize.getWidth() * 0.8), (int) (screensize.getHeight() * 0.8));
-        frame.add(tm.getCanvas());
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
-        tm.plotHistos();
 
     }
     
