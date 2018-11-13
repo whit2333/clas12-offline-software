@@ -187,6 +187,7 @@ public class Constants {
     }
     
     private static boolean USE_GFITTER = false;
+    //private static boolean USE_GFITTER = true;
 
     /**
      * @return the USE_GFITTER

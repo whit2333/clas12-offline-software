@@ -740,6 +740,10 @@ public class ClusterCleanerUtilities {
             sortedHits.get(hits.get(i).get_Layer()-1).add(hits.get(i));
         }
         for(int l = 0; l < 6; l++) {
+
+// MO: for GFitter take only single wire-wide clusters
+if(sortedHits.get(l).size()>1) sortedHits.get(l).removeAll(sortedHits.get(l));
+if(false){ // MO: below is redundant
             
             if(sortedHits.get(l).size()>2 && sortedHits.get(l).size()<5) {
                 ArrayList<Hit> rmHits = (ArrayList<Hit>) sortedHits.get(l).clone();
@@ -761,7 +765,9 @@ public class ClusterCleanerUtilities {
             }
             if(sortedHits.get(l).size()==10) 
                 sortedHits.get(l).removeAll(sortedHits.get(l));
-             
+
+} // MO: endif of redundant
+
         }
         hits.clear();
         for(int l = 0; l < 6; l++) {

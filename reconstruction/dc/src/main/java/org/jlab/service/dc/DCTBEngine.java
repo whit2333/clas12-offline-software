@@ -234,7 +234,7 @@ public class DCTBEngine extends DCEngine {
              gFit.runFitter(TrackArray[i].get(0).get_Sector());
 	     // MO: copy into kFit object
 		    StateVecs ksv = new StateVecs(dcSwim); // object was not created in memory
-		    ksv.init(TrackArray[i], 175., kFit); // must call this to create instance
+		    ksv.initFromHB(TrackArray[i], 175., kFit); // must call this to create instance
 		    kFit.finalStateVec = ksv.trackTraj.get(0);
 		    kFit.finalCovMat = ksv.trackCov.get(0);
 		    

@@ -355,7 +355,7 @@ if(debug_gfit) System.out.println(" GFit.Chi2.Before: " +sector+" , "+ chi2_befo
 
 			Matrix ialpha = null;
 			if(this.isNonsingular(alpha)==false) {
-				System.out.println("Covariance Matrix is non-invertible - quit filter!");
+				System.out.println("Covariance Matrix is non-invertible - exit GFitter!");
 				return;
 			}
 			try {

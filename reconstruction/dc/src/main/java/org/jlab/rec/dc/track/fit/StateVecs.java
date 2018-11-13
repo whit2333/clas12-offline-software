@@ -263,7 +263,7 @@ public class StateVecs {
         }
     }
 
-    void initFromHB(Track trkcand, double z0, KFitter kf) { 
+    public void initFromHB(Track trkcand, double z0, KFitter kf) { 
         if (trkcand != null && trkcand.get_CovMat()!=null) {
             dcSwim.SetSwimParameters(trkcand.get_Vtx0().x(), trkcand.get_Vtx0().y(), trkcand.get_Vtx0().z(), 
                     trkcand.get_pAtOrig().x(), trkcand.get_pAtOrig().y(), trkcand.get_pAtOrig().z(), trkcand.get_Q());
