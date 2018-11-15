@@ -742,8 +742,11 @@ public class ClusterCleanerUtilities {
         for(int l = 0; l < 6; l++) {
 
 // MO: for GFitter take only single wire-wide clusters
-if(sortedHits.get(l).size()>1) sortedHits.get(l).removeAll(sortedHits.get(l));
-if(false){ // MO: below is redundant
+//System.out.println(" HitListPruner: " + Constants.getGFT() );
+
+if(Constants.getGFT()){ // MO: GFitter requires single-wire-wide segments
+ if(sortedHits.get(l).size()>1) sortedHits.get(l).removeAll(sortedHits.get(l));
+} else {
             
             if(sortedHits.get(l).size()>2 && sortedHits.get(l).size()<5) {
                 ArrayList<Hit> rmHits = (ArrayList<Hit>) sortedHits.get(l).clone();
@@ -766,7 +769,7 @@ if(false){ // MO: below is redundant
             if(sortedHits.get(l).size()==10) 
                 sortedHits.get(l).removeAll(sortedHits.get(l));
 
-} // MO: endif of redundant
+} // MO: endif of GFitter-KFitter cuts selection
 
         }
         hits.clear();
