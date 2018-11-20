@@ -150,8 +150,8 @@ class HTCCCluster {
         y = (float) rot.getYPrime();
         z = (float) rot.getZPrime();
 
-        dtheta = Math.pow(dtheta, -0.5);
-        dphi = Math.pow(dphi, -0.5);
+        dtheta = hitdtheta.get(0);
+        dphi = hitdphi.get(0);
 
         nthetaclust = setitheta.size();
         nphiclust = setiphi.size();
