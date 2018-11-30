@@ -1,13 +1,18 @@
 ---
 
+dist: xenial
+
 sudo: required
 
 language: java
 
+env:
+# switch to openjdk:
+#- JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+# switch to oracle:
 jdk:
 - oraclejdk8
-
-# this affects which java version is used:
 addons:
   apt:
     packages:
@@ -15,6 +20,12 @@ addons:
 
 before_install:
     - ls -lthra
+# switch to openjdk:
+#    - sudo add-apt-repository -y ppa:openjdk-r/ppa
+#    - sudo apt-get -qq update
+#    - sudo apt-get install -y openjdk-8-jdk --no-install-recommends
+#    - sudo apt-get install -y openjfx
+#    - sudo update-java-alternatives -s java-1.8.0-openjdk-amd64
     - java -version
     - echo "starting build..."
 
