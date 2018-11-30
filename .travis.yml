@@ -12,11 +12,11 @@ env:
 
 # switch to oracle:
 jdk:
-- oraclejdk11
-#addons:
-#  apt:
-#    packages:
-#      - oracle-java8-installer
+- oraclejdk8
+addons:
+  apt:
+    packages:
+      - oracle-java8-installer
 
 before_install:
     - ls -lthra
