@@ -371,6 +371,7 @@ public class ClusterCleanerUtilities {
             newhitPos.setT0(hit.getT0()); 
             newhitPos.set_Beta(hit.get_Beta()); 
             newhitPos.setB(hit.getB()); 
+            newhitPos.set_LocalAngle(hit.get_LocalAngle());
             newhitPos.set_DeltaTimeBeta(hit.get_DeltaTimeBeta());
             newhitPos.setTStart(hit.getTStart());
             newhitPos.setTProp(hit.getTProp());
@@ -392,6 +393,7 @@ public class ClusterCleanerUtilities {
             newhitNeg.setT0(hit.getT0()); 
             newhitNeg.set_Beta(hit.get_Beta());  
             newhitNeg.setB(hit.getB());  
+            newhitNeg.set_LocalAngle(hit.get_LocalAngle());
             newhitNeg.set_DeltaTimeBeta(hit.get_DeltaTimeBeta());
             newhitNeg.setTStart(hit.getTStart());
             newhitNeg.setTProp(hit.getTProp());

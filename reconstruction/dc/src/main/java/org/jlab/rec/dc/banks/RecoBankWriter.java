@@ -84,6 +84,9 @@ public class RecoBankWriter {
             bank.setFloat("B", i, (float) hitlist.get(i).getB());
             bank.setFloat("TProp", i, (float) hitlist.get(i).getTProp());
             bank.setFloat("TFlight", i, (float) hitlist.get(i).getTFlight());
+            if(bank.getDescriptor().hasEntry("LocalAngle")){
+                bank.setFloat("LocalAngle", i, (float) hitlist.get(i).get_LocalAngle());
+            }
 
             if(hitlist.get(i).get_AssociatedHBTrackID()>-1 && !event.hasBank("MC::Particle")) {
                 bank.setFloat("TProp", i, (float) hitlist.get(i).getSignalPropagTimeAlongWire());
@@ -448,8 +451,12 @@ public class RecoBankWriter {
             bank.setFloat("TFlight", i, (float) hitlist.get(i).getTFlight());
             bank.setFloat("T0", i, (float) hitlist.get(i).getT0());
             bank.setFloat("TStart", i, (float) hitlist.get(i).getTStart());
+            if(bank.getDescriptor().hasEntry("LocalAngle")){
+                bank.setFloat("LocalAngle", i, (float) hitlist.get(i).get_LocalAngle());
+            }
             if(bank.getDescriptor().hasEntry("beta")){
                bank.setFloat("beta", i, (float) hitlist.get(i).get_Beta());
+               
             }
             if(hitlist.get(i).get_AssociatedTBTrackID()>-1 && !event.hasBank("MC::Particle")) {
                 if(hitlist.get(i).getSignalPropagTimeAlongWire()==0 || hitlist.get(i).get_AssociatedTBTrackID()<1) {
@@ -796,6 +803,34 @@ public class RecoBankWriter {
         }
         return bank;
     }
+    private DataBank fillMCTrajectoryBank(DataEvent event, List<Track> tracks) {
+        DataBank bank = event.createBank("MC::Trajectory", tracks.size()*21);
+        int i1=0;
+        for (Track track : tracks) {
+            if (track == null)
+                continue;
+            if (track.get_MCTrajectory() == null)
+                continue;
+
+            for (int j = 0; j < track.get_MCTrajectory().size(); j++) {
+                if (track.get_MCTrajectory().get(j).getDetName().startsWith("DC") && (j - 6) % 6 != 0)
+                    continue;  // save the last layer in a superlayer
+
+                bank.setShort("did", i1, (short) track.get_MCTrajectory().get(j).getDetId());
+                bank.setShort("tid", i1, (short) track.get_Id());
+                bank.setFloat("x", i1, (float) track.get_MCTrajectory().get(j).getX());
+                bank.setFloat("y", i1, (float) track.get_MCTrajectory().get(j).getY());
+                bank.setFloat("z", i1, (float) track.get_MCTrajectory().get(j).getZ());
+                bank.setFloat("tx", i1, (float) ((float) track.get_MCTrajectory().get(j).getpX() / track.get_P()));
+                bank.setFloat("ty", i1, (float) ((float) track.get_MCTrajectory().get(j).getpY() / track.get_P()));
+                bank.setFloat("tz", i1, (float) ((float) track.get_MCTrajectory().get(j).getpZ() / track.get_P()));
+                bank.setFloat("B", i1, (float) track.get_MCTrajectory().get(j).getiBdl());
+                bank.setFloat("L", i1, (float) track.get_MCTrajectory().get(j).getPathLen());
+                i1++;
+            }
+        }
+        return bank;
+    }
 
     public List<FittedHit> createRawHitList(List<Hit> hits) {
 
@@ -869,7 +904,8 @@ public class RecoBankWriter {
                     rbc.fillTBSegmentsBank(event, segments),
                     rbc.fillTBCrossesBank(event, crosses),
                     rbc.fillTBTracksBank(event, trkcands),
-                    rbc.fillTrajectoryBank(event, trkcands));
+                    rbc.fillTrajectoryBank(event, trkcands),
+                    rbc.fillMCTrajectoryBank(event, trkcands));
 
         }
         if (crosses != null && trkcands == null) {

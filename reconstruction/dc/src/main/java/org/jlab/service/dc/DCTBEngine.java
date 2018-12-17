@@ -256,6 +256,29 @@ public class DCTBEngine extends DCEngine {
                 trk.calcTrajectory(trkId, dcSwim, trk.get_Vtx0().x(), trk.get_Vtx0().y(), 
                         trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), 
                         ftofDetector, tSurf, tarCent);
+                String mcString = "MC::Particle";
+                if(event.hasBank(mcString)) {
+                    DataBank mcBank = event.getBank(mcString);
+                    Track mcTrk = (Track) trk.clone();
+                    int mcIdx = -1;
+                    double dotMC2RecoTrks = -1;
+                    Vector3D mcP = null;
+                    for(int mi =0; mi< mcBank.rows(); mi++) {
+                        if(this.getMCTrackCharge(mcBank.getInt("pid", mi))!=trk.get_Q())
+                            continue;
+                        mcP = new Vector3D(mcBank.getFloat("px", mi), mcBank.getFloat("py", mi), mcBank.getFloat("pz", mi)).asUnit();
+                        double dotMCi2RecoTrks = mcP.dot(trk.get_pAtOrig().clone().asUnit());
+                        if(dotMCi2RecoTrks>dotMC2RecoTrks) {
+                            dotMC2RecoTrks=dotMCi2RecoTrks;
+                            mcIdx = mi;
+                        }
+                    }
+                    mcTrk.calcTrajectory(trkId, dcSwim, mcBank.getFloat("vx", mcIdx), mcBank.getFloat("vy", mcIdx), mcBank.getFloat("vz", mcIdx) ,
+                        mcBank.getFloat("px", mcIdx), mcBank.getFloat("py", mcIdx), mcBank.getFloat("pz", mcIdx), trk.get_Q(), 
+                        ftofDetector, tSurf, tarCent);
+                    trk.set_MCTrajectory(mcTrk.trajectory);
+                    
+                }
 //                for(int j = 0; j< trk.trajectory.size(); j++) {
 //                System.out.println(trk.get_Id()+" "+trk.trajectory.size()+" ("+trk.trajectory.get(j).getDetId()+") ["+
 //                            trk.trajectory.get(j).getDetName()+"] "+
@@ -309,6 +332,16 @@ public class DCTBEngine extends DCEngine {
                 miss=l+1;
         }
         return miss;
+    }
+
+    private int getMCTrackCharge(int pid) {
+        int q = -1;
+        if(pid/100 ==0) {
+            q*=(int)Math.signum(pid);
+        } else {
+            q*=(int)Math.signum(-pid);
+        }
+        return q;
     }
     
    

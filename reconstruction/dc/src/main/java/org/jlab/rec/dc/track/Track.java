@@ -408,6 +408,14 @@ public class Track extends Trajectory implements Comparable<Track>{
             return ((returnSec ==0) ? return_val_a6 : returnSec);
     }
 
+    private List<TrajectoryStateVec> _mcTrajectory;
+    public void set_MCTrajectory(List<TrajectoryStateVec> mcTrajectory) {
+        _mcTrajectory = mcTrajectory;
+    }
+    public List<TrajectoryStateVec> get_MCTrajectory() {
+        return _mcTrajectory;
+    }
+
    
 
 }

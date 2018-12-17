@@ -373,6 +373,7 @@ public class ClusterFinder {
                         newhit.setT0(hit.getT0()); 
                         newhit.set_Beta(hit.get_Beta());
                         newhit.setB(hit.getB());
+                        newhit.set_LocalAngle(hit.get_LocalAngle());
                         newhit.set_DeltaTimeBeta(hit.get_DeltaTimeBeta());
                         newhit.setTStart(hit.getTStart());
                         newhit.setTProp(hit.getTProp());

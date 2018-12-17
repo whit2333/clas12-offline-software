@@ -29,25 +29,32 @@ public class TableLoader {
     /*
      * 
      */
-    public void test(){
-            TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
-            for(int s = 0; s<1; s++ ){ // loop over sectors
-                    for(int r = 2; r<3; r++ ){ //loop over slys
-                            for(int ibfield =0; ibfield<8; ibfield++) {
-                                    for(int icosalpha =0; icosalpha<6; icosalpha++) {
-                                            for (int tb = 0; tb< maxBinIdxT[s][r][ibfield][icosalpha]; tb++) {
-                                                double Xalpha = -(Math.toDegrees(Math.acos(Math.cos(Math.toRadians(30.)) + (icosalpha)*(1. - Math.cos(Math.toRadians(30.)))/5.)) - 30.);
-                                                double Xtime=(2*tb+1);
-                                                double Xdoca=tde.interpolateOnGrid((double) ibfield*0.5, Xalpha, Xtime, s, r);
-                                                    System.out.println("s "+(s+1)+" sl "+(r+1)+" time "+(2*tb+1)
-                                                            +" icosalpha "+icosalpha+" Xalpha "+Xalpha+" B "+ ibfield*0.5 + " dis "+ (float)DISTFROMTIME[s][r][ibfield][icosalpha][tb] +" "+
-                                                          (float) Xdoca );
-                                            }
+    public static void test(){
+        TimeToDistanceEstimator tde = new TimeToDistanceEstimator();
+        for(int s = 0; s<1; s++ ){ // loop over sectors
+            for(int r = 2; r<3; r++ ){ //loop over slys
+                for(int ibfield =0; ibfield<8; ibfield++) {
+                    for(int icosalpha =3; icosalpha<4; icosalpha++) {
+                        int tb =100;
+                        for (int j1 = 1; j1<= 1; j1++) {
+                         //for (int tb = 0; tb< maxBinIdxT[s][r][ibfield][icosalpha]; tb++) {
+                            double Xalpha = -(Math.toDegrees(Math.acos(Math.cos(Math.toRadians(30.)) + (icosalpha)*(1. - Math.cos(Math.toRadians(30.)))/5.)) - 30.);
+                            double Xtime=(2*tb+1);
+                            double Xdoca=tde.interpolateOnGrid((double) ibfield*0.5, Xalpha, Xtime, s, r);
 
-                                    }
+                            System.out.println("s "+(s+1)+" sl "+(r+1)+" time "+(2*tb+1)
+                                        +" icosalpha "+icosalpha+" Xalpha "+Xalpha+" B "+ ibfield*0.5 + " dis "+ (float)DISTFROMTIME[s][r][ibfield][icosalpha][tb] +" "+
+                                      (float) Xdoca );
+                            for(int j =0; j<10; j++) {
+                                double jbfield = (double)ibfield + 0.1*j;
+                                System.out.println(" B "+ jbfield*0.5 + " dis "+ (
+                                        float)tde.interpolateOnGrid((double) jbfield*0.5, Xalpha, Xtime, s, r));
                             }
+                        }
                     }
+                }
             }
+        }
     }
     
     
@@ -107,23 +114,24 @@ public class TableLoader {
 
                                         double cos30minusalpha = Math.cos(Math.toRadians(30.)) + (double) (icosalpha)*(1. - Math.cos(Math.toRadians(30.)))/5.;
 
-                                        double alpha = -(Math.toDegrees(Math.acos(cos30minusalpha)) - 30);
+                                        double alpha = -(Math.toDegrees(Math.acos(cos30minusalpha)) - 30.);
 
-                                        int nxmax = (int) (dmax/stepSize); 
+                                        int nxmax = (int) (2*dmax/stepSize); 
 
                                         for(int idist =0; idist<nxmax; idist++) {
 
-                                                double x = (double)(idist+1)*stepSize;
-                                                double timebfield = calc_Time( x,  dmax,  tmax,  alpha, bfield, s, r, tab) ;
+                                            double x = (double)(idist+1)*stepSize;
+                                            if(x>dmax)
+                                                continue;
+                                            double timebfield = calc_Time( x,  dmax,  tmax,  alpha, bfield, s, r, tab) ;
 
-                                                if(timebfield<=calc_Time( dmax,  dmax,  tmax,  30, bfield, s, r, tab))
-                                                        maxdist=x;
+                                            //if(timebfield<=calc_Time( dmax,  dmax,  tmax,  alpha, bfield, s, r, tab))
+                                            //   maxdist=x;
 
-                                                if(timebfield>calc_Time( dmax,  dmax,  tmax,  30, bfield, s, r, tab))
-                                                        x=maxdist;
+                                            //if(timebfield>calc_Time( dmax,  dmax,  tmax,  alpha, bfield, s, r, tab))
+                                            //    x=maxdist;
 
                                             int tbin = Integer.parseInt(df.format(timebfield/2.) ) -1;
-
 
                                             if(tbin<0)
                                                 tbin=0;
@@ -144,7 +152,8 @@ public class TableLoader {
                                 }
                         }
                 }
-        }	
+        }
+        //TableLoader.test();
         T2DLOADED = true;
      }
 
@@ -198,10 +207,11 @@ public class TableLoader {
         // double deltatime_bfield = CCDBConstants.getDELT_BFIELD_COEFFICIENT()[s][r]*Math.pow(bfield,2)*tmax*(CCDBConstants.getDELTATIME_BFIELD_PAR1()[s][r]*xhatalpha+CCDBConstants.getDELTATIME_BFIELD_PAR2()[s][r]*Math.pow(xhatalpha, 2)+
         //		 CCDBConstants.getDELTATIME_BFIELD_PAR3()[s][r]*Math.pow(xhatalpha, 3)+CCDBConstants.getDELTATIME_BFIELD_PAR4()[s][r]*Math.pow(xhatalpha, 4));
         double delBf = tab.getDoubleValue("delta_bfield_coefficient", s+1,r+1,0); 
-        //delBf = 0.15;
-        double deltatime_bfield = delBf*Math.pow(bfield,2)*tmax*(tab.getDoubleValue("b1", s+1,r+1,0)*xhatalpha+tab.getDoubleValue("b2", s+1,r+1,0)*Math.pow(xhatalpha, 2)+
-                     tab.getDoubleValue("b3", s+1,r+1,0)*Math.pow(xhatalpha, 3)+tab.getDoubleValue("b4", s+1,r+1,0)*Math.pow(xhatalpha, 4));
-        // System.out.println("dB "+deltatime_bfield+" raw time "+time);
+        //delBf = 0.16;
+        double deltatime_bfield = delBf*Math.pow(bfield,2)*tmax*(tab.getDoubleValue("b1", s+1,r+1,0)*xhatalpha+
+                tab.getDoubleValue("b2", s+1,r+1,0)*Math.pow(xhatalpha, 2)+
+                     tab.getDoubleValue("b3", s+1,r+1,0)*Math.pow(xhatalpha, 3)+
+                tab.getDoubleValue("b4", s+1,r+1,0)*Math.pow(xhatalpha, 4));
         //calculate the time at alpha deg. and at a non-zero bfield	          
         time += deltatime_bfield;
         //added deta(T0) correction

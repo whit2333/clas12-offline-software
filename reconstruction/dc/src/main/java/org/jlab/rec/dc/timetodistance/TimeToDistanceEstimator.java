@@ -20,10 +20,12 @@ public class TimeToDistanceEstimator {
      * @return y value on grid from linear interpolation between a and b evaluated at x
      */
     private double interpolateLinear(double x, double xa, double xb, double ya, double yb) {
-        double y = ya*(xb - x)/(xb - xa) + yb*(x - xa)/(xb - xa);
+        double y = 0;
         if(xb - xa == 0) {
-            y = ya + yb;
+            y = (ya + yb)/2.;
+            return y;
         }
+        y = ya*(xb - x)/(xb - xa) + yb*(x - xa)/(xb - xa);
         return y;
     }
 
@@ -40,17 +42,19 @@ public class TimeToDistanceEstimator {
         // if(alpha==30)
         //	 alpha-=0.0001;
         //reset range
-        if(B>3.0) {
-            B=3.0;
+        if(B>3.5) {
+            B=3.5;
         }
         
         int binlowB  = this.getBIdx(B);
         int binhighB = binlowB + 1; 
 
-        if(binhighB > TableLoader.maxBinIdxB-1) {
-            binhighB = TableLoader.maxBinIdxB-1;
-        }
-
+        //if(binhighB > TableLoader.maxBinIdxB-1) {
+        //    binhighB = TableLoader.maxBinIdxB-1;
+        //}
+        if(binhighB>7)
+            binhighB=7;
+        
         double B1 = binlowB*0.5;
         double B2 = binhighB*0.5;
 
@@ -58,12 +62,12 @@ public class TimeToDistanceEstimator {
         int binlowAlpha  = this.getAlphaIdx(alpha);
         int binhighAlpha = binlowAlpha + 1;
 
-        if(binhighAlpha > TableLoader.maxBinIdxAlpha-1) {
-            binhighAlpha = TableLoader.maxBinIdxAlpha-1;
-        }
-        if(binhighAlpha==binlowAlpha) {
-            binlowAlpha=binhighAlpha-1;
-        }
+        //if(binhighAlpha > TableLoader.maxBinIdxAlpha-1) {
+        //    binhighAlpha = TableLoader.maxBinIdxAlpha-1;
+        //}
+        //if(binhighAlpha==binlowAlpha) {
+        //    binlowAlpha=binhighAlpha-1;
+        //}
 
         double alpha1 = this.getAlphaFromAlphaIdx(binlowAlpha);	 
         double alpha2 = this.getAlphaFromAlphaIdx(binhighAlpha);
@@ -72,15 +76,19 @@ public class TimeToDistanceEstimator {
         int binlowT = this.getTimeIdx(t, SecIdx, SlyrIdx, binlowB, binlowAlpha);  
         int binhighT = binlowT + 1; 
 
-        if(binhighT>TableLoader.maxBinIdxT[SecIdx][SlyrIdx][binlowB][binlowAlpha]-1) {
-            binhighT=TableLoader.maxBinIdxT[SecIdx][SlyrIdx][binlowB][binlowAlpha]-1;
-        }
+        //if(binhighT>TableLoader.maxBinIdxT[SecIdx][SlyrIdx][binlowB][binlowAlpha]-1) {
+        //    binhighT=TableLoader.maxBinIdxT[SecIdx][SlyrIdx][binlowB][binlowAlpha]-1;
+        //}
 
-        double t1 = binlowT*2.;
-        double t2 = binhighT*2.;
+        double t1 = binlowT*2. +1;
+        double t2 = binhighT*2.+1;
 
         if(t>t2) {
             t=t2;
+        }
+        if(t<t1) {
+            t1-=1;
+            t2-=1;
         }
 
          // interpolate in B:
@@ -109,7 +117,7 @@ public class TimeToDistanceEstimator {
         if(f_B_alpha_t>2*Constants.wpdist[SlyrIdx]) {
             f_B_alpha_t = 2*Constants.wpdist[SlyrIdx];
         }                                                      
-                // System.out.println(SlyrIdx+" t "+t+" "+f_B_alpha_t+" tmax "+CalibrationConstantsLoader.dmaxsuperlayer[SlyrIdx]);
+        
         return f_B_alpha_t;
     }
 
@@ -145,11 +153,11 @@ public class TimeToDistanceEstimator {
         df.setRoundingMode(RoundingMode.CEILING);
         int binIdx = Integer.parseInt(df.format(t1/2.) ) -1; 
         if(binIdx<0) {
-            binIdx = TableLoader.minBinIdxT;
+            binIdx = 0;
         }
-        if(binIdx>TableLoader.maxBinIdxT[is][ir][ibfield][icosalpha]) {
-            binIdx = TableLoader.maxBinIdxT[is][ir][ibfield][icosalpha]-1;
-        }
+        //if(binIdx>TableLoader.maxBinIdxT[is][ir][ibfield][icosalpha]) {
+        //    binIdx = TableLoader.maxBinIdxT[is][ir][ibfield][icosalpha]-1;
+        //}
 
         return binIdx;
     }

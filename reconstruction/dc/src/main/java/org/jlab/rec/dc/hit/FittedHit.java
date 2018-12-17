@@ -359,12 +359,12 @@ public class FittedHit extends Hit implements Comparable<Hit> {
 
             }
             this.set_DeltaTimeBeta(deltatime_beta);
+            this.set_LocalAngle(Math.toDegrees(ralpha));
             double correctedTime = (this.get_Time() - deltatime_beta);
             if(correctedTime<=0)
-                correctedTime=0.01;
+                correctedTime=0.0;
 
             distance = tde.interpolateOnGrid(B, Math.toDegrees(ralpha), correctedTime, secIdx, slIdx) ;
-            
         }
         
         this.set_Doca(distance);
@@ -902,5 +902,13 @@ public class FittedHit extends Hit implements Comparable<Hit> {
     }
     public double get_DeltaTimeBeta() {
         return _deltatime_beta ;
+    }
+
+    private double _localAngle;
+    public void set_LocalAngle(double locAngle) {
+        _localAngle = locAngle;
+    }
+    public double get_LocalAngle() {
+        return _localAngle;
     }
 }
