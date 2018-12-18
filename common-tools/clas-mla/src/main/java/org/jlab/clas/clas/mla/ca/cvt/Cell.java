@@ -7,20 +7,67 @@ package org.jlab.clas.clas.mla.ca.cvt;
 
 import org.jlab.clas.clas.mla.ca.ACell;
 import org.jlab.clas.clas.mla.ca.ANode;
+import org.jlab.geom.prim.Point3D;
+import org.jlab.geom.prim.Vector3D;
 
 /**
  *
- * @author ziegler
+ * @authors bossu, ziegler
  */
 public class Cell extends ACell {
 
-    public Cell(ANode node1, ANode node2) {
+    double angleCut = 0.995;
+    // in XY follow the linear relation obtained from simulations
+    // Angle( DR ) = 0.175 * DR + 0.551 
+    // where DR is the difference in radius of the crosses
+    // The angles are in degrees
+    double a = 1.75;
+    double b = 0.551;
+    
+    public Cell(Node node1, Node node2) {
         super(node1, node2);
+        if(this.isValid(node1, node2)) {
+            this.setPath();
+            _npath = _path.clone().asUnit();
+        }
     }
 
     @Override
     public boolean passNeighboringCondition(ACell acell) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        boolean pass = false;
+        ANode anode1 = acell.getSourceNode();
+        ANode anode2 = acell.getSinkNode();
+        Point3D node1 = (Point3D) anode1.getNodeObjectType();
+        Point3D node2 = (Point3D) anode2.getNodeObjectType();
+        
+        Vector3D apath = node2.toVector3D().sub(node1.toVector3D()).asUnit();
+        if(_npath.dot(apath)>angleCut) {
+            pass = true;
+        }
+        return pass;
     }
     
+                
+    private Vector3D _npath;
+    private Vector3D _path;
+    /**
+     * @return the _path
+     */
+    public Vector3D getPath() {
+        return _path;
+    }
+
+   /**
+    * sets the path between nodes
+    */
+    
+    public void setPath() {
+        
+        this._path = (Vector3D) this.getSourceNode().connector( this.getSourceNode(), this.getSinkNode() );
+    }
+
+    private boolean isValid(Node node1, Node node2) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        //check angle stuff goes here...
+    }
 }

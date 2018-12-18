@@ -17,6 +17,20 @@ import org.jlab.geom.prim.Vector3D;
 public final class Node extends ANode {
 
     /**
+     * @return the _radius
+     */
+    public double getRadius() {
+        return _radius;
+    }
+
+    /**
+     * @param _radius the _radius to set
+     */
+    public void setRadius(double _radius) {
+        this._radius = _radius;
+    }
+
+    /**
      * @return the _id
      */
     public int getId() {
@@ -38,17 +52,48 @@ public final class Node extends ANode {
     }
 
     /**
-     * @param _point the _point to set
+     * 
+     * @param _point 3d point
      */
     public void setPoint(Point3D _point) {
         this._point = _point;
     }
-    public Node(Point3D p) {
+    
+    /**
+     * 
+     * @param x
+     * @param y
+     * @param z 
+     */
+    public void setPoint(double x, double y, double z) {
+        this._point = new Point3D(x, y, z);
+    }
+    /**
+     * 
+     * @param p 3d point
+     * @param radius radius to point
+     * @param type detector type:SVT, Z(C)-BMT
+     */
+    public Node(Point3D p, double radius, DetectorType type) {
         super(p);
-        this.setPoint(p);
+        this.setRadius(radius);
+        this.setDtype(type);
+        // SVT point = (x,y,z); BMTC point = (z, R, 0); BMTZ point = (x,y,0);
+        if(type == DetectorType.SVT)
+            this.setPoint(p);
+        if(type == DetectorType.BMTZ)
+            this.setPoint(p.x(), p.y(), 0);
+        if(type == DetectorType.BMTC)
+            this.setPoint(p.z(), radius, 0);
+    }
+    
+    public enum DetectorType {
+        SVT, BMTZ, BMTC
     }
     private int _id;
     private Point3D _point;
+    private double _radius;
+    private DetectorType _dtype;
     
     @Override
     public boolean equals(ANode anode1, ANode anode2) {
@@ -70,25 +115,7 @@ public final class Node extends ANode {
         return listOfaNodes.stream().anyMatch((anode1) -> (this.equals(anode1, anode)));
     }
     
-    private Vector3D _path;
     
-    /**
-     * @return the _path
-     */
-    public Vector3D getPath() {
-        return _path;
-    }
-
-   /**
-    * sets the path between nodes
-    * @param anode1
-    * @param anode2 
-    */
-    
-    public void setPath(ANode anode1, ANode anode2) {
-        
-        this._path = (Vector3D) connector( anode1, anode2 );
-    }
 
     @Override
     public Object connector(ANode anode1, ANode anode2) {
@@ -98,6 +125,20 @@ public final class Node extends ANode {
         Vector3D path = node2.toVector3D().sub(node1.toVector3D());
         
         return path;
+    }
+
+    /**
+     * @return the _dtype
+     */
+    public DetectorType getDtype() {
+        return _dtype;
+    }
+
+    /**
+     * @param _dtype the _dtype to set
+     */
+    public void setDtype(DetectorType _dtype) {
+        this._dtype = _dtype;
     }
  
     
