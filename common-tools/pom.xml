@@ -21,7 +21,8 @@
     <module>clas-detector</module>
     <module>cnuphys</module>
     <module>clas-reco</module> 
-    <module>clas-analysis</module> 
+    <module>clas-analysis</module>
+    <module>clas-mla</module>
     <module>swim-tools</module>
     <module>clas-math</module>
     <module>clas-eventmerger</module>
