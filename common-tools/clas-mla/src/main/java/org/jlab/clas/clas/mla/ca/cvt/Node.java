@@ -98,6 +98,7 @@ public final class Node extends ANode {
     private Point3D _point;
     private double _radius;
     private int _region;
+    private int _sector;
     private DetectorType _dtype;
     
     @Override
@@ -158,6 +159,20 @@ public final class Node extends ANode {
      */
     public void setRegion(int _region) {
         this._region = _region;
+    }
+
+    /**
+     * @return the _sector
+     */
+    public int getSector() {
+        return _sector;
+    }
+
+    /**
+     * @param _sector the _sector to set
+     */
+    public void setSector(int _sector) {
+        this._sector = _sector;
     }
  
     
