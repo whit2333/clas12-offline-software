@@ -79,20 +79,25 @@ public final class Node extends ANode {
         this.setRadius(radius);
         this.setDtype(type);
         // SVT point = (x,y,z); BMTC point = (z, R, 0); BMTZ point = (x,y,0);
-        if(type == DetectorType.SVT)
-            this.setPoint(p);
+        if(type == DetectorType.SVTT)
+            this.setPoint(p.x(), p.y(), 0);
+        if(type == DetectorType.SVTL)
+            this.setPoint(p.z(), radius, 0);
         if(type == DetectorType.BMTZ)
             this.setPoint(p.x(), p.y(), 0);
         if(type == DetectorType.BMTC)
             this.setPoint(p.z(), radius, 0);
     }
-    
+    /**
+     * SVTL: z, r info ; SVTT: x,y info; BMTZ; BMTC
+     */
     public enum DetectorType {
-        SVT, BMTZ, BMTC
+        SVTT, SVTL, BMTZ, BMTC
     }
     private int _id;
     private Point3D _point;
     private double _radius;
+    private int _region;
     private DetectorType _dtype;
     
     @Override
@@ -139,6 +144,20 @@ public final class Node extends ANode {
      */
     public void setDtype(DetectorType _dtype) {
         this._dtype = _dtype;
+    }
+
+    /**
+     * @return the _region
+     */
+    public int getRegion() {
+        return _region;
+    }
+
+    /**
+     * @param _region the _region to set
+     */
+    public void setRegion(int _region) {
+        this._region = _region;
     }
  
     
