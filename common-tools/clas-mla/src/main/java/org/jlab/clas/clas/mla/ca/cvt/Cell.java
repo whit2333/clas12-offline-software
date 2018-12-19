@@ -67,7 +67,18 @@ public class Cell extends ACell {
     }
 
     private boolean isValid(Node node1, Node node2) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        //check angle stuff goes here...
+        boolean isValid = false;
+        double cutAngle = this.a + (node2.getRadius() - node1.getRadius()) + this.b;
+        double nodesAngle = Math.toDegrees(node1.getPoint().toVector3D().angle(node2.getPoint().toVector3D()));
+        if (nodesAngle>cutAngle)
+            return isValid;
+        Vector3D dir = node2.getPoint().toVector3D()
+                .sub(node1.getPoint().toVector3D());
+        double relAngle = Math.toDegrees(node1.getPoint().toVector3D().angle(dir));
+        
+        
+//check angle stuff goes here...
+        return isValid;
+        
     }
 }
