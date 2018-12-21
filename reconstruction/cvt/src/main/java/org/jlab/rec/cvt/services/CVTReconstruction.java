@@ -1,6 +1,8 @@
 package org.jlab.rec.cvt.services;
 
+import java.util.ArrayList;
 import java.util.List;
+import org.jlab.clas.clas.mla.ca.cvt.CellOperations;
 
 import org.jlab.clas.reco.ReconstructionEngine;
 import org.jlab.clas.swimtools.Swim;
@@ -15,11 +17,13 @@ import org.jlab.io.hipo.HipoDataSync;
 import org.jlab.rec.cvt.Constants;
 import org.jlab.rec.cvt.banks.RecoBankWriter;
 import org.jlab.rec.cvt.bmt.CCDBConstantsLoader;
+import org.jlab.rec.cvt.cross.Cross;
 import org.jlab.rec.cvt.track.StraightTrack;
 import org.jlab.rec.cvt.track.Track;
+import org.jlab.rec.cvt.track.ca.CellFinder;
+import org.jlab.rec.cvt.track.ca.RunCA;
 //import org.jlab.service.eb.EBHBEngine;
 //import org.jlab.service.eb.EBTBEngine;
-
 /**
  * Service to return reconstructed BST track candidates- the output is in Evio
  * format
@@ -33,12 +37,19 @@ public class CVTReconstruction extends ReconstructionEngine {
     org.jlab.rec.cvt.bmt.Geometry BMTGeom;
     SVTStripFactory svtIdealStripFactory;
     
+    CellFinder cf;
+    CellOperations co;
+    RunCA rca;
+    
     public CVTReconstruction() {
         super("CVTTracks", "ziegler", "4.0");
         org.jlab.rec.cvt.svt.Constants.Load();
         SVTGeom = new org.jlab.rec.cvt.svt.Geometry();
         BMTGeom = new org.jlab.rec.cvt.bmt.Geometry();
-
+        
+        cf = new CellFinder();
+        co = new CellOperations();
+        rca = new RunCA();
     }
 
     String FieldsConfig = "";
@@ -114,8 +125,8 @@ public class CVTReconstruction extends ReconstructionEngine {
     public void setFieldsConfig(String fieldsConfig) {
         FieldsConfig = fieldsConfig;
     }
-    
-	@Override
+
+    @Override
     public boolean processDataEvent(DataEvent event) {
 		
         CVTRecHandler recHandler = new CVTRecHandler(SVTGeom,BMTGeom);
@@ -130,6 +141,11 @@ public class CVTReconstruction extends ReconstructionEngine {
         recHandler.loadCrosses();
 
         //System.out.println(" Number of crosses "+crosses.get(0).size()+" + "+crosses.get(1).size());
+        List<Cross> allcrosses = new ArrayList<Cross>();
+        allcrosses.addAll(recHandler.getCrosses().get(0));
+        allcrosses.addAll(recHandler.getCrosses().get(1));
+        rca.run(cf, co, allcrosses, BMTGeom);
+        
         if(Constants.isCosmicsData()==true) { 
             List<StraightTrack> cosmics = recHandler.cosmicsTracking();   
         	rbc.appendCVTCosmicsBanks(event, recHandler.getSVThits(), recHandler.getBMThits(), 
