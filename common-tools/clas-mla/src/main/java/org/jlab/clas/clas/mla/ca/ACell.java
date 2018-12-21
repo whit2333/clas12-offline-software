@@ -77,49 +77,6 @@ public abstract class ACell implements Comparable<ACell>, ICellProperties {
             this._neighbors.add(neighbor);
     }
     
-    /**
-     * 
-     * @param allCells
-     */
-    public void findNeighbors(ArrayList<ACell> allCells) {
-        for(int ic=0;ic<allCells.size();ic++){
-      	  
-            for(int jc=ic+1;jc<allCells.size();jc++){
-      		  
-                if( allCells.get(ic).getNeighbors().contains(allCells.get(jc))) {
-                    continue;
-                }
-                if( allCells.get(ic).getSourceNode().equals(allCells.get(jc).getSinkNode()) ){ 
-                    if(allCells.get(jc).passNeighboringCondition(allCells.get(ic))) {
-                        allCells.get(ic).addNeighbor(allCells.get(jc));
-                    }
-                }
-            }
-        }
-    }
-    
-    public void evolve(ArrayList<ACell> allCells, int N) {
-        int[] states = new int[allCells.size()];
-        // evolve
-        for( int i=0; i<N; i++){ // epochs   
-            // find the state for each cell
-            int j=0;
-            for( ACell c : allCells ){
-                int max = 0;
-                for( ACell n : c.getNeighbors() ){
-                    if( n.getState() > max ) {
-                        max = n.getState();
-                    } 
-                }
-                states[j] =  1 + max ;
-                j++;
-            }
-            // update all cell states at once
-            for( j=0;j<allCells.size();j++) {
-                allCells.get(j).setState(states[j]);
-            }
-        }
-    }
     
     
     private int _state;

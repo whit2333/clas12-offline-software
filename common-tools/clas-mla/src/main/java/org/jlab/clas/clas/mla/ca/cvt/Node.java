@@ -79,14 +79,22 @@ public final class Node extends ANode {
         this.setRadius(radius);
         this.setDtype(type);
         // SVT point = (x,y,z); BMTC point = (z, R, 0); BMTZ point = (x,y,0);
-        if(type == DetectorType.SVTT)
+        if(type == DetectorType.SVTT) {
             this.setPoint(p.x(), p.y(), 0);
-        if(type == DetectorType.SVTL)
+            this.setCoordIdx(0);
+        }
+        if(type == DetectorType.SVTL) {
             this.setPoint(p.z(), radius, 0);
-        if(type == DetectorType.BMTZ)
+            this.setCoordIdx(1);
+        }
+        if(type == DetectorType.BMTZ) {
             this.setPoint(p.x(), p.y(), 0);
-        if(type == DetectorType.BMTC)
+            this.setCoordIdx(0);
+        }
+        if(type == DetectorType.BMTC) {
             this.setPoint(p.z(), radius, 0);
+            this.setCoordIdx(1);
+        } 
     }
     /**
      * SVTL: z, r info ; SVTT: x,y info; BMTZ; BMTC
@@ -100,6 +108,7 @@ public final class Node extends ANode {
     private int _region;
     private int _sector;
     private DetectorType _dtype;
+    private int _coordIdx; //0: trans. 1: long.
     
     @Override
     public boolean equals(ANode anode1, ANode anode2) {
@@ -173,6 +182,20 @@ public final class Node extends ANode {
      */
     public void setSector(int _sector) {
         this._sector = _sector;
+    }
+
+    /**
+     * @return the _coordIdx
+     */
+    public int getCoordIdx() {
+        return _coordIdx;
+    }
+
+    /**
+     * @param _coordIdx the _coordIdx to set
+     */
+    public void setCoordIdx(int _coordIdx) {
+        this._coordIdx = _coordIdx;
     }
  
     
