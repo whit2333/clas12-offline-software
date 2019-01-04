@@ -347,7 +347,8 @@
        {"name":"posx",      "id":4, "type":"float", "info":"x position (mm)"},
        {"name":"posy",      "id":5, "type":"float", "info":"y position (mm)"},
        {"name":"posz",      "id":6, "type":"float", "info":"z position (mm)"},
-       {"name":"phi",       "id":7, "type":"float", "info":"phi (rad)"}
+       {"name":"phi",       "id":7, "type":"float", "info":"phi (rad)"},
+       {"name":"tid",       "id":8, "type":"int32", "info":"tid"}
     ]
   },
   {
