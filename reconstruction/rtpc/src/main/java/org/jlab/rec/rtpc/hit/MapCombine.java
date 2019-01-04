@@ -228,7 +228,7 @@ public class MapCombine {
 			//canvasmap.get(z).save(z + ".png");
 		}
 		EmbeddedCanvas c_adcvst = new EmbeddedCanvas();
-		c_adcvst.draw(histmap.get(0));
+		if(histmap.get(0)!=null) c_adcvst.draw(histmap.get(0));
 		if(draw) {
 			JFrame j_adcvst = new JFrame();
 			j_adcvst.setSize(800, 600);
