@@ -1,7 +1,7 @@
 [   
  {
     "bank": "RTPC::rec",
-    "group": 1720,
+    "group": 21921,
     "info": "reconstructed RTPC hits",
     "items": [
        {"name":"TID",        "id":1, "type":"int16", "info":"Track ID of the hit"},
