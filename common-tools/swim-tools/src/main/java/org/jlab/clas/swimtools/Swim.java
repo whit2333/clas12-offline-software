@@ -335,7 +335,7 @@ public class Swim {
     /**
      * Cylindrical stopper
      */
-    private class CylindricalcalBoundarySwimStopper implements IStopper {
+    private class CylindricalBoundarySwimStopper implements IStopper {
 
         private double _finalPathLength = Double.NaN;
 
@@ -347,7 +347,7 @@ public class Swim {
          * @param maxR
          *            the max radial coordinate in meters.
          */
-        private CylindricalcalBoundarySwimStopper(double Rad) {
+        private CylindricalBoundarySwimStopper(double Rad) {
                 // DC reconstruction units are cm. Swim units are m. Hence scale by
                 // 100
                 _Rad = Rad;
@@ -395,7 +395,7 @@ public class Swim {
         if(this.SwimUnPhys)
             return null;
         
-        CylindricalcalBoundarySwimStopper stopper = new CylindricalcalBoundarySwimStopper(Rad);
+        CylindricalBoundarySwimStopper stopper = new CylindricalBoundarySwimStopper(Rad);
         
         SwimTrajectory st = PC.CF.swim(_charge, _x0, _y0, _z0, _pTot, _theta, _phi, stopper, _maxPathLength, stepSize,
                         0.0005);
@@ -424,7 +424,10 @@ public class Swim {
         private double _finalPathLength = Double.NaN;
 
         private double _Rad;
-
+        private double _Xc = 0;
+        private double _Yc = 0; 
+        private double _Zc = 0;
+        
         /**
          * A swim stopper that will stop if the boundary of a plane is crossed
          *
@@ -436,11 +439,21 @@ public class Swim {
                 // 100
                 _Rad = Rad;
         }
+        private SphericalBoundarySwimStopper(double Rad, double Xc, double Yc, double Zc) {
+                // DC reconstruction units are cm. Swim units are m. Hence scale by
+                // 100
+                _Rad = Rad;
+                _Xc = Xc;
+                _Yc = Yc;
+                _Zc = Zc;
+        }
 
         @Override
         public boolean stopIntegration(double t, double[] y) {
 
-                double r = Math.sqrt(y[0] * y[0] + y[1] * y[1] + y[2] * y[2]) * 100.;
+                double r = Math.sqrt((y[0]* 100.-_Xc) * (y[0]* 100.-_Xc) +
+                        (y[1]* 100.-_Yc) * (y[1]* 100.-_Yc) +
+                        (y[2]* 100.-_Zc) * (y[2]* 100.-_Zc)) ;
 
                 return (r > _Rad);
 
@@ -479,6 +492,36 @@ public class Swim {
         if(this.SwimUnPhys==true)
             return null;
         SphericalBoundarySwimStopper stopper = new SphericalBoundarySwimStopper(Rad);
+
+        SwimTrajectory st = PC.CF.swim(_charge, _x0, _y0, _z0, _pTot, _theta, _phi, stopper, _maxPathLength, stepSize,
+                        0.0005);
+        if(st==null)
+            return null;
+        st.computeBDL(PC.CP);
+        // st.computeBDL(compositeField);
+
+        double[] lastY = st.lastElement();
+
+        value[0] = lastY[0] * 100; // convert back to cm
+        value[1] = lastY[1] * 100; // convert back to cm
+        value[2] = lastY[2] * 100; // convert back to cm
+        value[3] = lastY[3] * _pTot; // normalized values
+        value[4] = lastY[4] * _pTot;
+        value[5] = lastY[5] * _pTot;
+        value[6] = lastY[6] * 100;
+        value[7] = lastY[7] * 10; // Conversion from kG.m to T.cm
+
+        return value;
+
+    }
+    
+    public double[] SwimToSphere(double Rad, double Xc, double Yc, double Zc) {
+
+        double[] value = new double[8];
+        // using adaptive stepsize
+        if(this.SwimUnPhys==true)
+            return null;
+        SphericalBoundarySwimStopper stopper = new SphericalBoundarySwimStopper(Rad, Xc, Yc, Zc);
 
         SwimTrajectory st = PC.CF.swim(_charge, _x0, _y0, _z0, _pTot, _theta, _phi, stopper, _maxPathLength, stepSize,
                         0.0005);
