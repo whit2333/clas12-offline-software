@@ -55,7 +55,7 @@ public class DCEngine extends ReconstructionEngine {
         if (wireDistortionsFlag!=null) {
             System.out.println("["+this.getName()+"] run with wire distortions in tracking config chosen based on yaml ="+wireDistortionsFlag);
             if(Boolean.valueOf(wireDistortionsFlag)==true) {
-                Constants.setWIREDIST(1.0);
+                Constants.setWIREDIST(1.0); 
             } else {
                 Constants.setWIREDIST(0);
             }

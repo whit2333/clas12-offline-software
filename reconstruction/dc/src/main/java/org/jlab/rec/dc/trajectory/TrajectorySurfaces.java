@@ -100,7 +100,6 @@ public class TrajectorySurfaces {
             d = P.dot(n);
             this._DetectorPlanes.get(is).add(new Surface("EC", index++, 1, -d, -n.x(), -n.y(), -n.z())); 
             index=7; // end of MM + HTCC);
-
         }
     }
     private Point3D RotateFromTSCtoLabC(double X, double Y, double Z, int sector) {

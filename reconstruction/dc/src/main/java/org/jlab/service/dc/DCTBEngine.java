@@ -256,7 +256,7 @@ public class DCTBEngine extends DCEngine {
                 trk.calcTrajectory(trkId, dcSwim, trk.get_Vtx0().x(), trk.get_Vtx0().y(), 
                         trk.get_Vtx0().z(), trk.get_pAtOrig().x(), trk.get_pAtOrig().y(), trk.get_pAtOrig().z(), trk.get_Q(), 
                         ftofDetector, tSurf, tarCent);
-//                for(int j = 0; j< trk.trajectory.size(); j++) {
+                for(int j = 0; j< trk.trajectory.size(); j++) {
 //                System.out.println(trk.get_Id()+" "+trk.trajectory.size()+" ("+trk.trajectory.get(j).getDetId()+") ["+
 //                            trk.trajectory.get(j).getDetName()+"] "+
 //                            (float)trk.trajectory.get(j).getX()/trk.get_P()+", "+

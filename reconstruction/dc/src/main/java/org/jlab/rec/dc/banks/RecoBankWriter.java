@@ -769,7 +769,7 @@ public class RecoBankWriter {
     }
 
     private DataBank fillTrajectoryBank(DataEvent event, List<Track> tracks) {
-        DataBank bank = event.createBank("TimeBasedTrkg::Trajectory", tracks.size()*21);
+        DataBank bank = event.createBank("TimeBasedTrkg::Trajectory", tracks.size()*24);
         int i1=0;
         for (Track track : tracks) {
             if (track == null)
@@ -780,7 +780,6 @@ public class RecoBankWriter {
             for (int j = 0; j < track.trajectory.size(); j++) {
                 if (track.trajectory.get(j).getDetName().startsWith("DC") && (j - 6) % 6 != 0)
                     continue;  // save the last layer in a superlayer
-
                 bank.setShort("did", i1, (short) track.trajectory.get(j).getDetId());
                 bank.setShort("tid", i1, (short) track.get_Id());
                 bank.setFloat("x", i1, (float) track.trajectory.get(j).getX());

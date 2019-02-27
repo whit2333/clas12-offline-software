@@ -7,6 +7,7 @@ import org.jlab.clas.swimtools.Swim;
 import org.jlab.detector.geant4.v2.FTOFGeant4Factory;
 import org.jlab.detector.hits.DetHit;
 import org.jlab.detector.hits.FTOFDetHit;
+import org.jlab.geom.prim.Point3D;
 import org.jlab.geom.prim.Vector3D;
 import org.jlab.geometry.prim.Line3d;
 import org.jlab.rec.dc.cross.Cross;
@@ -273,8 +274,9 @@ public class Trajectory extends ArrayList<Cross> {
         double[] trkPars = new double[8];
         if(trkPars==null)
             return;
+        
         //HTCC
-        double[] trkParsCheren = dcSwim.SwimToSphere(175.);
+        double[] trkParsCheren = dcSwim.SwimToSphere(175.); 
         if(trkParsCheren==null)
             return;
         this.FillTrajectory(id, trajectory, trkParsCheren, trkParsCheren[6], trkParsCheren[7], 0, ts); 
@@ -290,12 +292,14 @@ public class Trajectory extends ArrayList<Cross> {
         this.FillTrajectory(id, trajectory, trkTar3, tarWall-z, Math.abs((tarWall-z)*b[2]), 102, ts);
         
         double[] trkTar1 = dcSwim.SwimToPlaneLab(tarCenter);
+        this.trajectory.get(this.trajectory.size()-1).setDetName("TAR");
         if(trkTar1==null)
             return;
         for (int b = 3; b<6; b++) {
             trkTar1[b]*=-1;
         } 
         this.FillTrajectory(id, trajectory, trkTar1, tarCenter-z, Math.abs((tarWall-z)*b[2]), 101, ts);
+        this.trajectory.get(this.trajectory.size()-1).setDetName("TAR");
         
         //reset track to swim forward
         dcSwim.SetSwimParameters(x, y, z, px, py, pz, q);
@@ -309,6 +313,8 @@ public class Trajectory extends ArrayList<Cross> {
         int is = this._Sector-1;
         double pathLen =0;
         double iBdl = 0;
+        
+        
         for(int j = 0; j<ts.getDetectorPlanes().get(is).size(); j++) {
             
             if(j>0 ) {
@@ -354,6 +360,35 @@ public class Trajectory extends ArrayList<Cross> {
             }
             
         }
+        
+        //reset track to swim forward
+        dcSwim.SetSwimParameters(x, y, z, px, py, pz, q);
+        //RICH
+        //RICH aerogel plane
+        Vector3D PR = new Vector3D(-89.45984,  4.68839,  565.60234);
+        Vector3D nR = new Vector3D(-0.422619426399283, 0.0, 0.9063072439465223);
+        double[] trkRICH =dcSwim.SwimToPlaneBoundary(PR.dot(nR), nR,1);
+        this.FillTrajectory(id, trajectory, trkRICH, trkRICH[6], trkRICH[7], 50, ts);
+        this.trajectory.get(this.trajectory.size()-1).setDetName("RICH");
+        
+        //RICH pmt cathode
+        PR = new Vector3D(48.351, 0.0, 691.775);
+        nR = new Vector3D(-0.422619426399283, 0.0, 0.9063072439465223);
+        trkRICH =dcSwim.SwimToPlaneBoundary(PR.dot(nR), nR,1);
+        this.FillTrajectory(id, trajectory, trkRICH, trkRICH[6], trkRICH[7], 51, ts);
+        this.trajectory.get(this.trajectory.size()-1).setDetName("RICH");
+        
+        //RICH mirror
+        Point3D cent = new Point3D(-45.868, 0.0, 391.977);
+        PR = cent.toVector3D();
+        trkRICH =dcSwim.SwimToPlaneBoundary(PR.dot(nR), nR,1);
+        dcSwim.SetSwimParameters(trkRICH[0], trkRICH[1], trkRICH[2], trkRICH[3], trkRICH[4], trkRICH[5], q);
+        double RichpathLen=trkPars[6];
+        double RichBdl=trkPars[7];
+        trkRICH = dcSwim.SwimToSphere(270., cent.x(), cent.y(), cent.z()); 
+        this.FillTrajectory(id, trajectory, trkRICH, RichpathLen+trkRICH[6], RichBdl+trkRICH[7], 52, ts);
+        this.trajectory.get(this.trajectory.size()-1).setDetName("RICH");
+        
     }
 
     private void FillTrajectory(int id, List<TrajectoryStateVec> trajectory, double[] trkPars, double pathLen, double iBdl, int i, TrajectorySurfaces ts) {
@@ -361,7 +396,7 @@ public class Trajectory extends ArrayList<Cross> {
         sv.setDetId(i);
         if(i==0)
             sv.setDetName("HTCC");
-        if(i>0 && i<100)
+        if(i>0 && i<50)
             sv.setDetName(ts.getDetectorPlanes().get(0).get(i-1).getDetectorName());
         if(i>100)
             sv.setDetName("TAR");
